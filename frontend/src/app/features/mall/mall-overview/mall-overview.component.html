@@ -7,7 +7,9 @@
       [boxs]="boxs"
       [boutiques]="boutiques"
       [contrats]="contrats"
+      [editMode]="editMode"                    
       (selectBox)="enterInteriorView($event)"
+      (editBox)="onEditBox($event)"            
     ></app-mall-map>
 
     <app-box-interior
@@ -16,9 +18,18 @@
       [type]="selectedType!"
       [contrat]="selectedContrat"
       [boutique]="selectedBoutique"
-     
       (back)="returnToMap()"
     ></app-box-interior>
 
   </div>
+
+  <button 
+    class="fab-edit" 
+    mat-fab 
+    color="primary" 
+    (click)="toggleEditMode()"
+    matTooltip="{{ editMode ? 'Quitter le mode édition' : 'Modifier les boxes' }}"
+  >
+    <mat-icon>{{ editMode ? 'close' : 'edit' }}</mat-icon>
+  </button>
 </div>

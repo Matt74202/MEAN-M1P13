@@ -30,3 +30,11 @@ app-supermarket-dimensions-form {
   right: 32px;
   z-index: 1001;
 }
+
+.fab-edit {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}

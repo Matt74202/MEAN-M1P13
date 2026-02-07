@@ -1,5 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';      
+import { MatIconModule } from '@angular/material/icon';           
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import * as PIXI from 'pixi.js';
 
@@ -14,6 +17,9 @@ import { TypeBoutique, Box, Boutique, Contrat } from '@app/model/mall-models';
   standalone: true,
   imports: [
     CommonModule,
+    MatButtonModule,        
+    MatIconModule,         
+    MatTooltipModule,
     MallMapComponent,
     BoxInteriorComponent
   ],
@@ -30,27 +36,34 @@ export class MallCanvasComponent {
 
   protected readonly boxs: Box[] = [
     { _id: 'A01', idType: 't1', statut: 'LIBRE',  loyer: 148000, x: 40,  y: 40  },
-    { _id: 'A02', idType: 't2', statut: 'OCCUPE', loyer: 242000, x: 40,  y: 130 },
-    { _id: 'A03', idType: 't3', statut: 'LIBRE',  loyer: 385000, x: 40,  y: 250 },
-    { _id: 'A04', idType: 't1', statut: 'OCCUPE', loyer: 155000, x: 40,  y: 420 },
-    { _id: 'A05', idType: 't2', statut: 'LIBRE',  loyer: 255000, x: 160, y: 40  },
-    { _id: 'A06', idType: 't1', statut: 'OCCUPE', loyer: 152000, x: 160, y: 130 },
-    { _id: 'A07', idType: 't3', statut: 'LIBRE',  loyer: 518000, x: 160, y: 250 },
-    { _id: 'A08', idType: 't2', statut: 'OCCUPE', loyer: 260000, x: 300, y: 40  },
-    { _id: 'A09', idType: 't3', statut: 'LIBRE',  loyer: 402000, x: 300, y: 170 },
-    { _id: 'A10', idType: 't1', statut: 'LIBRE',  loyer: 150000, x: 300, y: 340 },
-    { _id: 'B01', idType: 't2', statut: 'LIBRE',  loyer: 248000, x: 520, y: 40  },
-    { _id: 'B02', idType: 't1', statut: 'OCCUPE', loyer: 145000, x: 520, y: 130 },
-    { _id: 'B03', idType: 't3', statut: 'OCCUPE', loyer: 395000, x: 520, y: 250 },
-    { _id: 'B04', idType: 't3', statut: 'LIBRE',  loyer: 525000, x: 660, y: 40  },
-    { _id: 'B05', idType: 't2', statut: 'OCCUPE', loyer: 258000, x: 660, y: 170 },
-    { _id: 'B06', idType: 't1', statut: 'LIBRE',  loyer: 153000, x: 660, y: 290 },
-    { _id: 'B07', idType: 't2', statut: 'LIBRE',  loyer: 262000, x: 800, y: 40  },
-    { _id: 'B08', idType: 't3', statut: 'OCCUPE', loyer: 410000, x: 800, y: 180 },
-    { _id: 'B09', idType: 't1', statut: 'LIBRE',  loyer: 149000, x: 800, y: 350 },
-    { _id: 'C01', idType: 't2', statut: 'LIBRE',  loyer: 270000, x: 940, y: 80  },
-    { _id: 'C02', idType: 't3', statut: 'OCCUPE', loyer: 540000, x: 940, y: 300 },
+    { _id: 'A02', idType: 't2', statut: 'OCCUPE', loyer: 242000, x: 40,  y: 120 },
+    { _id: 'A03', idType: 't3', statut: 'LIBRE',  loyer: 385000, x: 40,  y: 260 },
+    { _id: 'A04', idType: 't1', statut: 'OCCUPE', loyer: 155000, x: 40,  y: 430 },
+
+    { _id: 'A05', idType: 't2', statut: 'LIBRE',  loyer: 255000, x: 260, y: 40  },
+    { _id: 'A06', idType: 't1', statut: 'OCCUPE', loyer: 152000, x: 260, y: 160 },
+    { _id: 'A07', idType: 't3', statut: 'LIBRE',  loyer: 518000, x: 260, y: 260 },
+
+    { _id: 'A08', idType: 't2', statut: 'OCCUPE', loyer: 260000, x: 500, y: 40  },
+    { _id: 'A09', idType: 't3', statut: 'LIBRE',  loyer: 402000, x: 500, y: 200 },
+    { _id: 'A10', idType: 't1', statut: 'LIBRE',  loyer: 150000, x: 500, y: 370 },
+
+    { _id: 'B01', idType: 't2', statut: 'LIBRE',  loyer: 248000, x: 760, y: 40  },
+    { _id: 'B02', idType: 't1', statut: 'OCCUPE', loyer: 145000, x: 760, y: 160 },
+    { _id: 'B03', idType: 't3', statut: 'OCCUPE', loyer: 395000, x: 760, y: 260 },
+
+    { _id: 'B04', idType: 't3', statut: 'LIBRE',  loyer: 525000, x: 1020, y: 40  },
+    { _id: 'B05', idType: 't2', statut: 'OCCUPE', loyer: 258000, x: 1020, y: 220 },
+    { _id: 'B06', idType: 't1', statut: 'LIBRE',  loyer: 153000, x: 1020, y: 360 },
+
+    { _id: 'B07', idType: 't2', statut: 'LIBRE',  loyer: 262000, x: 1280, y: 40  },
+    { _id: 'B08', idType: 't3', statut: 'OCCUPE', loyer: 410000, x: 1280, y: 220 },
+    { _id: 'B09', idType: 't1', statut: 'LIBRE',  loyer: 149000, x: 1280, y: 380 },
+
+    { _id: 'C01', idType: 't2', statut: 'LIBRE',  loyer: 270000, x: 1540, y: 80  },
+    { _id: 'C02', idType: 't3', statut: 'OCCUPE', loyer: 540000, x: 1540, y: 260 },
   ];
+
 
   protected readonly boutiques: Boutique[] = [
     { _id: 'bout1', nom: 'Mode Plus',     typeCommerce: 'Mode' },
@@ -83,6 +96,23 @@ export class MallCanvasComponent {
   selectedType?: TypeBoutique;
   selectedContrat?: Contrat;
   selectedBoutique?: Boutique;
+
+  editMode = false;
+
+  toggleEditMode() {
+    this.editMode = !this.editMode;
+  }
+
+  onEditBox(box: Box) {
+    // Ici tu pourras ouvrir un formulaire de modification
+    console.log('Modifier la box :', box);
+    
+    // Exemple futur : ouvrir un dialog
+    // this.dialog.open(BoxEditDialogComponent, { data: box });
+    
+    // Pour le moment on peut juste afficher une alerte ou log
+    alert(`Modifier la box ${box._id} (${box.statut})`);
+  }
 
 
   enterInteriorView(box: Box): void {

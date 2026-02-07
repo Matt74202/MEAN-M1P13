@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
 import * as PIXI from 'pixi.js';
 
 import { TypeBoutique, Box, Boutique, Contrat } from '@app/model/mall-models'; 
@@ -13,7 +13,7 @@ import { TypeBoutique, Box, Boutique, Contrat } from '@app/model/mall-models';
     .map-pixi canvas { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
   `]
 })
-export class MallMapComponent implements AfterViewInit, OnDestroy {
+export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
 
   @Input() types: TypeBoutique[] = [];
   @Input() boxs: Box[] = [];
@@ -22,6 +22,9 @@ export class MallMapComponent implements AfterViewInit, OnDestroy {
   @Input() modeTexture: PIXI.Texture | null = null;
 
   @Output() selectBox = new EventEmitter<Box>();
+  @Output() editBox = new EventEmitter<Box>();
+
+  @Input() editMode: boolean = false;
 
   @ViewChild('mapContainer') mapContainerRef!: ElementRef<HTMLDivElement>;
 
@@ -32,6 +35,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy {
     const container = this.mapContainerRef?.nativeElement;
     if (!container) return;
 
+    // Petit délai pour s'assurer que le conteneur a bien ses dimensions
     await new Promise(r => setTimeout(r, 50));
 
     const rect = container.getBoundingClientRect();
@@ -59,6 +63,13 @@ export class MallMapComponent implements AfterViewInit, OnDestroy {
     this.drawMap();
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    // Redessiner quand editMode change (mais pas au premier rendu)
+    if (changes['editMode'] && !changes['editMode'].firstChange && this.app) {
+      this.drawMap();
+    }
+  }
+
   private drawMap(): void {
     this.mapContainerPixi.removeChildren();
 
@@ -84,6 +95,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy {
 
       this.mapContainerPixi.addChild(g);
 
+      // Label
       const contrat = this.contrats.find(c => c.idBox === box._id && c.statut === 'ACTIF');
       let labelText = box.statut === 'LIBRE' ? 'Libre' : box._id;
       if (contrat) {
@@ -104,11 +116,52 @@ export class MallMapComponent implements AfterViewInit, OnDestroy {
           wordWrapWidth: type.longueur - 10,
         }
       });
-
       label.anchor.set(0.5);
       label.x = box.x + type.longueur / 2;
       label.y = box.y + type.largeur / 2;
       this.mapContainerPixi.addChild(label);
+
+      // Icône crayon en mode édition
+      if (this.editMode) {
+        const editIcon = new PIXI.Text('✏', {
+          fontSize: 20,
+          fill: 0x555555,
+          fontWeight: '500',
+          fontFamily: 'Arial, sans-serif',
+          dropShadow: {
+            color: 0xffffff,
+            blur: 3,
+            distance: 1,
+            alpha: 0.7,
+            angle: Math.PI / 4
+          }
+        });
+
+        editIcon.anchor.set(1, 0);
+        editIcon.x = box.x + type.longueur - 12;
+        editIcon.y = box.y + 20;
+        editIcon.rotation = Math.PI / 3; // ≈ 60° (penché comme un crayon)
+
+        editIcon.eventMode = 'static';
+        editIcon.cursor = 'pointer';
+
+        editIcon.on('pointerover', () => {
+          editIcon.scale.set(1.25);
+          editIcon.tint = 0x1976d2; // bleu Material
+        });
+
+        editIcon.on('pointerout', () => {
+          editIcon.scale.set(1);
+          editIcon.tint = 0xffffff;
+        });
+
+        editIcon.on('pointerdown', (e) => {
+          e.stopPropagation(); // Empêche de déclencher aussi le selectBox
+          this.editBox.emit(box);
+        });
+
+        this.mapContainerPixi.addChild(editIcon);
+      }
     });
   }
 
