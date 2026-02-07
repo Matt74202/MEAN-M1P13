@@ -1,0 +1,24 @@
+<div class="mall-canvas-wrapper">
+  <div class="pixi-container">
+
+    <app-mall-map
+      *ngIf="!showInteriorView"
+      [types]="types"
+      [boxs]="boxs"
+      [boutiques]="boutiques"
+      [contrats]="contrats"
+      (selectBox)="enterInteriorView($event)"
+    ></app-mall-map>
+
+    <app-box-interior
+      *ngIf="showInteriorView && selectedBox && selectedType"
+      [box]="selectedBox!"
+      [type]="selectedType!"
+      [contrat]="selectedContrat"
+      [boutique]="selectedBoutique"
+     
+      (back)="returnToMap()"
+    ></app-box-interior>
+
+  </div>
+</div>
