@@ -7,6 +7,8 @@ export interface TypeBoutique {
   nbEtagereDroite: number;
 }
 
+export type Etage = 'RC' | 'FC';
+
 export interface Box {
   _id: string;
   idType: string;
@@ -14,6 +16,7 @@ export interface Box {
   loyer: number;
   x: number;
   y: number;
+  etage: 'RC' | 'FC';
 }
 
 export interface Boutique {

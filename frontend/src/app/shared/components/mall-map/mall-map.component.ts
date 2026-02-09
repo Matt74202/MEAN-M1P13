@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
 import * as PIXI from 'pixi.js';
 
-import { TypeBoutique, Box, Boutique, Contrat } from '@app/model/mall-models'; 
+import { TypeBoutique, Box, Boutique, Contrat, Etage } from '@app/model/mall-models'; 
 
 @Component({
   selector: 'app-mall-map',
@@ -21,12 +21,11 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   @Input() contrats: Contrat[] = [];
   @Input() modeTexture: PIXI.Texture | null = null;
 
-  @Output() selectBox = new EventEmitter<Box>();
-  @Output() editBox = new EventEmitter<Box>();   // on garde pour compatibilité, mais on va ajouter un nouvel event
-
   @Input() editMode: boolean = false;
+  @Input() currentEtage: Etage = 'RC';  // ← NOUVEAU : on reçoit l'étage du parent
 
-  // Nouvel event pour signaler un changement de statut
+  @Output() selectBox = new EventEmitter<Box>();
+  @Output() editBox = new EventEmitter<Box>();
   @Output() statusChange = new EventEmitter<{ box: Box; newStatus: 'LIBRE' | 'NON_FONCTIONNEL' }>();
 
   @ViewChild('mapContainer') mapContainerRef!: ElementRef<HTMLDivElement>;
@@ -66,11 +65,16 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['editMode'] && !changes['editMode'].firstChange && this.app) {
-      this.drawMap();
+    if (this.app) {
+      if (changes['editMode'] || changes['currentEtage'] || changes['boxs'] || this.editMode) {
+        this.drawMap();
+      }
     }
-    // Optionnel : redessiner aussi si boxs change (utile si statut modifié)
-    if (changes['boxs'] && this.app) {
+  }
+
+  public forceRedraw() {
+    if (this.app) {
+      console.log('forceRedraw exécuté');
       this.drawMap();
     }
   }
@@ -78,13 +82,15 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   private drawMap(): void {
     this.mapContainerPixi.removeChildren();
 
-    this.boxs.forEach(box => {
+    // Filtre les boxes visibles selon l'étage courant
+    const visibleBoxes = this.boxs.filter(box => box.etage === this.currentEtage);
+
+    visibleBoxes.forEach(box => {
       const type = this.types.find(t => t._id === box.idType);
       if (!type) return;
 
       const g = new PIXI.Graphics();
 
-      // Couleur de fond selon statut
       let fill: number;
       let textColor: number;
       let border = 0xc0c0c0;
@@ -93,10 +99,10 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
         fill = 0xf0f0f0;
         textColor = 0x4a5568;
       } else if (box.statut === 'NON_FONCTIONNEL') {
-        fill = 0xffebee;           // rouge très clair
-        textColor = 0xc62828;      // rouge foncé
-        border = 0xef5350;         // bordure rouge
-      } else { // LIBRE
+        fill = 0xffebee;
+        textColor = 0xc62828;
+        border = 0xef5350;
+      } else {
         fill = 0xebf5ff;
         textColor = 0x2c5282;
       }
@@ -144,13 +150,12 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
       label.y = box.y + type.largeur / 2;
       this.mapContainerPixi.addChild(label);
 
-      // === Icônes d'action en mode édition ===
+      // Icônes d'action en mode édition
       if (this.editMode) {
         if (box.statut === 'LIBRE') {
-          // Icône X pour marquer NON_FONCTIONNEL
           const iconX = new PIXI.Text('✕', {
             fontSize: 22,
-            fill: 0xd32f2f,           // rouge Material
+            fill: 0xd32f2f,
             fontWeight: 'bold',
             fontFamily: 'Arial, sans-serif',
             dropShadow: {
@@ -158,7 +163,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
               blur: 4,
               distance: 2,
               alpha: 0.6,
-              angle: Math.PI / 4,          
+              angle: Math.PI / 4,
             }
           });
 
@@ -168,6 +173,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
 
           iconX.eventMode = 'static';
           iconX.cursor = 'pointer';
+          iconX.interactive = true;
 
           iconX.on('pointerover', () => {
             iconX.scale.set(1.3);
@@ -179,16 +185,17 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
           });
           iconX.on('pointerdown', (e) => {
             e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('Clic sur ✕ détecté pour', box._id);
             this.statusChange.emit({ box, newStatus: 'NON_FONCTIONNEL' });
           });
 
           this.mapContainerPixi.addChild(iconX);
         }
         else if (box.statut === 'NON_FONCTIONNEL') {
-          // Icône check pour remettre en LIBRE
           const iconCheck = new PIXI.Text('✓', {
             fontSize: 22,
-            fill: 0x2e7d32,           
+            fill: 0x2e7d32,
             fontWeight: 'bold',
             fontFamily: 'Arial, sans-serif',
             dropShadow: {
@@ -196,7 +203,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
               blur: 4,
               distance: 2,
               alpha: 0.6,
-              angle: Math.PI / 4,        
+              angle: Math.PI / 4,
             }
           });
 
@@ -206,6 +213,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
 
           iconCheck.eventMode = 'static';
           iconCheck.cursor = 'pointer';
+          iconCheck.interactive = true;
 
           iconCheck.on('pointerover', () => {
             iconCheck.scale.set(1.3);
@@ -217,12 +225,13 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
           });
           iconCheck.on('pointerdown', (e) => {
             e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('Clic sur ✓ détecté pour', box._id);
             this.statusChange.emit({ box, newStatus: 'LIBRE' });
           });
 
           this.mapContainerPixi.addChild(iconCheck);
         }
-        // Pas d'icône pour OCCUPE
       }
     });
   }

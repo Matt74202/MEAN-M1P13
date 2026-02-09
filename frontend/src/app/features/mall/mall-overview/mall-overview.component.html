@@ -1,16 +1,40 @@
 <div class="mall-canvas-wrapper">
+
+  <!-- Sélecteur d'étage -->
+  <div class="etage-selector" *ngIf="!showInteriorView">
+    <button 
+      mat-raised-button 
+      [color]="currentEtage === 'RC' ? 'primary' : ''" 
+      (click)="setEtage('RC')"
+      [disabled]="currentEtage === 'RC'"
+    >
+      Rez-de-chaussée
+    </button>
+
+    <button 
+      mat-raised-button 
+      [color]="currentEtage === 'FC' ? 'primary' : ''" 
+      (click)="setEtage('FC')"
+      [disabled]="currentEtage === 'FC'"
+    >
+      1ᵉʳ étage
+    </button>
+  </div>
+
   <div class="pixi-container">
 
     <app-mall-map
+      #mallMap
       *ngIf="!showInteriorView"
       [types]="types"
-      [boxs]="boxs"
+      [boxs]="boxs"                     <!-- On passe TOUTES les boxes -->
       [boutiques]="boutiques"
       [contrats]="contrats"
       [editMode]="editMode"
+      [currentEtage]="currentEtage"     <!-- On passe l'étage pour filtrer dedans -->
       (selectBox)="enterInteriorView($event)"
       (editBox)="onEditBox($event)"
-      (statusChange)="onStatusChange($event)"  
+      (statusChange)="onStatusChange($event)"
     ></app-mall-map>
 
     <app-box-interior
