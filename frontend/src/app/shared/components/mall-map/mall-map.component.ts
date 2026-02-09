@@ -22,9 +22,12 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   @Input() modeTexture: PIXI.Texture | null = null;
 
   @Output() selectBox = new EventEmitter<Box>();
-  @Output() editBox = new EventEmitter<Box>();
+  @Output() editBox = new EventEmitter<Box>();   // on garde pour compatibilité, mais on va ajouter un nouvel event
 
   @Input() editMode: boolean = false;
+
+  // Nouvel event pour signaler un changement de statut
+  @Output() statusChange = new EventEmitter<{ box: Box; newStatus: 'LIBRE' | 'NON_FONCTIONNEL' }>();
 
   @ViewChild('mapContainer') mapContainerRef!: ElementRef<HTMLDivElement>;
 
@@ -35,7 +38,6 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
     const container = this.mapContainerRef?.nativeElement;
     if (!container) return;
 
-    // Petit délai pour s'assurer que le conteneur a bien ses dimensions
     await new Promise(r => setTimeout(r, 50));
 
     const rect = container.getBoundingClientRect();
@@ -64,8 +66,11 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Redessiner quand editMode change (mais pas au premier rendu)
     if (changes['editMode'] && !changes['editMode'].firstChange && this.app) {
+      this.drawMap();
+    }
+    // Optionnel : redessiner aussi si boxs change (utile si statut modifié)
+    if (changes['boxs'] && this.app) {
       this.drawMap();
     }
   }
@@ -78,9 +83,23 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
       if (!type) return;
 
       const g = new PIXI.Graphics();
-      const fill = box.statut === 'LIBRE' ? 0xebf5ff : 0xf0f0f0;
-      const border = 0xc0c0c0;
-      const textColor = box.statut === 'LIBRE' ? 0x2c5282 : 0x4a5568;
+
+      // Couleur de fond selon statut
+      let fill: number;
+      let textColor: number;
+      let border = 0xc0c0c0;
+
+      if (box.statut === 'OCCUPE') {
+        fill = 0xf0f0f0;
+        textColor = 0x4a5568;
+      } else if (box.statut === 'NON_FONCTIONNEL') {
+        fill = 0xffebee;           // rouge très clair
+        textColor = 0xc62828;      // rouge foncé
+        border = 0xef5350;         // bordure rouge
+      } else { // LIBRE
+        fill = 0xebf5ff;
+        textColor = 0x2c5282;
+      }
 
       g.rect(box.x, box.y, type.longueur, type.largeur)
         .fill(fill)
@@ -97,10 +116,14 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
 
       // Label
       const contrat = this.contrats.find(c => c.idBox === box._id && c.statut === 'ACTIF');
-      let labelText = box.statut === 'LIBRE' ? 'Libre' : box._id;
+      let labelText = box._id;
       if (contrat) {
         const boutique = this.boutiques.find(b => b._id === contrat.idBoutique);
         if (boutique) labelText = boutique.nom;
+      } else if (box.statut === 'NON_FONCTIONNEL') {
+        labelText = 'Non fonctionnel';
+      } else {
+        labelText = 'Libre';
       }
 
       const label = new PIXI.Text({
@@ -121,46 +144,85 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
       label.y = box.y + type.largeur / 2;
       this.mapContainerPixi.addChild(label);
 
-      // Icône crayon en mode édition
+      // === Icônes d'action en mode édition ===
       if (this.editMode) {
-        const editIcon = new PIXI.Text('✏', {
-          fontSize: 20,
-          fill: 0x555555,
-          fontWeight: '500',
-          fontFamily: 'Arial, sans-serif',
-          dropShadow: {
-            color: 0xffffff,
-            blur: 3,
-            distance: 1,
-            alpha: 0.7,
-            angle: Math.PI / 4
-          }
-        });
+        if (box.statut === 'LIBRE') {
+          // Icône X pour marquer NON_FONCTIONNEL
+          const iconX = new PIXI.Text('✕', {
+            fontSize: 22,
+            fill: 0xd32f2f,           // rouge Material
+            fontWeight: 'bold',
+            fontFamily: 'Arial, sans-serif',
+            dropShadow: {
+              color: 0xffffff,
+              blur: 4,
+              distance: 2,
+              alpha: 0.6,
+              angle: Math.PI / 4,          
+            }
+          });
 
-        editIcon.anchor.set(1, 0);
-        editIcon.x = box.x + type.longueur - 12;
-        editIcon.y = box.y + 20;
-        editIcon.rotation = Math.PI / 3; // ≈ 60° (penché comme un crayon)
+          iconX.anchor.set(1, 0);
+          iconX.x = box.x + type.longueur - 10;
+          iconX.y = box.y + 12;
 
-        editIcon.eventMode = 'static';
-        editIcon.cursor = 'pointer';
+          iconX.eventMode = 'static';
+          iconX.cursor = 'pointer';
 
-        editIcon.on('pointerover', () => {
-          editIcon.scale.set(1.25);
-          editIcon.tint = 0x1976d2; // bleu Material
-        });
+          iconX.on('pointerover', () => {
+            iconX.scale.set(1.3);
+            iconX.tint = 0xb71c1c;
+          });
+          iconX.on('pointerout', () => {
+            iconX.scale.set(1);
+            iconX.tint = 0xffffff;
+          });
+          iconX.on('pointerdown', (e) => {
+            e.stopPropagation();
+            this.statusChange.emit({ box, newStatus: 'NON_FONCTIONNEL' });
+          });
 
-        editIcon.on('pointerout', () => {
-          editIcon.scale.set(1);
-          editIcon.tint = 0xffffff;
-        });
+          this.mapContainerPixi.addChild(iconX);
+        }
+        else if (box.statut === 'NON_FONCTIONNEL') {
+          // Icône check pour remettre en LIBRE
+          const iconCheck = new PIXI.Text('✓', {
+            fontSize: 22,
+            fill: 0x2e7d32,           
+            fontWeight: 'bold',
+            fontFamily: 'Arial, sans-serif',
+            dropShadow: {
+              color: 0xffffff,
+              blur: 4,
+              distance: 2,
+              alpha: 0.6,
+              angle: Math.PI / 4,        
+            }
+          });
 
-        editIcon.on('pointerdown', (e) => {
-          e.stopPropagation(); // Empêche de déclencher aussi le selectBox
-          this.editBox.emit(box);
-        });
+          iconCheck.anchor.set(1, 0);
+          iconCheck.x = box.x + type.longueur - 10;
+          iconCheck.y = box.y + 12;
 
-        this.mapContainerPixi.addChild(editIcon);
+          iconCheck.eventMode = 'static';
+          iconCheck.cursor = 'pointer';
+
+          iconCheck.on('pointerover', () => {
+            iconCheck.scale.set(1.3);
+            iconCheck.tint = 0x1b5e20;
+          });
+          iconCheck.on('pointerout', () => {
+            iconCheck.scale.set(1);
+            iconCheck.tint = 0xffffff;
+          });
+          iconCheck.on('pointerdown', (e) => {
+            e.stopPropagation();
+            this.statusChange.emit({ box, newStatus: 'LIBRE' });
+          });
+
+          this.mapContainerPixi.addChild(iconCheck);
+        }
+        // Pas d'icône pour OCCUPE
       }
     });
   }

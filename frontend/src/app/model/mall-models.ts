@@ -10,7 +10,7 @@ export interface TypeBoutique {
 export interface Box {
   _id: string;
   idType: string;
-  statut: 'LIBRE' | 'OCCUPE';
+  statut: 'LIBRE' | 'OCCUPE' | 'NON_FONCTIONNEL';
   loyer: number;
   x: number;
   y: number;

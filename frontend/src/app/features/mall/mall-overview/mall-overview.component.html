@@ -7,9 +7,10 @@
       [boxs]="boxs"
       [boutiques]="boutiques"
       [contrats]="contrats"
-      [editMode]="editMode"                    
+      [editMode]="editMode"
       (selectBox)="enterInteriorView($event)"
-      (editBox)="onEditBox($event)"            
+      (editBox)="onEditBox($event)"
+      (statusChange)="onStatusChange($event)"  
     ></app-mall-map>
 
     <app-box-interior

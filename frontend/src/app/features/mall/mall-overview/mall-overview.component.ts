@@ -34,7 +34,7 @@ export class MallCanvasComponent {
     { _id: 't3', nom: 'Grand',  longueur: 200, largeur: 140, nbEtagereGauche: 3, nbEtagereDroite: 3 },
   ];
 
-  protected readonly boxs: Box[] = [
+  protected boxs: Box[] = [
     { _id: 'A01', idType: 't1', statut: 'LIBRE',  loyer: 148000, x: 40,  y: 40  },
     { _id: 'A02', idType: 't2', statut: 'OCCUPE', loyer: 242000, x: 40,  y: 120 },
     { _id: 'A03', idType: 't3', statut: 'LIBRE',  loyer: 385000, x: 40,  y: 260 },
@@ -137,5 +137,15 @@ export class MallCanvasComponent {
     this.selectedType = undefined;
     this.selectedContrat = undefined;
     this.selectedBoutique = undefined;
+  }
+
+  onStatusChange(event: { box: Box; newStatus: 'LIBRE' | 'NON_FONCTIONNEL' }) {
+    const boxToUpdate = this.boxs.find(b => b._id === event.box._id);
+    if (boxToUpdate) {
+      boxToUpdate.statut = event.newStatus;
+      // Force Angular à détecter le changement (optionnel si OnPush)
+      this.boxs = [...this.boxs]; 
+      console.log(`Box ${boxToUpdate._id} passée à ${boxToUpdate.statut}`);
+    }
   }
 }
