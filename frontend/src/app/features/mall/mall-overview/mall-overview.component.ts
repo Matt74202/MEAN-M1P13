@@ -4,8 +4,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import * as PIXI from 'pixi.js';
-
 import { MallMapComponent } from '@app/shared/components/mall-map/mall-map.component';
 import { BoxInteriorComponent } from '@app/shared/components/box-interior/box-interior.component';
 
@@ -27,7 +25,7 @@ import { TypeBoutique, Box, Boutique, Contrat, Etage } from '@app/model/mall-mod
 })
 export class MallCanvasComponent {
 
-  @ViewChild(MallMapComponent) mallMapComp?: MallMapComponent;  // ← Correctement placé ici
+  @ViewChild(MallMapComponent) mallMapComp?: MallMapComponent;
 
   protected readonly types: TypeBoutique[] = [
     { _id: 't1', nom: 'Petit', longueur: 80, largeur: 60, nbEtagereGauche: 1, nbEtagereDroite: 1 },
@@ -36,36 +34,18 @@ export class MallCanvasComponent {
   ];
 
   protected boxs: Box[] = [
-    // Rez-de-chaussée (RC)
-    { _id: 'RC-A01', idType: 't1', statut: 'LIBRE', loyer: 148000, x: 40, y: 40, etage: 'RC' },
-    { _id: 'RC-A02', idType: 't2', statut: 'OCCUPE', loyer: 242000, x: 40, y: 120, etage: 'RC' },
-    { _id: 'RC-A03', idType: 't3', statut: 'LIBRE', loyer: 385000, x: 40, y: 260, etage: 'RC' },
-    { _id: 'RC-A04', idType: 't1', statut: 'OCCUPE', loyer: 155000, x: 40, y: 430, etage: 'RC' },
+    { _id: 'RC-A01', idType: 't1', statut: 'LIBRE',  loyer: 148000, x:  60, y:  60,  etage: 'RC' },
+    { _id: 'RC-A02', idType: 't2', statut: 'OCCUPE', loyer: 242000, x:  60, y: 160,  etage: 'RC' },
+    { _id: 'RC-A03', idType: 't3', statut: 'LIBRE',  loyer: 385000, x:  60, y: 280,  etage: 'RC' },
+    { _id: 'RC-A04', idType: 't1', statut: 'OCCUPE', loyer: 155000, x:  60, y: 440,  etage: 'RC' },
 
-    { _id: 'RC-A05', idType: 't2', statut: 'LIBRE', loyer: 255000, x: 260, y: 40, etage: 'RC' },
-    { _id: 'RC-A06', idType: 't1', statut: 'OCCUPE', loyer: 152000, x: 260, y: 160, etage: 'RC' },
-    { _id: 'RC-A07', idType: 't3', statut: 'LIBRE', loyer: 518000, x: 260, y: 260, etage: 'RC' },
+    { _id: 'RC-B01', idType: 't2', statut: 'LIBRE',  loyer: 248000, x: 1100, y:  60, etage: 'RC' },
+    { _id: 'RC-B02', idType: 't1', statut: 'OCCUPE', loyer: 145000, x: 1100, y: 180, etage: 'RC' },
+    { _id: 'RC-B03', idType: 't3', statut: 'OCCUPE', loyer: 395000, x: 1100, y: 300, etage: 'RC' },
+    { _id: 'RC-B04', idType: 't3', statut: 'LIBRE',  loyer: 525000, x: 1280, y:  60, etage: 'RC' },
+    { _id: 'RC-B05', idType: 't2', statut: 'OCCUPE', loyer: 258000, x: 1280, y: 240, etage: 'RC' },
+    { _id: 'RC-B06', idType: 't1', statut: 'LIBRE',  loyer: 153000, x: 1280, y: 380, etage: 'RC' },
 
-    { _id: 'RC-A08', idType: 't2', statut: 'OCCUPE', loyer: 260000, x: 500, y: 40, etage: 'RC' },
-    { _id: 'RC-A09', idType: 't3', statut: 'LIBRE', loyer: 402000, x: 500, y: 200, etage: 'RC' },
-    { _id: 'RC-A10', idType: 't1', statut: 'LIBRE', loyer: 150000, x: 500, y: 370, etage: 'RC' },
-
-    { _id: 'RC-B01', idType: 't2', statut: 'LIBRE', loyer: 248000, x: 760, y: 40, etage: 'RC' },
-    { _id: 'RC-B02', idType: 't1', statut: 'OCCUPE', loyer: 145000, x: 760, y: 160, etage: 'RC' },
-    { _id: 'RC-B03', idType: 't3', statut: 'OCCUPE', loyer: 395000, x: 760, y: 260, etage: 'RC' },
-
-    { _id: 'RC-B04', idType: 't3', statut: 'LIBRE', loyer: 525000, x: 1020, y: 40, etage: 'RC' },
-    { _id: 'RC-B05', idType: 't2', statut: 'OCCUPE', loyer: 258000, x: 1020, y: 220, etage: 'RC' },
-    { _id: 'RC-B06', idType: 't1', statut: 'LIBRE', loyer: 153000, x: 1020, y: 360, etage: 'RC' },
-
-    { _id: 'RC-B07', idType: 't2', statut: 'LIBRE', loyer: 262000, x: 1280, y: 40, etage: 'RC' },
-    { _id: 'RC-B08', idType: 't3', statut: 'OCCUPE', loyer: 410000, x: 1280, y: 220, etage: 'RC' },
-    { _id: 'RC-B09', idType: 't1', statut: 'LIBRE', loyer: 149000, x: 1280, y: 380, etage: 'RC' },
-
-    { _id: 'RC-C01', idType: 't2', statut: 'LIBRE', loyer: 270000, x: 1540, y: 80, etage: 'RC' },
-    { _id: 'RC-C02', idType: 't3', statut: 'OCCUPE', loyer: 540000, x: 1540, y: 260, etage: 'RC' },
-
-    // Premier étage (FC)
     { _id: 'FC-A01', idType: 't1', statut: 'LIBRE', loyer: 158000, x: 40, y: 40, etage: 'FC' },
     { _id: 'FC-A02', idType: 't2', statut: 'LIBRE', loyer: 262000, x: 40, y: 120, etage: 'FC' },
     { _id: 'FC-A03', idType: 't3', statut: 'NON_FONCTIONNEL', loyer: 395000, x: 40, y: 260, etage: 'FC' },
@@ -120,14 +100,7 @@ export class MallCanvasComponent {
     const boxToUpdate = this.boxs.find(b => b._id === event.box._id);
     if (boxToUpdate) {
       boxToUpdate.statut = event.newStatus;
-      console.log('Statut mis à jour :', boxToUpdate.statut);
-
-      // Force le redraw immédiatement
-      setTimeout(() => {
-        this.mallMapComp?.forceRedraw();
-      }, 0);
-    } else {
-      console.log('Box non trouvée !');
+      this.mallMapComp?.forceRedraw();
     }
   }
 

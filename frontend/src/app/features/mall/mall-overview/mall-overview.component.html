@@ -27,11 +27,11 @@
       #mallMap
       *ngIf="!showInteriorView"
       [types]="types"
-      [boxs]="boxs"                     <!-- On passe TOUTES les boxes -->
+      [boxs]="boxs"                     
       [boutiques]="boutiques"
       [contrats]="contrats"
       [editMode]="editMode"
-      [currentEtage]="currentEtage"     <!-- On passe l'étage pour filtrer dedans -->
+      [currentEtage]="currentEtage"    
       (selectBox)="enterInteriorView($event)"
       (editBox)="onEditBox($event)"
       (statusChange)="onStatusChange($event)"
