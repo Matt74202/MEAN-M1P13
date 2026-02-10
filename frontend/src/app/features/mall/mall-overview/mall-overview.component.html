@@ -1,7 +1,6 @@
 <div class="mall-canvas-wrapper">
 
-  <!-- Sélecteur d'étage -->
-  <div class="etage-selector" *ngIf="!showInteriorView">
+  <div class="etage-selector" *ngIf="!showInteriorView && !editMode">
     <button 
       mat-raised-button 
       [color]="currentEtage === 'RC' ? 'primary' : ''" 
@@ -21,20 +20,27 @@
     </button>
   </div>
 
+  <div class="add-box-controls" *ngIf="editMode && !showInteriorView">
+    <button mat-raised-button color="primary" (click)="addBox('PETIT')">+ Petit (80×60)</button>
+    <button mat-raised-button color="primary" (click)="addBox('MOYEN')">+ Moyen (140×100)</button>
+    <button mat-raised-button color="primary" (click)="addBox('GRAND')">+ Grand (200×140)</button>
+  </div>
+
   <div class="pixi-container">
 
     <app-mall-map
       #mallMap
       *ngIf="!showInteriorView"
       [types]="types"
-      [boxs]="boxs"                     
+      [boxs]="editMode ? editingBoxes : boxs"
       [boutiques]="boutiques"
       [contrats]="contrats"
       [editMode]="editMode"
-      [currentEtage]="currentEtage"    
+      [currentEtage]="currentEtage"
       (selectBox)="enterInteriorView($event)"
       (editBox)="onEditBox($event)"
       (statusChange)="onStatusChange($event)"
+      (deleteBox)="onDeleteBox($event)"           
     ></app-mall-map>
 
     <app-box-interior
@@ -53,8 +59,9 @@
     mat-fab 
     color="primary" 
     (click)="toggleEditMode()"
-    matTooltip="{{ editMode ? 'Quitter le mode édition' : 'Modifier les boxes' }}"
+    matTooltip="{{ editMode ? 'Quitter le mode édition' : 'Entrer en mode édition' }}"
   >
     <mat-icon>{{ editMode ? 'close' : 'edit' }}</mat-icon>
   </button>
+
 </div>

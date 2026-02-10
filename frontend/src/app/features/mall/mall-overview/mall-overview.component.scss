@@ -4,31 +4,30 @@
   width: 100%;
 }
 
-.etage-selector{
-  margin-top: 20px;
+.etage-selector {
+  margin: 16px 0;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
 }
 
-.etage-selector button {
-  background-color: transparent;
-  color: #333;
-}
-
-.etage-selector button[color="primary"],
-.etage-selector button:disabled {
-  background-color: #7d936c !important;  /* vert plus foncé pour le bouton actif */
-  color: white;
+.add-box-controls {
+  margin: 16px 0;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .pixi-container {
-  height: 100%;
+  height: calc(100% - 100px);
   width: 100%;
-  padding-top: 80px;          /* ← AJOUTE ÇA : descend la carte */
   box-sizing: border-box;
 }
 
 .fab-edit {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 90;
+  bottom: 32px;
+  right: 32px;
+  z-index: 100;
 }
