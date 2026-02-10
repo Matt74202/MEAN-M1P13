@@ -106,7 +106,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
     this.drawMap(false);
   }
 
-  private drawMap(isInitial = false) {
+private drawMap(isInitial = false) {
   if (!this.app) return;
 
   if (isInitial) {
@@ -122,7 +122,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
     this.mapContent.addChild(hall);
   }
 
-  // Nettoyage des containers disparus
+  // Supprimer les containers des box absents / étage différent
   for (const [id, cont] of this.boxesContainers.entries()) {
     if (!this.boxs.some(b => b._id === id && b.etage === this.currentEtage)) {
       this.mapContent.removeChild(cont);
@@ -135,9 +135,12 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
     .forEach(box => {
       let container = this.boxesContainers.get(box._id);
 
-      const needsRecreate = !container ||
-                           container.children.length < 4 ||  // +1 pour le bouton rotation
-                           (this.editMode !== !!container.getChildByName('statusIcon'));
+      const hasStatusIcon = !!container?.getChildByName('statusIcon');
+
+      const needsRecreate =
+        !container ||
+        (this.editMode && !hasStatusIcon) ||
+        (!this.editMode && hasStatusIcon);
 
       if (needsRecreate) {
         if (container) {
@@ -150,7 +153,6 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
       }
 
       const boxContainer: PIXI.Container = container!;
-
       boxContainer.x = box.x;
       boxContainer.y = box.y;
       boxContainer.rotation = box.rotation ?? 0;
@@ -158,6 +160,8 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
 
   this.app.renderer.render(this.app.stage);
 }
+
+
 
   private createRotateButton(box: Box, container: PIXI.Container): PIXI.Container {
     const rotateBtn = new PIXI.Container();
@@ -251,101 +255,100 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   dragArea.cursor = 'move';
   container.addChild(dragArea);
 
-  if (this.editMode) {
-    const isFree = box.statut === 'LIBRE';
+ if (this.editMode) {
+  const isFree = box.statut === 'LIBRE';
 
-    // ───────────────────────────────
-    // Cercle d'état ─ haut gauche (taille alignée avec les autres icônes)
-    // ───────────────────────────────
-    const statusCircle = new PIXI.Graphics();
-    const circleRadius = 14; // rayon → diamètre ≈ 28 px (proche des icônes 28–32 px)
-    statusCircle.circle(-w/2 + 24, -h/2 + 20, circleRadius);
-    statusCircle.fill(isFree ? 0x2e7d32 : 0xd32f2f); // vert / rouge
-    statusCircle.eventMode = 'static';
-    statusCircle.cursor = 'pointer';
+  const iconY = -h / 2 + 22;     // même ligne pour tous
+  const startX = w / 2 - 20;    // point de départ à droite
+  const gap = 28;              // espace entre icônes
 
-    (container as any).statusCircleRef = statusCircle;
+  // 🔴🟢 Statut
+  const statusCircle = new PIXI.Graphics();
+  const circleRadius = 9;
+  statusCircle.circle(0, 0, circleRadius);
+  statusCircle.fill(isFree ? 0x2e7d32 : 0xd32f2f);
+  statusCircle.x = startX - gap * 2;
+  statusCircle.y = iconY;
+  statusCircle.eventMode = 'static';
+  statusCircle.cursor = 'pointer';
+  statusCircle.name = 'statusIcon';
 
-    statusCircle.on('pointerdown', (e) => {
-      e.stopPropagation();
+  (container as any).statusCircleRef = statusCircle;
 
-      const newIsFree = box.statut === 'NON_FONCTIONNEL'; // inverse l'état actuel
-      const newStatus: 'LIBRE' | 'NON_FONCTIONNEL' = newIsFree ? 'LIBRE' : 'NON_FONCTIONNEL';
+  statusCircle.on('pointerdown', (e) => {
+    e.stopPropagation();
 
-      box.statut = newStatus;
+    const newIsFree = box.statut === 'NON_FONCTIONNEL';
+    const newStatus: 'LIBRE' | 'NON_FONCTIONNEL' = newIsFree ? 'LIBRE' : 'NON_FONCTIONNEL';
 
-      // Mise à jour immédiate du cercle
-      statusCircle.clear();
-      statusCircle.circle(-w/2 + 24, -h/2 + 20, circleRadius);
-      statusCircle.fill(newIsFree ? 0x2e7d32 : 0xd32f2f);
+    box.statut = newStatus;
 
-      // Mise à jour du fond du box
-      this.updateBoxBackground(background, container as any, newIsFree);
+    statusCircle.clear();
+    statusCircle.circle(0, 0, circleRadius);
+    statusCircle.fill(newIsFree ? 0x2e7d32 : 0xd32f2f);
 
-      // Mise à jour du texte "NON FONCTIONNEL"
-      this.updateNonFunctionalText(container, newIsFree, w, h);
+    this.updateBoxBackground(background, container as any, newIsFree);
+    this.updateNonFunctionalText(container, newIsFree, w, h);
 
-      this.statusChange.emit({ box, newStatus });
-      this.app?.renderer.render(this.app.stage);
-    });
+    this.statusChange.emit({ box, newStatus });
+    this.app?.renderer.render(this.app.stage);
+  });
 
-    container.addChild(statusCircle);
+  container.addChild(statusCircle);
 
-    // Création initiale du texte "NON FONCTIONNEL" si besoin
-    this.updateNonFunctionalText(container, isFree, w, h);
+  // ↻ Rotation
+  const rotateIcon = new PIXI.Text('↻', {
+    fontSize: 26,
+    fill: 0x0288d1,
+    fontWeight: 'bold'
+  });
+  rotateIcon.anchor.set(0.5);
+  rotateIcon.x = startX - gap;
+  rotateIcon.y = iconY;
+  rotateIcon.eventMode = 'static';
+  rotateIcon.cursor = 'pointer';
+  rotateIcon.name = 'rotateIcon';
 
-    // ───────────────────────────────
-    // Rotation ─ milieu haut
-    // ───────────────────────────────
-    const rotateIcon = new PIXI.Text('↻', {
-      fontSize: 28,
-      fill: 0x0288d1,
-      fontWeight: 'bold'
-    });
-    rotateIcon.x = 0;
-    rotateIcon.y = -h/2 + 8;
-    rotateIcon.eventMode = 'static';
-    rotateIcon.cursor = 'pointer';
+  rotateIcon.on('pointerdown', (e) => {
+    e.stopPropagation();
+    const current = box.rotation ?? 0;
+    box.rotation = (current + Math.PI / 2) % (Math.PI * 2);
+    container.rotation = box.rotation;
 
-    rotateIcon.on('pointerdown', (e) => {
-      e.stopPropagation();
-      const current = box.rotation ?? 0;
-      box.rotation = (current + Math.PI / 2) % (Math.PI * 2);
-      container.rotation = box.rotation;
+    container.scale.set(1.08);
+    setTimeout(() => container.scale.set(1), 140);
 
-      container.scale.set(1.08);
-      setTimeout(() => container.scale.set(1), 140);
+    this.app?.renderer.render(this.app.stage);
+  });
 
-      this.app?.renderer.render(this.app.stage);
-    });
+  container.addChild(rotateIcon);
 
-    container.addChild(rotateIcon);
+  // ✖ Supprimer
+  const trash = new PIXI.Text('×', {
+    fontSize: 30,
+    fill: 0xd32f2f,
+    fontWeight: 'bold'
+  });
+  trash.anchor.set(0.5);
+  trash.x = startX;
+  trash.y = iconY;
+  trash.eventMode = 'static';
+  trash.cursor = 'pointer';
+  trash.name = 'deleteIcon';
 
-    // ───────────────────────────────
-    // Supprimer ─ haut droit
-    // ───────────────────────────────
-    const trash = new PIXI.Text('×', {
-      fontSize: 32,
-      fill: 0xd32f2f,
-      fontWeight: 'bold'
-    });
-    trash.x = w/2 - 38;
-    trash.y = -h/2 + 8;
-    trash.eventMode = 'static';
-    trash.cursor = 'pointer';
+  trash.on('pointerdown', (e) => {
+    e.stopPropagation();
+    if (confirm(`Supprimer définitivement ${box._id} ?`)) {
+      container.alpha = 0.3;
+      setTimeout(() => {
+        this.deleteBox.emit(box);
+      }, 150);
+    }
+  });
 
-    trash.on('pointerdown', (e) => {
-      e.stopPropagation();
-      if (confirm(`Supprimer définitivement ${box._id} ?`)) {
-        container.alpha = 0.3;
-        setTimeout(() => {
-          this.deleteBox.emit(box);
-        }, 150);
-      }
-    });
+  container.addChild(trash);
+}
 
-    container.addChild(trash);
-  }
 
   // Drag
   dragArea.on('pointerdown', e => {
@@ -368,15 +371,54 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   return container;
 }
 
-  private updateBoxBackground(graphics: PIXI.Graphics, container: any, isFree: boolean) {
-    const w = container.boxWidth as number;
-    const h = container.boxHeight as number;
+private updateBoxBackground(graphics: PIXI.Graphics, container: any, isFree: boolean) {
+  const w = container.boxWidth as number;
+  const h = container.boxHeight as number;
 
-    graphics.clear();
-    graphics.roundRect(-w/2, -h/2, w, h, 8)
-      .fill(isFree ? 0xffffff : 0xffdddd)
-      .stroke({ width: 2, color: isFree ? 0x888888 : 0xff8888 });
-  }
+  const doorWidth = w * 0.6;   // largeur de la porte
+  const wallColor = isFree ? 0x888888 : 0xff8888;
+
+  graphics.clear();
+
+  // Fond
+  graphics.roundRect(-w/2, -h/2, w, h, 8)
+    .fill(isFree ? 0xffffff : 0xffdddd);
+
+  // Mur = lignes avec trou au centre bas
+  graphics.setStrokeStyle({ width: 2, color: wallColor });
+
+  const left = -w / 2;
+  const right = w / 2;
+  const top = -h / 2;
+  const bottom = h / 2;
+  const doorLeft = -doorWidth / 2;
+  const doorRight = doorWidth / 2;
+
+  // Haut
+  graphics.moveTo(left, top);
+  graphics.lineTo(right, top);
+
+  // Côté droit
+  graphics.moveTo(right, top);
+  graphics.lineTo(right, bottom);
+
+  // Bas gauche → porte
+  graphics.moveTo(left, bottom);
+  graphics.lineTo(doorLeft, bottom);
+
+  // Bas droite ← porte
+  graphics.moveTo(doorRight, bottom);
+  graphics.lineTo(right, bottom);
+
+  // Côté gauche
+  graphics.moveTo(left, bottom);
+  graphics.lineTo(left, top);
+
+  graphics.stroke();
+}
+
+
+
 
   ngOnDestroy() {
     if (this.app) {
