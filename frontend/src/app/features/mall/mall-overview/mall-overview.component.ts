@@ -92,35 +92,43 @@ export class MallCanvasComponent {
     }
   }
 
-  addBox(size: 'PETIT' | 'MOYEN' | 'GRAND') {
-    const typeMap: Record<'PETIT' | 'MOYEN' | 'GRAND', string> = {
-      'PETIT': 't1',
-      'MOYEN': 't2',
-      'GRAND': 't3'
-    };
+addBox(size: 'PETIT' | 'MOYEN' | 'GRAND') {
+  const typeMap: Record<'PETIT' | 'MOYEN' | 'GRAND', string> = {
+    PETIT: 't1',
+    MOYEN: 't2',
+    GRAND: 't3'
+  };
 
-    const selectedType = this.types.find(t => t._id === typeMap[size]);
+  const selectedType = this.types.find(t => t._id === typeMap[size]);
+  if (!selectedType) return;
 
-    if (!selectedType) {
-      console.error(`Type non trouvé pour la taille ${size}`);
-      return;
-    }
+  const prefix = this.currentEtage === 'RC' ? 'RC' : 'FC';
 
-    const newBox: Box = {
-      _id: `box-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      statut: 'LIBRE',
-      x: 300 + Math.random() * 800,
-      y: 150 + Math.random() * 500,
-      etage: this.currentEtage,
-      width: selectedType.longueur,
-      height: selectedType.largeur,
-      rotation: 0,
-      idType: selectedType._id,  // utile pour l'intérieur plus tard
-    };
+  const existing = this.editingBoxes
+    .filter(b => b.etage === this.currentEtage && b.nom?.startsWith(prefix))
+    .map(b => parseInt(b.nom.split('-')[1], 10))
+    .filter(n => !isNaN(n));
 
-    this.editingBoxes.push(newBox);
-    this.mallMapComp?.forceRedraw();
-  }
+  const nextNumber = existing.length ? Math.max(...existing) + 1 : 1;
+  const formatted = String(nextNumber).padStart(3, '0');
+
+  const newBox: Box = {
+    _id: `box-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    nom: `${prefix}-${formatted}`,          // ⬅️ ici
+    statut: 'LIBRE',
+    x: 300 + Math.random() * 800,
+    y: 150 + Math.random() * 500,
+    etage: this.currentEtage,
+    width: selectedType.longueur,
+    height: selectedType.largeur,
+    rotation: 0,
+    idType: selectedType._id,
+  };
+
+  this.editingBoxes.push(newBox);
+  this.mallMapComp?.forceRedraw();
+}
+
 
   onEditBox(box: Box) {
     console.log('Modifier box:', box);

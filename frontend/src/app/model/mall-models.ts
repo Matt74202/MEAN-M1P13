@@ -11,16 +11,18 @@ export type Etage = 'RC' | 'FC';
 
 export interface Box {
   _id: string;
-  idType?: string;           // optionnel maintenant
+  nom: string;                        
+  idType?: string;
   statut: 'LIBRE' | 'OCCUPE' | 'NON_FONCTIONNEL';
-  loyer?: number;            // optionnel
+  loyer?: number;
   x: number;
   y: number;
   etage: Etage;
-  width?: number;            // ajouté
-  height?: number;           // ajouté
-  rotation?: number;         // ajouté (optionnel)
+  width?: number;
+  height?: number;
+  rotation?: number;
 }
+
 
 export interface Boutique {
   _id: string;

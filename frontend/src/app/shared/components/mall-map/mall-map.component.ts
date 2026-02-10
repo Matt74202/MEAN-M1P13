@@ -241,7 +241,7 @@ private drawMap(isInitial = false) {
   container.addChild(background);
   (container as any).backgroundRef = background;
 
-  const label = new PIXI.Text(box._id, {
+  const label = new PIXI.Text(box.nom, {
     fontSize: 14,
     fill: 0x222222,
     align: 'center'
