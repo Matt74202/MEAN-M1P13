@@ -190,7 +190,36 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
     return rotateBtn;
   }
 
-  private createBoxContainer(box: Box): PIXI.Container {
+  private updateNonFunctionalText(container: PIXI.Container, isFree: boolean, w: number, h: number): void {
+  // Supprimer l'ancien texte s'il existe
+  const existing = container.children.find(c => c.name === 'nonFunctionalText');
+  if (existing) {
+    container.removeChild(existing);
+  }
+
+  if (!isFree) {
+    const text = new PIXI.Text('NON FONCTIONNEL', {
+      fontSize: 11,                     // plus petit pour moins encombrer
+      fill: 0xb71c1c,
+      fontWeight: 'bold',
+      align: 'center',
+      wordWrap: true,
+      wordWrapWidth: w * 0.8,
+      breakWords: true,
+      fontStyle: 'italic',              // option : italique pour le différencier
+    });
+
+    text.name = 'nonFunctionalText';
+    text.anchor.set(0.5, 0.5);
+    text.x = 0;
+    text.y = 18;                      // ← ici : décalé vers le bas (ajuste 18 → 22 ou 25 si besoin)
+    text.alpha = 0.65;                // transparence pour ne pas masquer l'ID
+
+    container.addChild(text);
+  }
+}
+
+ private createBoxContainer(box: Box): PIXI.Container {
   const w = box.width ?? 140;
   const h = box.height ?? 100;
 
@@ -225,48 +254,83 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   if (this.editMode) {
     const isFree = box.statut === 'LIBRE';
 
-    // Statut (à droite)
-    const statusIcon = new PIXI.Text(isFree ? '✕' : '✓', {
-      fontSize: 32,
-      fill: isFree ? 0xd32f2f : 0x2e7d32,
-      fontWeight: 'bold'
-    });
-    statusIcon.name = 'statusIcon';
-    statusIcon.x = w/2 - 42;
-    statusIcon.y = -h/2 + 14;
-    statusIcon.eventMode = 'static';
-    statusIcon.cursor = 'pointer';
+    // ───────────────────────────────
+    // Cercle d'état ─ haut gauche (taille alignée avec les autres icônes)
+    // ───────────────────────────────
+    const statusCircle = new PIXI.Graphics();
+    const circleRadius = 14; // rayon → diamètre ≈ 28 px (proche des icônes 28–32 px)
+    statusCircle.circle(-w/2 + 24, -h/2 + 20, circleRadius);
+    statusCircle.fill(isFree ? 0x2e7d32 : 0xd32f2f); // vert / rouge
+    statusCircle.eventMode = 'static';
+    statusCircle.cursor = 'pointer';
 
-    (container as any).statusIconRef = statusIcon;
+    (container as any).statusCircleRef = statusCircle;
 
-    statusIcon.on('pointerdown', (e) => {
+    statusCircle.on('pointerdown', (e) => {
       e.stopPropagation();
 
-      const currentIsFree = box.statut === 'LIBRE';
-      const newIsFree = !currentIsFree;
-      const newStatus = newIsFree ? 'LIBRE' : 'NON_FONCTIONNEL';
+      const newIsFree = box.statut === 'NON_FONCTIONNEL'; // inverse l'état actuel
+      const newStatus: 'LIBRE' | 'NON_FONCTIONNEL' = newIsFree ? 'LIBRE' : 'NON_FONCTIONNEL';
 
       box.statut = newStatus;
 
-      statusIcon.text = newIsFree ? '✕' : '✓';
-      statusIcon.tint = newIsFree ? 0xd32f2f : 0x2e7d32;
+      // Mise à jour immédiate du cercle
+      statusCircle.clear();
+      statusCircle.circle(-w/2 + 24, -h/2 + 20, circleRadius);
+      statusCircle.fill(newIsFree ? 0x2e7d32 : 0xd32f2f);
 
+      // Mise à jour du fond du box
       this.updateBoxBackground(background, container as any, newIsFree);
+
+      // Mise à jour du texte "NON FONCTIONNEL"
+      this.updateNonFunctionalText(container, newIsFree, w, h);
 
       this.statusChange.emit({ box, newStatus });
       this.app?.renderer.render(this.app.stage);
     });
 
-    container.addChild(statusIcon);
+    container.addChild(statusCircle);
 
-    // Poubelle (gauche)
-    const trash = new PIXI.Text('🗑', {
+    // Création initiale du texte "NON FONCTIONNEL" si besoin
+    this.updateNonFunctionalText(container, isFree, w, h);
+
+    // ───────────────────────────────
+    // Rotation ─ milieu haut
+    // ───────────────────────────────
+    const rotateIcon = new PIXI.Text('↻', {
       fontSize: 28,
-      fill: 0xe53935,
+      fill: 0x0288d1,
       fontWeight: 'bold'
     });
-    trash.x = -w/2 + 12;
-    trash.y = -h/2 + 12;
+    rotateIcon.x = 0;
+    rotateIcon.y = -h/2 + 8;
+    rotateIcon.eventMode = 'static';
+    rotateIcon.cursor = 'pointer';
+
+    rotateIcon.on('pointerdown', (e) => {
+      e.stopPropagation();
+      const current = box.rotation ?? 0;
+      box.rotation = (current + Math.PI / 2) % (Math.PI * 2);
+      container.rotation = box.rotation;
+
+      container.scale.set(1.08);
+      setTimeout(() => container.scale.set(1), 140);
+
+      this.app?.renderer.render(this.app.stage);
+    });
+
+    container.addChild(rotateIcon);
+
+    // ───────────────────────────────
+    // Supprimer ─ haut droit
+    // ───────────────────────────────
+    const trash = new PIXI.Text('×', {
+      fontSize: 32,
+      fill: 0xd32f2f,
+      fontWeight: 'bold'
+    });
+    trash.x = w/2 - 38;
+    trash.y = -h/2 + 8;
     trash.eventMode = 'static';
     trash.cursor = 'pointer';
 
@@ -279,35 +343,11 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
         }, 150);
       }
     });
+
     container.addChild(trash);
-
-    // Rotation (juste à côté de la poubelle)
-    const rotateIcon = new PIXI.Text('↻', {
-      fontSize: 28,
-      fill: 0x0288d1,
-      fontWeight: 'bold'
-    });
-    rotateIcon.x = -w/2 + 52;   // juste après la poubelle
-    rotateIcon.y = -h/2 + 12;
-    rotateIcon.eventMode = 'static';
-    rotateIcon.cursor = 'pointer';
-
-    rotateIcon.on('pointerdown', (e) => {
-      e.stopPropagation();
-      const current = box.rotation ?? 0;
-      box.rotation = (current + Math.PI / 2) % (Math.PI * 2);
-      container.rotation = box.rotation;
-
-      // Option : petit feedback visuel
-      container.scale.set(1.08);
-      setTimeout(() => container.scale.set(1), 120);
-
-      this.app?.renderer.render(this.app.stage);
-    });
-
-    container.addChild(rotateIcon);
   }
 
+  // Drag
   dragArea.on('pointerdown', e => {
     if (!this.editMode) return;
     this.isDragging = true;
@@ -318,9 +358,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
     e.stopPropagation();
   });
 
-  // Sélection du box (pour interior view ou autres actions)
   container.on('pointerdown', e => {
-    // On ne déclenche la sélection que si ce n'est pas sur une icône
     if (e.target !== container && e.target !== dragArea) return;
     this.selectedBoxId = box._id;
     this.selectBox.emit(box);

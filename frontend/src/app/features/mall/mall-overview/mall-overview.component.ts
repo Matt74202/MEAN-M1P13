@@ -28,9 +28,9 @@ export class MallCanvasComponent {
   @ViewChild(MallMapComponent) mallMapComp?: MallMapComponent;
 
   protected readonly types: TypeBoutique[] = [
-    { _id: 't1', nom: 'Petit', longueur: 140, largeur: 140, nbEtagereGauche: 1, nbEtagereDroite: 1 },
-    { _id: 't2', nom: 'Moyen', longueur: 200, largeur: 200, nbEtagereGauche: 2, nbEtagereDroite: 2 },
-    { _id: 't3', nom: 'Grand', longueur: 200, largeur: 250, nbEtagereGauche: 3, nbEtagereDroite: 3 },
+    { _id: 't1', nom: 'Petit', longueur: 140, largeur: 140, nbEtagereGauche: 1, nbEtagereDroite: 1 }, //4*4
+    { _id: 't2', nom: 'Moyen', longueur: 140, largeur: 200, nbEtagereGauche: 2, nbEtagereDroite: 2 }, //4*8
+    { _id: 't3', nom: 'Grand', longueur: 200, largeur: 250, nbEtagereGauche: 3, nbEtagereDroite: 3 }, //10*12
   ];
 
   protected boxs: Box[] = [];
