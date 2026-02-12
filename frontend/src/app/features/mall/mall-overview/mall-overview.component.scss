@@ -1,0 +1,33 @@
+.mall-canvas-wrapper {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.etage-selector {
+  margin: 16px 0;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.add-box-controls {
+  margin: 16px 0;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.pixi-container {
+  height: calc(100% - 100px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fab-edit {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 100;
+}
