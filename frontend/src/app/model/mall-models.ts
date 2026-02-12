@@ -12,7 +12,7 @@ export type Etage = 'RC' | 'FC';
 export interface Box {
   _id: string;
   nom: string;                        
-  idType?: string;
+  typeNom: 'Petit' | 'Moyen' | 'Grand';
   statut: 'LIBRE' | 'OCCUPE' | 'NON_FONCTIONNEL';
   loyer?: number;
   x: number;

@@ -6,10 +6,10 @@ const boxSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  idType: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'TypeBox',
-    required: false,
+  typeNom: {
+    type: String,
+    enum: ['Petit', 'Moyen', 'Grand'],
+    required: true,
   },
   statut: {
     type: String,

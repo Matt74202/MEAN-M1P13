@@ -39,15 +39,6 @@
     ></app-mall-map>
 
 
-    <app-box-interior
-      *ngIf="showInteriorView && selectedBox && selectedType"
-      [box]="selectedBox!"
-      [type]="selectedType!"
-      [contrat]="selectedContrat"
-      [boutique]="selectedBoutique"
-      (back)="returnToMap()"
-    ></app-box-interior>
-
   </div>
 
   <button 
