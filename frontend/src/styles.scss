@@ -27,3 +27,15 @@ body {
 }
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+// boutique-home.component.scss (et global si possible)
+:root {
+  --bg-main:       #f8f9f5;       // très clair, presque blanc cassé
+  --text-primary:  #3a4a2f;       // vert foncé très discret
+  --text-secondary:#6b7d5e;       // vert moyen-gris
+  --accent:        #7d936c;       // vert doux (utilisé avec parcimonie)
+  --border:        #ccd5b5;       // vert très pâle pour bordures
+  --card-bg:       #ffffff;
+}
+
+

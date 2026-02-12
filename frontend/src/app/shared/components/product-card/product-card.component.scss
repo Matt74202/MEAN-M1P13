@@ -1,0 +1,122 @@
+.product-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;           // gris très clair au lieu de vert
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: border-color 0.25s ease;
+
+  &:hover {
+    border-color: #aab992;              // vert très pâle au hover (subtil)
+  }
+}
+
+.image-container {
+  aspect-ratio: 4 / 3;
+  height: 220px;
+  background: #f9f9f9;                  // gris très clair
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+mat-card-content {
+  padding: 1.1rem 1.3rem 0.8rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-title {
+  font-size: 1.28rem;
+  margin: 0 0 0.5rem;
+  font-weight: 500;
+  color: #7d936c;                       // ← vert pour le titre
+  line-height: 1.35;
+  flex-shrink: 0;
+}
+
+.price {
+  font-size: 1.32rem;
+  font-weight: 600;
+  color: #7d936c;                       // ← vert pour le prix
+  margin: 0.3rem 0 1rem;
+  flex-shrink: 0;
+}
+
+.description-wrapper {
+  position: relative;
+  flex-grow: 1;
+  min-height: 2.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.description {
+  font-size: 0.96rem;
+  color: #333333;                       // ← noir/gris foncé classique
+  line-height: 1.48;
+  margin: 0;
+  transition: max-height 0.28s ease;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &.expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+  }
+}
+
+.show-more {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(to right, transparent, #ffffff 30%);
+  padding-left: 2.2rem;
+  color: #555555;                       // ← gris moyen, pas vert
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #222222;
+  }
+}
+
+.category-chip {
+  display: inline-block;
+  font-size: 0.82rem;
+  color: #555555;                       // ← gris foncé
+  border: 1px solid #e0e0e0;           // gris clair
+  padding: 0.28rem 0.75rem;
+  border-radius: 4px;
+  margin-top: 0.6rem;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.edit-actions {
+  padding: 0.8rem 1.2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  border-top: 1px solid #e0e0e0;
+  flex-shrink: 0;
+
+  button {
+    color: #555555;
+    &:hover {
+      color: #7d936c;                   // vert seulement au hover des boutons édition
+    }
+  }
+}

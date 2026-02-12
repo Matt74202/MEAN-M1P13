@@ -1,0 +1,31 @@
+.boutique-container {
+  min-height: 100vh;
+  background: #fff;
+  color: var(--text-primary);
+  font-family: 'Garet', system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+.boutique-header {
+  padding: 2.5rem 2rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  background: white;
+}
+
+.boutique-title {
+  margin: 0;
+  font-family: 'New Icon Script', 'Garet', sans-serif;
+  font-size: 2.1rem;
+  font-weight: 400;
+  letter-spacing: 0.8px;
+  color: var(--text-primary);
+}
+
+.content-area {
+  padding: 2.5rem 2rem;
+  max-width: 1280px;
+  margin: 0 auto;
+}
