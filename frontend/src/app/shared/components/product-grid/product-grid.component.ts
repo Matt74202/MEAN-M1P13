@@ -16,6 +16,7 @@ import { Produit } from '@app/model/produit-models';
           [editMode]="editMode()"
           (deleted)="produitDeleted.emit(p._id)"
           (updated)="produitUpdated.emit($event)"
+          (edit)="edit.emit($event)"
         />
       } @empty {
         <div class="empty-state">
@@ -41,6 +42,8 @@ import { Produit } from '@app/model/produit-models';
 export class ProductGridComponent {
   produits = input.required<Produit[]>();
   editMode = input<boolean>(false);
+
+  edit = output<Produit>();
 
   produitDeleted = output<string>();
   produitUpdated = output<Produit>();

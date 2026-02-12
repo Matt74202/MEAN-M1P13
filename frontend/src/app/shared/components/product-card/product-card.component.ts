@@ -25,6 +25,7 @@ export class ProductCardComponent {
 
   deleted  = output<void>();
   updated  = output<Produit>();
+  edit = output<Produit>();
 
   expanded = signal(false);
 

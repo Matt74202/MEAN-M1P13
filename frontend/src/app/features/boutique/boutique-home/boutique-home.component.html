@@ -7,7 +7,9 @@
     <app-edit-products-toolbar
       [editMode]="editMode()"
       (toggleEdit)="toggleEditMode()"
+      (addProduit)="openProduitForm()"
     ></app-edit-products-toolbar>
+
   </header>
 
   <main class="content-area">
@@ -23,7 +25,9 @@
       [editMode]="editMode()"
       (produitDeleted)="onProduitDeleted($event)"
       (produitUpdated)="onProduitUpdated($event)"
+      (edit)="openProduitForm($event)"
     ></app-product-grid>
+
 
   </main>
 

@@ -1,0 +1,108 @@
+<div class="form-container">
+  <div class="form-header">
+    <h2 class="form-title">{{ title() }}</h2>
+    @if (subtitle()) {
+      <p class="form-subtitle">{{ subtitle() }}</p>
+    }
+  </div>
+
+  <form [formGroup]="formGroup()" (ngSubmit)="onSubmit()" class="form-content">
+    @for (field of fields(); track field.name) {
+      <div class="form-field">
+
+        <!-- Input texte / email / tel / number -->
+        @if (field.type === 'text' || field.type === 'email' || field.type === 'tel' || field.type === 'number') {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ field.label }}</mat-label>
+            <input
+              matInput
+              [type]="field.type"
+              [formControlName]="field.name"
+              [placeholder]="field.placeholder || ''"
+              [required]="field.required || false"
+            />
+            @if (formGroup().get(field.name)?.hasError('required') && formGroup().get(field.name)?.touched) {
+              <mat-error>{{ field.label }} est requis</mat-error>
+            }
+          </mat-form-field>
+        }
+
+        <!-- Textarea -->
+        @if (field.type === 'textarea') {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ field.label }}</mat-label>
+            <textarea
+              matInput
+              [formControlName]="field.name"
+              [placeholder]="field.placeholder || ''"
+              [rows]="field.rows || 4"
+              [required]="field.required || false"
+            ></textarea>
+            @if (formGroup().get(field.name)?.hasError('required') && formGroup().get(field.name)?.touched) {
+              <mat-error>{{ field.label }} est requis</mat-error>
+            }
+          </mat-form-field>
+        }
+
+        <!-- Select -->
+        @if (field.type === 'select') {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ field.label }}</mat-label>
+            <mat-select [formControlName]="field.name" [required]="field.required || false">
+              @for (option of field.options; track option.value) {
+                <mat-option [value]="option.value">{{ option.label }}</mat-option>
+              }
+            </mat-select>
+            @if (formGroup().get(field.name)?.hasError('required') && formGroup().get(field.name)?.touched) {
+              <mat-error>{{ field.label }} est requis</mat-error>
+            }
+          </mat-form-field>
+        }
+
+        <!-- File -->
+        @if (field.type === 'file') {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ field.label }}</mat-label>
+            <input
+              matInput
+              readonly
+              [value]="getFileName(field.name)"
+              [placeholder]="field.placeholder || 'Aucun fichier sélectionné'"
+              (click)="triggerFileInput(field.name)"
+              style="cursor: pointer;"
+            />
+            <mat-icon matSuffix (click)="triggerFileInput(field.name)" style="cursor: pointer;">
+              attach_file
+            </mat-icon>
+            @if (formGroup().get(field.name)?.hasError('required') && formGroup().get(field.name)?.touched) {
+              <mat-error>{{ field.label }} est requis</mat-error>
+            }
+          </mat-form-field>
+          <!-- Input file caché (en dehors du mat-form-field) -->
+          <input
+            [id]="'file-' + field.name"
+            type="file"
+            (change)="onFileChange($event, field.name)"
+            style="display: none;"
+          />
+        }
+
+
+
+      </div>
+    }
+
+    <!-- Actions -->
+    <div class="form-actions">
+      @if (showCancel()) {
+        <button type="button" mat-stroked-button (click)="cancel.emit()">Annuler</button>
+      }
+      <button type="submit" mat-raised-button [disabled]="formGroup().invalid || isSubmitting()">
+        @if (isSubmitting()) {
+          <mat-icon>hourglass_empty</mat-icon>
+        }
+        {{ submitLabel() }}
+      </button>
+    </div>
+  </form>
+</div>

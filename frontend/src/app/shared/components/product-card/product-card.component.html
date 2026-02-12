@@ -28,7 +28,7 @@
 
   @if (editMode()) {
     <mat-card-actions class="edit-actions">
-      <button mat-icon-button color="primary" (click)="updated.emit(produit())">
+      <button mat-icon-button (click)="edit.emit(produit())">
         <mat-icon>edit</mat-icon>
       </button>
       <button mat-icon-button color="warn" (click)="deleted.emit()">
