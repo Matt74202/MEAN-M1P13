@@ -1,0 +1,63 @@
+<div class="mall-canvas-wrapper">
+
+  <div class="etage-selector" *ngIf="!showInteriorView && !editMode">
+    <button 
+      mat-raised-button 
+      [color]="currentEtage === 'RC' ? 'primary' : ''" 
+      (click)="setEtage('RC')"
+      [disabled]="currentEtage === 'RC'"
+    >
+      Rez-de-chaussée
+    </button>
+
+    <button 
+      mat-raised-button 
+      [color]="currentEtage === 'FC' ? 'primary' : ''" 
+      (click)="setEtage('FC')"
+      [disabled]="currentEtage === 'FC'"
+    >
+      1ᵉʳ étage
+    </button>
+  </div>
+
+  <div class="add-box-controls" *ngIf="editMode && !showInteriorView">
+    <button mat-raised-button color="primary" (click)="addBox('PETIT')">+ Petit (4 m × 4 m)</button>
+    <button mat-raised-button color="primary" (click)="addBox('MOYEN')">+ Moyen (4 m × 8 m)</button>
+    <button mat-raised-button color="primary" (click)="addBox('GRAND')">+ Grand (10 m × 12 m)</button>
+  </div>
+
+  <div class="pixi-container">
+
+    <app-mall-map
+      #mallMap
+      [types]="types"
+      [boxs]="editMode ? editingBoxes : boxs"
+      [editMode]="editMode"
+      [currentEtage]="currentEtage"
+      (statusChange)="onStatusChange($event)"
+      (deleteBox)="onDeleteBox($event)"
+    ></app-mall-map>
+
+
+    <app-box-interior
+      *ngIf="showInteriorView && selectedBox && selectedType"
+      [box]="selectedBox!"
+      [type]="selectedType!"
+      [contrat]="selectedContrat"
+      [boutique]="selectedBoutique"
+      (back)="returnToMap()"
+    ></app-box-interior>
+
+  </div>
+
+  <button 
+    class="fab-edit" 
+    mat-fab 
+    color="primary" 
+    (click)="toggleEditMode()"
+    matTooltip="{{ editMode ? 'Quitter le mode édition' : 'Entrer en mode édition' }}"
+  >
+    <mat-icon>{{ editMode ? 'close' : 'edit' }}</mat-icon>
+  </button>
+
+</div>
