@@ -1,0 +1,34 @@
+<!-- boutique-home.component.html -->
+<div class="boutique-container">
+
+  <header class="boutique-header">
+    <h1 class="boutique-title">Ma Boutique – Mode & Artisanat</h1>
+    
+    <app-edit-products-toolbar
+      [editMode]="editMode()"
+      (toggleEdit)="toggleEditMode()"
+      (addProduit)="openProduitForm()"
+    ></app-edit-products-toolbar>
+
+  </header>
+
+  <main class="content-area">
+    <app-filter-chips
+      [items]="categoryItems()"
+      [selected]="selectedCategory()"
+      (select)="onCategoryChange($event)"
+      allLabel="Toutes les catégories"
+    />
+
+    <app-product-grid
+      [produits]="filteredProduits()"
+      [editMode]="editMode()"
+      (produitDeleted)="onProduitDeleted($event)"
+      (produitUpdated)="onProduitUpdated($event)"
+      (edit)="openProduitForm($event)"
+    ></app-product-grid>
+
+
+  </main>
+
+</div>

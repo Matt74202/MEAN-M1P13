@@ -4,4 +4,5 @@ import { MallCanvasComponent } from '@app/features/mall/mall-overview/mall-overv
 export const routes: Routes = [
   { path: '', redirectTo: '/mall', pathMatch: 'full' },
   { path: 'mall', component: MallCanvasComponent },
+  { path: 'boutique', loadComponent: () => import('@app/features/boutique/boutique-home/boutique-home.component').then(m => m.BoutiqueHomeComponent) },
 ];

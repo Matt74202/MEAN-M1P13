@@ -1,0 +1,40 @@
+<mat-card class="product-card" [class.edit-mode]="editMode()">
+
+  <div class="image-container">
+    <img [src]="produit().imageUrl || 'https://placehold.co/400x320?text=Photo+produit'" 
+         alt="{{produit().details.nom}}"
+         class="product-image">
+  </div>
+
+  <mat-card-content>
+    <h3 class="product-title">{{ produit().details.nom }}</h3>
+    <div class="price">{{ produit().details.prix | number:'1.0-0' }} Ar</div>
+    
+    <div class="description-wrapper">
+      <p class="description"
+         [class.expanded]="expanded()">
+        {{ produit().details.description }}
+      </p>
+
+      <span class="show-more" 
+            (click)="toggleExpand(); $event.stopPropagation()"
+            *ngIf="produit().details.description.length > 140 || expanded()">
+        {{ expanded() ? 'Voir moins' : 'Voir plus...' }}
+      </span>
+    </div>
+
+    <div class="category-chip">{{ produit().details.categorie }}</div>
+  </mat-card-content>
+
+  @if (editMode()) {
+    <mat-card-actions class="edit-actions">
+      <button mat-icon-button (click)="edit.emit(produit())">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <button mat-icon-button color="warn" (click)="deleted.emit()">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </mat-card-actions>
+  }
+
+</mat-card>
