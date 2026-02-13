@@ -39,11 +39,11 @@ export class BoutiqueHomeComponent {
 
   // Données statiques pour démarrer (simule ta boutique)
  protected readonly produits = signal<Produit[]>([
-  { _id: 'p1', idBoutique: 'bout1', details: { nom: 'Robe d\'été fluide', description: 'Robe légère en coton bio, parfaite pour les chaudes journées d\'Antananarivo', categorie: 'Mode femme', prix: 45000, date: new Date('2025-11-10'), }, imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400', },  { _id: 'p2', idBoutique: 'bout1', details: { nom: 'Écharpe en soie malgache', categorie: 'Accessoires', prix: 28000, description: '...', date: new Date() }, imageUrl: '...' },
-  { _id: 'p3', idBoutique: 'bout1', details: { nom: 'Produit 3', categorie: 'Categorie 1', prix: 28000, description: '...', date: new Date() }, imageUrl: '...' },
-  { _id: 'p4', idBoutique: 'bout1', details: { nom: 'Produit 4', categorie: 'Categorie 2', prix: 28000, description: '...', date: new Date() }, imageUrl: '...' },
-  { _id: 'p5', idBoutique: 'bout1', details: { nom: 'Produit 5', categorie: 'Categorie 3', prix: 28000, description: '...', date: new Date() }, imageUrl: '...' },
-  { _id: 'p6', idBoutique: 'bout1', details: { nom: 'Produit 6', categorie: 'Categorie 93', prix: 28000, description: '...', date: new Date() }, imageUrl: '...' },
+  { _id: 'p1', idBoutique: 'bout1', details: { nom: 'Robe d\'été fluide', description: 'Robe légère en coton bio, parfaite pour les chaudes journées d\'Antananarivo', categorie: 'Mode femme', prix: 45000, date: new Date('2025-11-10').toISOString(), }, imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400', },  { _id: 'p2', idBoutique: 'bout1', details: { nom: 'Écharpe en soie malgache', categorie: 'Accessoires', prix: 28000, description: '...', date: new Date().toISOString() }, imageUrl: '...' },
+  { _id: 'p3', idBoutique: 'bout1', details: { nom: 'Produit 3', categorie: 'Categorie 1', prix: 28000, description: '...', date: new Date().toISOString() }, imageUrl: '...' },
+  { _id: 'p4', idBoutique: 'bout1', details: { nom: 'Produit 4', categorie: 'Categorie 2', prix: 28000, description: '...', date: new Date().toISOString() }, imageUrl: '...' },
+  { _id: 'p5', idBoutique: 'bout1', details: { nom: 'Produit 5', categorie: 'Categorie 3', prix: 28000, description: '...', date: new Date().toISOString() }, imageUrl: '...' },
+  { _id: 'p6', idBoutique: 'bout1', details: { nom: 'Produit 6', categorie: 'Categorie 93', prix: 28000, description: '...', date: new Date().toISOString() }, imageUrl: '...' },
   // etc.
 ]);
 
@@ -218,7 +218,7 @@ export class BoutiqueHomeComponent {
         description: values.description?.trim() || '',
         categorie: values.categorie || '',
         prix: Number(values.prix),
-        date: produit?.details.date || new Date(),
+        date: produit?.details.date || new Date().toISOString(),
       },
       imageUrl: values.imageUrl?.trim() || undefined,
       stock: Number(values.stock) || 0,

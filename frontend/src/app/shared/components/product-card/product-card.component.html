@@ -18,7 +18,7 @@
 
       <span class="show-more" 
             (click)="toggleExpand(); $event.stopPropagation()"
-            *ngIf="produit().details.description.length > 140 || expanded()">
+            *ngIf="(produit().details?.description?.length ?? 0) > 140 || expanded()">
         {{ expanded() ? 'Voir moins' : 'Voir plus...' }}
       </span>
     </div>
