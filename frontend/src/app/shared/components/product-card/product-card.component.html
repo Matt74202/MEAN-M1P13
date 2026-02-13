@@ -31,7 +31,7 @@
       <button mat-icon-button (click)="edit.emit(produit())">
         <mat-icon>edit</mat-icon>
       </button>
-      <button mat-icon-button color="warn" (click)="deleted.emit()">
+      <button mat-icon-button color="warn" (click)="deleted.emit(produit().id)">
         <mat-icon>delete</mat-icon>
       </button>
     </mat-card-actions>

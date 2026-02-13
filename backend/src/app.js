@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const cloudinary = require('./config/cloudinary');
 require('dotenv').config();
 
 const routes = require('./routes');

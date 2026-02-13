@@ -1,21 +1,22 @@
 const Produit = require('../models/Produit');
 const cloudinary = require('../config/cloudinary');
+const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const sharp = require('sharp');
+
+
 
 // ────────────────────────────────────────────────
-// Configuration Multer (stockage local simple)
+// Configuration Multer
 // ────────────────────────────────────────────────
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = 'public/uploads/produits/';
-    
-    // Créer le dossier s'il n'existe pas
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
-    
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -29,18 +30,16 @@ const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|webp/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
-  
-  if (extname && mimetype) {
-    return cb(null, true);
-  }
+
+  if (extname && mimetype) return cb(null, true);
   cb(new Error('Format non autorisé. Seules les images jpeg, jpg, png, webp sont acceptées.'));
 };
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 Mo max
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter
-}).single('image');  // ← nom du champ dans Postman = "image"
+}).single('image');
 
 
 // ────────────────────────────────────────────────
@@ -58,134 +57,137 @@ const handleMulterError = (err, res) => {
   }
 };
 
+// ────────────────────────────────────────────────
+// Helpers
+// ────────────────────────────────────────────────
+const deleteLocalFile = async (filePath) => {
+  if (!filePath) return;
+  
+  try {
+    if (fs.existsSync(filePath)) {
+      await fs.promises.unlink(filePath);
+      console.log('🗑️ Fichier supprimé:', filePath);
+    }
+  } catch (error) {
+    if (error.code === 'EPERM' || error.code === 'EBUSY') {
+      console.warn('⚠️ Fichier verrouillé, suppression ignorée:', path.basename(filePath));
+    } else {
+      console.error('❌ Erreur suppression:', error.message);
+    }
+  }
+};
+
+const extractPublicIdFromUrl = (url) => {
+  if (!url || !url.includes('cloudinary')) return null;
+  const parts = url.split('/');
+  const file = parts[parts.length - 1];
+  const folder = parts[parts.length - 2];
+  const publicId = `${folder}/${file.split('.')[0]}`;
+  return publicId;
+};
+
 
 // ────────────────────────────────────────────────
-// CRUD
+// CREATE
 // ────────────────────────────────────────────────
 
 exports.createProduit = async (req, res) => {
   upload(req, res, async (err) => {
-    if (err) {
-      return handleMulterError(err, res);
-    }
-
-    // Debug pour voir exactement ce que reçoit le serveur
-    console.log('DEBUG ─ req.body après multer :', JSON.stringify(req.body, null, 2));
-    console.log('DEBUG ─ req.file :', req.file ? req.file : 'aucun fichier');
+    if (err) return handleMulterError(err, res);
 
     try {
-      // ─── Extraction robuste des champs (gère nested ET notation brackets) ───
-      const detailsSource = req.body.details || {};
+      console.log('=== CREATE PRODUIT DEBUG ===');
+      console.log('Body:', req.body);
+      console.log('File:', req.file);
 
-      const nom = (
-        req.body['details[nom]'] ||
-        detailsSource.nom ||
-        req.body.nom ||
-        ''
-      ).trim();
+      const {
+        nom,
+        description,
+        categorie,
+        prix,
+        stock,
+        enPromotion,
+        idBoutique
+      } = req.body;
 
-      const categorie = (
-        req.body['details[categorie]'] ||
-        detailsSource.categorie ||
-        req.body.categorie ||
-        ''
-      ).trim();
-
-      const prixStr = (
-        req.body['details[prix]'] ||
-        detailsSource.prix ||
-        req.body.prix ||
-        '0'
-      ).trim();
-
-      const description = (
-        req.body['details[description]'] ||
-        detailsSource.description ||
-        req.body.description ||
-        ''
-      ).trim();
-
-      // ─── Validations explicites ───
-      if (!nom) {
+      if (!nom || !categorie || !prix || !idBoutique) {
+        deleteLocalFile(req.file?.path);
         return res.status(400).json({
           success: false,
-          message: "Le nom du produit est requis",
-          debug: { receivedBody: req.body, extractedNom: nom }
+          message: 'Nom, catégorie, prix et idBoutique sont requis'
         });
       }
 
-      if (!categorie) {
+      const prixNumber = Number(prix);
+      if (isNaN(prixNumber) || prixNumber <= 0) {
+        deleteLocalFile(req.file?.path);
         return res.status(400).json({
           success: false,
-          message: "La catégorie est requise",
-          debug: { receivedBody: req.body }
+          message: 'Prix invalide'
         });
       }
 
-      const prix = Number(prixStr);
-      if (isNaN(prix) || prix <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Le prix doit être un nombre positif valide",
-          debug: { prixRecu: prixStr }
-        });
-      }
-
-      // ─── Construction des données pour Mongoose ───
       const produitData = {
-        idBoutique: req.body.idBoutique,
+        idBoutique,
         details: {
-          nom,
-          description,
-          categorie,
-          prix,               // ← ici c'est un Number (après conversion)
-          date: req.body['details[date]'] || detailsSource.date
-            ? new Date(req.body['details[date]'] || detailsSource.date)
-            : new Date()
+          nom: nom.trim(),
+          description: description?.trim() || '',
+          categorie: categorie.trim().toLowerCase(),
+          prix: prixNumber,
+          date: new Date()
         },
-        stock: Number(req.body.stock) || 0,
-        enPromotion: req.body.enPromotion === 'true' ||
-                     req.body.enPromotion === true ||
-                     false
+        stock: Number(stock) || 0,
+        enPromotion: enPromotion === 'true' || enPromotion === true
       };
 
-      // ─── Upload vers Cloudinary si fichier présent ───
+      // Upload avec compression Sharp
       if (req.file) {
-  try {
-    console.log('Début upload Cloudinary...');
-    
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'boutique-produits',
-      resource_type: 'image',
-      allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-      transformation: [{ quality: 'auto' }, { fetch_format: 'auto' }],
-      timeout: 120000   // ← 120 secondes (2 min) – teste d'abord ça
-      // timeout: 180000  // 3 min si toujours timeout
-    });
+        console.log('📤 Compression et upload vers Cloudinary...');
+        console.log('Taille originale:', (req.file.size / 1024 / 1024).toFixed(2), 'Mo');
+        
+        const compressedPath = req.file.path.replace(/\.\w+$/, '-compressed.jpg');
+        
+        try {
+          // Compression avec Sharp
+          await sharp(req.file.path)
+            .resize(1200, 1200, {
+              fit: 'inside',
+              withoutEnlargement: true
+            })
+            .jpeg({ quality: 80 })
+            .toFile(compressedPath);
+          
+          const compressedStats = fs.statSync(compressedPath);
+          console.log('Taille compressée:', (compressedStats.size / 1024 / 1024).toFixed(2), 'Mo');
+          
+          // Upload vers Cloudinary
+          console.log('☁️ Upload vers Cloudinary...');
+          const result = await cloudinary.uploader.upload(compressedPath, {
+            folder: 'boutique-produits',
+            resource_type: 'image'
+          });
 
-    console.log('Upload Cloudinary OK :', result.secure_url);
-    produitData.imageUrl = result.secure_url;
-    
-    fs.unlinkSync(req.file.path);  // supprime temp
-    
-  } catch (cloudinaryErr) {
-    console.error('ERREUR Cloudinary détaillée :', cloudinaryErr);
-    // Ne bloque pas la création du produit (image optionnelle)
-  }
-} else {
-  console.log('Aucun fichier image reçu');
-}
+          console.log('✅ Upload Cloudinary réussi:', result.secure_url);
+          produitData.imageUrl = result.secure_url;
+          
+          // Nettoyage
+          deleteLocalFile(req.file.path);
+          deleteLocalFile(compressedPath);
+          
+        } catch (cloudinaryError) {
+          console.error('❌ Erreur:', cloudinaryError);
+          deleteLocalFile(req.file.path);
+          deleteLocalFile(compressedPath);
+          return res.status(400).json({ 
+            success: false, 
+            message: `Erreur upload: ${cloudinaryError.message || cloudinaryError.error?.message}` 
+          });
+        }
+      }
 
-      // ─── Debug avant sauvegarde ───
-      console.log('DEBUG ─ Données envoyées à Mongoose :', JSON.stringify(produitData, null, 2));
-
-      const nouveauProduit = new Produit(produitData);
-
-      console.log('DEBUG ─ Instance Produit créée :', nouveauProduit.toObject());
-
-      await nouveauProduit.save();
-
-      console.log('DEBUG ─ Sauvegarde réussie');
+      console.log('💾 Création en base de données...');
+      const nouveauProduit = await Produit.create(produitData);
+      console.log('✅ Produit créé:', nouveauProduit._id);
 
       res.status(201).json({
         success: true,
@@ -194,115 +196,216 @@ exports.createProduit = async (req, res) => {
       });
 
     } catch (error) {
-      // Nettoyage fichier temporaire en cas d'erreur
-      if (req.file && fs.existsSync(req.file.path)) {
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch (unlinkErr) {
-          console.error('Erreur suppression fichier temporaire :', unlinkErr);
-        }
-      }
-
-      console.error('Erreur complète création produit :', error);
-
-      res.status(400).json({
-        success: false,
-        message: error.message || 'Erreur lors de la création du produit',
-        debug: {
-          receivedBody: req.body,
-          errorStack: error.stack ? error.stack.split('\n').slice(0, 3) : undefined
-        }
-      });
+      console.error('❌ ERREUR GLOBALE:', error);
+      deleteLocalFile(req.file?.path);
+      res.status(400).json({ success: false, message: error.message });
     }
   });
 };
 
 
+// ────────────────────────────────────────────────
+// GET ALL (avec pagination)
+// ────────────────────────────────────────────────
 exports.getAllProduits = async (req, res) => {
   try {
-    const { boutiqueId, categorie, enPromotion, sort = '-details.date' } = req.query;
+    const {
+      boutiqueId,
+      categorie,
+      enPromotion,
+      sort = '-details.date',
+      page = 1,
+      limit = 10
+    } = req.query;
+
     const filter = {};
 
     if (boutiqueId) filter.idBoutique = boutiqueId;
-    if (categorie) filter['details.categorie'] = categorie;
+    if (categorie) filter['details.categorie'] = categorie.toLowerCase();
     if (enPromotion === 'true') filter.enPromotion = true;
+
+    const skip = (Number(page) - 1) * Number(limit);
 
     const produits = await Produit.find(filter)
       .sort(sort)
-      .limit(50);
+      .skip(skip)
+      .limit(Number(limit));
 
-    res.json({ success: true, count: produits.length, produits });
+    const total = await Produit.countDocuments(filter);
+
+    res.json({
+      success: true,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+      total,
+      count: produits.length,
+      produits
+    });
+
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
 
+// ────────────────────────────────────────────────
+// GET BY ID
+// ────────────────────────────────────────────────
 exports.getProduitById = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'ID invalide' });
+    }
+
     const produit = await Produit.findById(req.params.id);
+
     if (!produit) {
       return res.status(404).json({ success: false, message: 'Produit non trouvé' });
     }
+
     res.json({ success: true, produit });
+
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
 
+// ────────────────────────────────────────────────
+// UPDATE
+// ────────────────────────────────────────────────
 exports.updateProduit = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) return handleMulterError(err, res);
 
     try {
-      const updateData = { ...req.body };
-
-      // Gestion nested fields (details)
-      if (req.body['details[nom]'] || req.body.nom) {
-        updateData.details = updateData.details || {};
-        updateData.details.nom = req.body['details[nom]'] || req.body.nom;
-      }
-      // ... même chose pour description, categorie, prix si besoin
-
-      if (req.file) {
-        updateData.imageUrl = `/uploads/produits/${req.file.filename}`;
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        deleteLocalFile(req.file?.path);
+        return res.status(400).json({ success: false, message: 'ID invalide' });
       }
 
-      const produit = await Produit.findByIdAndUpdate(
-        req.params.id,
-        { $set: updateData },
-        { new: true, runValidators: true }
-      );
-
+      const produit = await Produit.findById(req.params.id);
       if (!produit) {
+        deleteLocalFile(req.file?.path);
         return res.status(404).json({ success: false, message: 'Produit non trouvé' });
       }
 
-      res.json({ success: true, produit });
+      const updateFields = {};
+
+      if (req.body.nom) updateFields["details.nom"] = req.body.nom.trim();
+      if (req.body.description) updateFields["details.description"] = req.body.description.trim();
+      if (req.body.categorie) updateFields["details.categorie"] = req.body.categorie.trim().toLowerCase();
+
+      if (req.body.prix) {
+        const prix = Number(req.body.prix);
+        if (isNaN(prix) || prix <= 0) {
+          deleteLocalFile(req.file?.path);
+          return res.status(400).json({ success: false, message: 'Prix invalide' });
+        }
+        updateFields["details.prix"] = prix;
+      }
+
+      if (req.body.stock !== undefined) {
+        updateFields.stock = Number(req.body.stock);
+      }
+
+      if (req.body.enPromotion !== undefined) {
+        updateFields.enPromotion =
+          req.body.enPromotion === 'true' || req.body.enPromotion === true;
+      }
+
+      // Upload image avec compression
+      if (req.file) {
+        console.log('📤 Compression et upload nouvelle image...');
+        console.log('Taille originale:', (req.file.size / 1024 / 1024).toFixed(2), 'Mo');
+        
+        const compressedPath = req.file.path.replace(/\.\w+$/, '-compressed.jpg');
+        
+        try {
+          // Compression
+          await sharp(req.file.path)
+            .resize(1200, 1200, {
+              fit: 'inside',
+              withoutEnlargement: true
+            })
+            .jpeg({ quality: 80 })
+            .toFile(compressedPath);
+          
+          const compressedStats = fs.statSync(compressedPath);
+          console.log('Taille compressée:', (compressedStats.size / 1024 / 1024).toFixed(2), 'Mo');
+          
+          // Supprimer ancienne image Cloudinary
+          if (produit.imageUrl) {
+            const publicId = extractPublicIdFromUrl(produit.imageUrl);
+            if (publicId) {
+              await cloudinary.uploader.destroy(publicId);
+            }
+          }
+
+          // Upload nouvelle image
+          const result = await cloudinary.uploader.upload(compressedPath, {
+            folder: 'boutique-produits',
+            resource_type: 'image'
+          });
+
+          console.log('✅ Upload réussi:', result.secure_url);
+          updateFields.imageUrl = result.secure_url;
+          
+          // Nettoyage
+          deleteLocalFile(req.file.path);
+          deleteLocalFile(compressedPath);
+          
+        } catch (cloudinaryError) {
+          console.error('❌ Erreur upload:', cloudinaryError);
+          deleteLocalFile(req.file.path);
+          deleteLocalFile(compressedPath);
+          return res.status(400).json({ 
+            success: false, 
+            message: `Erreur upload: ${cloudinaryError.message || cloudinaryError.error?.message}` 
+          });
+        }
+      }
+
+      const updatedProduit = await Produit.findByIdAndUpdate(
+        req.params.id,
+        { $set: updateFields },
+        { new: true, runValidators: true }
+      );
+
+      res.json({ success: true, produit: updatedProduit });
+
     } catch (err) {
+      deleteLocalFile(req.file?.path);
       res.status(400).json({ success: false, message: err.message });
     }
   });
 };
 
 
+// ────────────────────────────────────────────────
+// DELETE
+// ────────────────────────────────────────────────
 exports.deleteProduit = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'ID invalide' });
+    }
+
     const produit = await Produit.findByIdAndDelete(req.params.id);
+
     if (!produit) {
       return res.status(404).json({ success: false, message: 'Produit non trouvé' });
     }
 
-    // Optionnel : supprimer l'image physique
     if (produit.imageUrl) {
-      const filePath = path.join(__dirname, '..', '..', 'public', produit.imageUrl);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      const publicId = extractPublicIdFromUrl(produit.imageUrl);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
       }
     }
 
-    res.json({ success: true, message: 'Produit supprimé' });
+    res.json({ success: true, message: 'Produit supprimé avec succès' });
+
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

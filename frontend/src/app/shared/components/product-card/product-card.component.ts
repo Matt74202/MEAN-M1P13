@@ -23,7 +23,7 @@ export class ProductCardComponent {
   produit = input.required<Produit>();
   editMode = input<boolean>(false);
 
-  deleted  = output<void>();
+  deleted = output<string>();
   updated  = output<Produit>();
   edit = output<Produit>();
 

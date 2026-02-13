@@ -1,20 +1,19 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FormBuilder, Validators } from '@angular/forms';
 
 import { ProductGridComponent } from '@shared/components/product-grid/product-grid.component';
 import { EditProductsToolbarComponent } from '@shared/components/edit-product-toolbar/edit-product-toolbar.component';
-import { Produit } from '@app/model/produit-models';
+import { FilterChipsComponent } from '@app/shared/UI/filter/filter-chips.component';
 import { FormComponent, FormField } from '@app/shared/UI/form/form.component';
 
-import { FilterChipsComponent } from '@app/shared/UI/filter/filter-chips.component';
-
+import { Produit } from '@app/model/produit-models';
+import { ProduitService } from '@app/services/produit.service';
 
 @Component({
   selector: 'app-boutique-home',
@@ -33,152 +32,114 @@ import { FilterChipsComponent } from '@app/shared/UI/filter/filter-chips.compone
   templateUrl: './boutique-home.component.html',
   styleUrl: './boutique-home.component.scss',
 })
-export class BoutiqueHomeComponent {
+export class BoutiqueHomeComponent implements OnInit {
 
   private dialog = inject(MatDialog);
+  private produitService = inject(ProduitService);
+  private fb = inject(FormBuilder);
 
-  // Données statiques pour démarrer (simule ta boutique)
- protected readonly produits = signal<Produit[]>([
-  { _id: 'p1', idBoutique: 'bout1', details: { nom: 'Robe d\'été fluide', description: 'Robe légère en coton bio, parfaite pour les chaudes journées d\'Antananarivo', categorie: 'Mode femme', prix: 45000, date: new Date('2025-11-10').toISOString(), }, imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400', },  { _id: 'p2', idBoutique: 'bout1', details: { nom: 'Écharpe en soie malgache', categorie: 'Accessoires', prix: 28000, description: '...', date: new Date().toISOString() }, imageUrl: '...' },
-  { _id: 'p3', idBoutique: 'bout1', details: { nom: 'Produit 3', categorie: 'Categorie 1', prix: 28000, description: '...', date: new Date().toISOString() }, imageUrl: '...' },
-  { _id: 'p4', idBoutique: 'bout1', details: { nom: 'Produit 4', categorie: 'Categorie 2', prix: 28000, description: '...', date: new Date().toISOString() }, imageUrl: '...' },
-  { _id: 'p5', idBoutique: 'bout1', details: { nom: 'Produit 5', categorie: 'Categorie 3', prix: 28000, description: '...', date: new Date().toISOString() }, imageUrl: '...' },
-  { _id: 'p6', idBoutique: 'bout1', details: { nom: 'Produit 6', categorie: 'Categorie 93', prix: 28000, description: '...', date: new Date().toISOString() }, imageUrl: '...' },
-  // etc.
-]);
+  private readonly boutiqueId = '698f190319727b22bdcb0ce2';
 
-
+  protected readonly produits = signal<Produit[]>([]);
   editMode = signal(false);
 
+  selectedCategory = signal<string | null>(null);
+
+  // ────────────────────────────────────────────────
+  // INIT
+  // ────────────────────────────────────────────────
+  ngOnInit(): void {
+    this.loadProduits();
+  }
+
+  loadProduits() {
+    this.produitService
+      .getProduitsByBoutique(this.boutiqueId)
+      .subscribe(res => {
+        this.produits.set(res.produits || []);
+      });
+  }
+
+
+  // ────────────────────────────────────────────────
+  // MODE EDIT
+  // ────────────────────────────────────────────────
   toggleEditMode() {
     this.editMode.update(v => !v);
   }
 
+  // ────────────────────────────────────────────────
+  // DELETE
+  // ────────────────────────────────────────────────
   onProduitDeleted(id: string) {
-    this.produits.update(list => list.filter(p => p._id !== id));
+    this.produitService.deleteProduit(id).subscribe(() => {
+      this.loadProduits();
+    });
   }
 
+  // ────────────────────────────────────────────────
+  // UPDATE local refresh
+  // ────────────────────────────────────────────────
   onProduitUpdated(updated: Produit) {
-    this.produits.update(list =>
-      list.map(p => p._id === updated._id ? updated : p)
-    );
+    this.loadProduits();
   }
 
-  // État du filtre
-  selectedCategory = signal<string | null>(null);
 
-  // Liste des catégories uniques (extraites des produits)
-  private categoriesSet = computed(() => {
-    const set = new Set<string>(
-      this.produits().map(p => p.details.categorie).filter(Boolean) as string[]
-    );
-    return Array.from(set).sort();
-  });
-
-  // Format attendu par <app-filter-chips>
+  // ────────────────────────────────────────────────
+  // FILTER
+  // ────────────────────────────────────────────────
   categoryItems = computed(() => {
-    // Récupère les catégories uniques depuis les produits
     const unique = new Set(
       this.produits().map(p => p.details.categorie).filter(Boolean)
     );
 
-    // Transforme en format {value, label} pour filter-chips
     return Array.from(unique).map(cat => ({
       value: cat,
       label: cat
     }));
   });
 
-  // Produits affichés (filtrés)
   filteredProduits = computed(() => {
     const cat = this.selectedCategory();
-    if (cat === null) {
-      return this.produits();
-    }
+    if (!cat) return this.produits();
     return this.produits().filter(p => p.details.categorie === cat);
   });
 
-  // Handler
   onCategoryChange(value: string | null) {
     this.selectedCategory.set(value);
   }
 
+  // ────────────────────────────────────────────────
+  // FORM (CREATE / UPDATE)
+  // ────────────────────────────────────────────────
+openProduitForm(produit?: Produit) {
 
-  openProduitForm(produit?: Produit) {
   // ──────────────────────────────────────────────────────────────
-  // Préparation des champs du formulaire
+  // Définition des champs du formulaire
   // ──────────────────────────────────────────────────────────────
   const fields: FormField[] = [
-    {
-      name: 'nom',
-      label: 'Nom du produit',
-      type: 'text',
-      required: true,
-      placeholder: 'Ex: Robe d\'été fluide'
-    },
-    {
-      name: 'description',
-      label: 'Description',
-      type: 'textarea',
-      required: true,
-      rows: 5,
-      placeholder: 'Décrivez le produit en détail...'
-    },
-    {
-      name: 'categorie',
-      label: 'Catégorie',
-      type: 'select',
-      required: true,
-      options: this.categoryItems().map(item => ({
-        value: item.value,
-        label: item.label
-      }))
-    },
-    {
-      name: 'prix',
-      label: 'Prix (Ar)',
-      type: 'number',
-      required: true,
-      placeholder: 'Ex: 45000'
-    },
-    {
-      name: 'imageUrl',
-      label: 'Image du produit',
-      type: 'file', 
-      required: false
-    },
-    {
-      name: 'stock',
-      label: 'Stock disponible',
-      type: 'number',
-      placeholder: '0'
-    },
+    { name: 'nom', label: 'Nom du produit', type: 'text', required: true },
+    { name: 'description', label: 'Description', type: 'textarea', required: false, rows: 5 },
+    { name: 'categorie', label: 'Catégorie', type: 'select', required: true, options: this.categoryItems() },
+    { name: 'prix', label: 'Prix (Ar)', type: 'number', required: true },
+    { name: 'image', label: 'Image', type: 'file', required: false },
+    { name: 'stock', label: 'Stock disponible', type: 'number' },
   ];
 
   // ──────────────────────────────────────────────────────────────
   // Création du FormGroup
   // ──────────────────────────────────────────────────────────────
-  const fb = new FormBuilder();
-
-  const formGroup = fb.group({
-    nom: [
-      produit?.details.nom || '',
-      [Validators.required, Validators.minLength(3)]
-    ],
-    description: [
-      produit?.details.description || '',
-      [Validators.required, Validators.minLength(10)]
-    ],
-    categorie: [
-      produit?.details.categorie || '',
-      Validators.required
-    ],
+  const formGroup = this.fb.group({
+    nom: [produit?.details.nom || '', [Validators.required]],
+    description: [produit?.details.description || '', []],
+    categorie: [produit?.details.categorie || '', Validators.required],
     prix: [
-      produit?.details.prix || null,
-      [Validators.required, Validators.min(100)]
+      produit?.details.prix ?? 0, 
+      [Validators.required, Validators.min(0)]
     ],
-    imageUrl: [produit?.imageUrl || ''],
-    stock: [produit?.stock ?? 0, Validators.min(0)],
+    image: [null],
+    stock: [produit?.stock ?? 0, [Validators.min(0)]],
+    enPromotion: [produit?.enPromotion ?? false]
   });
 
   // ──────────────────────────────────────────────────────────────
@@ -187,11 +148,9 @@ export class BoutiqueHomeComponent {
   const dialogRef = this.dialog.open(FormComponent, {
     width: '720px',
     maxWidth: '92vw',
-    maxHeight: '90vh',
-    autoFocus: true,
     data: {
       title: produit ? 'Modifier le produit' : 'Ajouter un produit',
-      subtitle: produit ? produit.details.nom : undefined,
+      subtitle: produit?.details.nom,
       fields,
       formGroup,
       submitLabel: produit ? 'Modifier' : 'Ajouter',
@@ -210,35 +169,50 @@ export class BoutiqueHomeComponent {
 
     const values = formGroup.value;
 
-    const updatedProduit: Produit = {
-      _id: produit?._id || 'new-' + Date.now().toString(36),
-      idBoutique: produit?.idBoutique || 'bout1',
-      details: {
-        nom: values.nom?.trim() || '',
-        description: values.description?.trim() || '',
-        categorie: values.categorie || '',
-        prix: Number(values.prix),
-        date: produit?.details.date || new Date().toISOString(),
+    // Validation du prix
+    const prix = values.prix !== null && values.prix !== undefined && values.prix >= 0 
+      ? values.prix 
+      : 0;
+
+    const formData = new FormData();
+    formData.append('idBoutique', this.boutiqueId);
+    formData.append('nom', values.nom || '');
+    formData.append('description', values.description || '');
+    formData.append('categorie', values.categorie || '');
+    formData.append('prix', prix.toString());
+    formData.append('stock', (values.stock ?? 0).toString());
+
+    // Ajout de l'image si présente
+    if (values.image) {
+      formData.append('image', values.image);
+    }
+
+    // ✅ CHOIX ENTRE CREATE ET UPDATE
+    const request$ = produit 
+      ? this.produitService.updateProduit(produit.id, formData)
+      : this.produitService.createProduit(formData);
+
+    request$.subscribe({
+      next: (res) => {
+        console.log(produit ? 'Produit modifié' : 'Produit créé', res.produit);
+        this.loadProduits(); // ✅ Recharger la liste complète
+        dialogRef.close();
       },
-      imageUrl: values.imageUrl?.trim() || undefined,
-      stock: Number(values.stock) || 0,
-    };
-
-    this.produits.update(list => {
-      if (produit) {
-        return list.map(p => p._id === updatedProduit._id ? updatedProduit : p);
+      error: (err) => {
+        console.error('Erreur lors de la création/modification', err);
+        if (err.error) {
+          console.error('Détails:', err.error);
+        }
       }
-      return [...list, updatedProduit];
     });
-
-    dialogRef.close();
   });
 
   // ──────────────────────────────────────────────────────────────
-  // Gestion de l'annulation
+  // Annulation
   // ──────────────────────────────────────────────────────────────
   dialogRef.componentInstance.cancel.subscribe(() => {
     dialogRef.close();
   });
 }
+
 }
