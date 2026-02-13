@@ -24,3 +24,6 @@ coverage/
 # Éditeurs
 .vscode/
 .idea/
+
+#images
+public/
