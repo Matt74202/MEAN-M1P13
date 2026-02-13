@@ -3,10 +3,10 @@ export interface Produit {
   idBoutique: string;
   details: {
     nom: string;
-    description: string;
+    description?: string;
     categorie: string;
     prix: number;
-    date: Date;
+    date: string;
   };
   imageUrl?: string;
   stock?: number;

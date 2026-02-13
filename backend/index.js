@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const boxRoutes = require('./src/routes/boxRoutes');
+const produitRoutes = require('./src/routes/produitRoutes');
 
 const app = express();
 
@@ -31,7 +32,8 @@ mongoose
   });
 
 // Routes
-app.use('/api/boxes', boxRoutes);     // ou le préfixe que tu utilises
+app.use('/api/boxes', boxRoutes);     
+app.use('/api/produits', produitRoutes);
 
 // Pour debug en dev
 if (process.env.NODE_ENV === 'development') {
