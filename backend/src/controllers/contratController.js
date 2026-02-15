@@ -1,6 +1,5 @@
 const Contrat = require('../models/Contrat');
 
-// Créer un nouveau contrat
 exports.createContrat = async (req, res) => {
   try {
     const contrat = new Contrat(req.body);
@@ -11,7 +10,6 @@ exports.createContrat = async (req, res) => {
   }
 };
 
-// Récupérer tous les contrats avec filtres optionnels
 exports.getAllContrats = async (req, res) => {
   try {
     const { idBoutique, idBox, statut } = req.query;
@@ -22,18 +20,26 @@ exports.getAllContrats = async (req, res) => {
     if (statut) filter.statut = statut;
 
     const contrats = await Contrat.find(filter)
-      .populate('idBoutique', 'nom') // Optionnel: peupler les références
-      .populate('idBox', 'nom typeNom')
       .sort({ dateDebut: -1 });
 
-    res.json(contrats);
+    // Transformer les contrats pour avoir des strings simples
+    const contratsFormatted = contrats.map(c => ({
+      _id: c._id.toString(),
+      idBoutique: c.idBoutique.toString(),  // ← String au lieu d'objet
+      idBox: c.idBox.toString(),            // ← String au lieu d'objet
+      duree: c.duree,
+      dateDebut: c.dateDebut,
+      dateFin: c.dateFin,
+      statut: c.statut
+    }));
+
+    res.json(contratsFormatted);
   } catch (err) {
     console.error('Erreur getAllContrats:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// Récupérer un contrat par ID
 exports.getContratById = async (req, res) => {
   try {
     const contrat = await Contrat.findById(req.params.id)
@@ -49,7 +55,6 @@ exports.getContratById = async (req, res) => {
   }
 };
 
-// Mettre à jour un contrat
 exports.updateContrat = async (req, res) => {
   try {
     const contrat = await Contrat.findByIdAndUpdate(
@@ -67,7 +72,6 @@ exports.updateContrat = async (req, res) => {
   }
 };
 
-// Supprimer un contrat
 exports.deleteContrat = async (req, res) => {
   try {
     const contrat = await Contrat.findByIdAndDelete(req.params.id);

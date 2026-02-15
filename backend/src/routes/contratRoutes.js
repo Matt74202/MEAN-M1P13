@@ -1,12 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const contratController = require('../controllers/contratController');
+const {
+  createContrat,
+  getAllContrats,
+  getContratById,
+  updateContrat,
+  deleteContrat
+} = require('../controllers/contratController');
 
-// Routes CRUD pour Contrat
-router.post('/', contratController.createContrat);
-router.get('/', contratController.getAllContrats);
-router.get('/:id', contratController.getContratById);
-router.put('/:id', contratController.updateContrat);
-router.delete('/:id', contratController.deleteContrat);
+const validateObjectId = require('../middlewares/validateObjectId');
+
+router.route('/')
+  .post(createContrat)
+  .get(getAllContrats);
+
+router.route('/:id')
+  .get(validateObjectId, getContratById)
+  .put(validateObjectId, updateContrat)
+  .delete(validateObjectId, deleteContrat);
 
 module.exports = router;

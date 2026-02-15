@@ -1,5 +1,6 @@
 <div class="mall-canvas-wrapper">
 
+  <!-- Sélecteur d'étage -->
   <div class="etage-selector" *ngIf="!showInteriorView && !editMode">
     <button 
       mat-raised-button 
@@ -20,27 +21,40 @@
     </button>
   </div>
 
+  <!-- 🆕 Filtre par type de commerce -->
+  <div class="filter-section" *ngIf="!showInteriorView && !editMode && typeCommerceOptions.length > 0">
+    <h3 class="filter-title">Filtrer par type de commerce</h3>
+    <app-filter-chips
+      [items]="typeCommerceOptions"
+      [selected]="selectedTypeCommerce"
+      [allLabel]="'Tous les types'"
+      (select)="onTypeCommerceFilterChange($event)"
+    ></app-filter-chips>
+  </div>
+
+  <!-- Boutons d'ajout de boxes en mode édition -->
   <div class="add-box-controls" *ngIf="editMode && !showInteriorView">
     <button mat-raised-button color="primary" (click)="addBox('PETIT')">+ Petit (4 m × 4 m)</button>
     <button mat-raised-button color="primary" (click)="addBox('MOYEN')">+ Moyen (4 m × 8 m)</button>
     <button mat-raised-button color="primary" (click)="addBox('GRAND')">+ Grand (10 m × 12 m)</button>
   </div>
 
+  <!-- Canvas Pixi.js -->
   <div class="pixi-container">
-
     <app-mall-map
       #mallMap
       [types]="types"
-      [boxs]="editMode ? editingBoxes : boxs"
+      [boxs]="getFilteredBoxes()"
+      [boutiques]="boutiques"
+      [contrats]="contrats"
       [editMode]="editMode"
       [currentEtage]="currentEtage"
       (statusChange)="onStatusChange($event)"
       (deleteBox)="onDeleteBox($event)"
     ></app-mall-map>
-
-
   </div>
 
+  <!-- Bouton flottant pour activer/désactiver le mode édition -->
   <button 
     class="fab-edit" 
     mat-fab 

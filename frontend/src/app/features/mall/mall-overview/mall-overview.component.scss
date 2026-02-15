@@ -1,33 +1,67 @@
 .mall-canvas-wrapper {
-  position: relative;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   width: 100%;
+  position: relative;
+  background: #e5e5e5;
+
 }
 
 .etage-selector {
-  margin: 16px 0;
   display: flex;
-  gap: 16px;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
   justify-content: center;
+
+  button {
+    min-width: 180px;
+  }
+}
+
+// Section de filtre - réduite
+.filter-section {
+  padding: 0.8rem 1.5rem 0.4rem;
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+
+  .filter-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.6rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 }
 
 .add-box-controls {
-  margin: 16px 0;
   display: flex;
-  gap: 16px;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  background: #fff3e0;
+  border-bottom: 2px solid #ff9800;
   justify-content: center;
-  flex-wrap: wrap;
+
+  button {
+    min-width: 150px;
+  }
 }
 
 .pixi-container {
-  height: calc(100% - 100px);
-  width: 100%;
-  box-sizing: border-box;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #e5e5e5;
+  max-height: calc(100vh - 180px); 
+  min-height: 500px; 
 }
 
 .fab-edit {
   position: fixed;
-  bottom: 32px;
-  right: 32px;
-  z-index: 100;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1000;
 }
