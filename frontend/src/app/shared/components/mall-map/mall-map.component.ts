@@ -38,6 +38,8 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   @Output() editBox = new EventEmitter<Box>();
   @Output() statusChange = new EventEmitter<{ box: Box; newStatus: 'LIBRE' | 'NON_FONCTIONNEL' }>();
   @Output() deleteBox = new EventEmitter<Box>();
+  @Output() loyerChange = new EventEmitter<{ box: Box; newLoyer: number }>();
+  @Output() boxPositionChanged = new EventEmitter<Box>();
 
   @ViewChild('mapContainer') mapContainerRef!: ElementRef<HTMLDivElement>;
 
@@ -105,6 +107,9 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   }
 
   private endDrag() {
+    if (this.isDragging && this.currentDraggedBox) {
+      this.boxPositionChanged.emit(this.currentDraggedBox);
+    }
     this.isDragging = false;
     this.currentDraggedBox = null;
     this.currentDraggedContainer = null;
@@ -315,98 +320,151 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
     container.addChild(dragArea);
 
     if (this.editMode) {
-      const isFree = box.statut === 'LIBRE';
+  const isFree = box.statut === 'LIBRE';
 
-      const iconY = -h / 2 + 22;
-      const startX = w / 2 - 20;
-      const gap = 28;
+  const iconY = -h / 2 + 22;
+  const startX = w / 2 - 20;
+  const gap = 28;
 
-      const statusCircle = new PIXI.Graphics();
-      const circleRadius = 9;
-      statusCircle.circle(0, 0, circleRadius);
-      statusCircle.fill(isFree ? 0x2e7d32 : 0xd32f2f);
-      statusCircle.x = startX - gap * 2;
-      statusCircle.y = iconY;
-      statusCircle.eventMode = 'static';
-      statusCircle.cursor = 'pointer';
-      statusCircle.name = 'statusIcon';
+  // ═══════════════════════════════════════════════════════════
+  // Icône Statut (Cercle vert/rouge)
+  // ═══════════════════════════════════════════════════════════
+  const statusCircle = new PIXI.Graphics();
+  const circleRadius = 9;
+  statusCircle.circle(0, 0, circleRadius);
+  statusCircle.fill(isFree ? 0x2e7d32 : 0xd32f2f);
+  statusCircle.x = startX - gap * 3;  // 🆕 Décalé pour faire de la place
+  statusCircle.y = iconY;
+  statusCircle.eventMode = 'static';
+  statusCircle.cursor = 'pointer';
+  statusCircle.name = 'statusIcon';
 
-      (container as any).statusCircleRef = statusCircle;
+  (container as any).statusCircleRef = statusCircle;
 
-      statusCircle.on('pointerdown', (e) => {
-        e.stopPropagation();
+  statusCircle.on('pointerdown', (e) => {
+    e.stopPropagation();
 
-        const newIsFree = box.statut === 'NON_FONCTIONNEL';
-        const newStatus: 'LIBRE' | 'NON_FONCTIONNEL' = newIsFree ? 'LIBRE' : 'NON_FONCTIONNEL';
+    const newIsFree = box.statut === 'NON_FONCTIONNEL';
+    const newStatus: 'LIBRE' | 'NON_FONCTIONNEL' = newIsFree ? 'LIBRE' : 'NON_FONCTIONNEL';
 
-        box.statut = newStatus;
+    box.statut = newStatus;
 
-        statusCircle.clear();
-        statusCircle.circle(0, 0, circleRadius);
-        statusCircle.fill(newIsFree ? 0x2e7d32 : 0xd32f2f);
+    statusCircle.clear();
+    statusCircle.circle(0, 0, circleRadius);
+    statusCircle.fill(newIsFree ? 0x2e7d32 : 0xd32f2f);
 
-        this.updateBoxBackground(background, container as any, newIsFree, typeColor);
-        this.updateNonFunctionalText(container, newIsFree, w, h);
+    this.updateBoxBackground(background, container as any, newIsFree, typeColor);
+    this.updateNonFunctionalText(container, newIsFree, w, h);
 
-        this.statusChange.emit({ box, newStatus });
-        this.app?.renderer.render(this.app.stage);
-      });
+    this.statusChange.emit({ box, newStatus });
+    this.app?.renderer.render(this.app.stage);
+  });
 
-      container.addChild(statusCircle);
+  container.addChild(statusCircle);
 
-      const rotateIcon = new PIXI.Text('↻', {
-        fontSize: 26,
-        fill: 0x0288d1,
-        fontWeight: 'bold'
-      });
-      rotateIcon.anchor.set(0.5);
-      rotateIcon.x = startX - gap;
-      rotateIcon.y = iconY;
-      rotateIcon.eventMode = 'static';
-      rotateIcon.cursor = 'pointer';
-      rotateIcon.name = 'rotateIcon';
+  // ═══════════════════════════════════════════════════════════
+  // 🆕 Icône Loyer (💰)
+  // ═══════════════════════════════════════════════════════════
+  const loyerIcon = new PIXI.Text('💰', {
+    fontSize: 20,
+    align: 'center'
+  });
+  loyerIcon.anchor.set(0.5);
+  loyerIcon.x = startX - gap * 2;
+  loyerIcon.y = iconY;
+  loyerIcon.eventMode = 'static';
+  loyerIcon.cursor = 'pointer';
+  loyerIcon.name = 'loyerIcon';
 
-      rotateIcon.on('pointerdown', (e) => {
-        e.stopPropagation();
-        const current = box.rotation ?? 0;
-        box.rotation = (current + Math.PI / 2) % (Math.PI * 2);
-        container.rotation = box.rotation;
-        
-        // 🆕 Mettre à jour la rotation du textContainer pour qu'il reste droit
-        textContainer.rotation = -box.rotation;
-
-        container.scale.set(1.08);
-        setTimeout(() => container.scale.set(1), 140);
-
-        this.app?.renderer.render(this.app.stage);
-      });
-
-      container.addChild(rotateIcon);
-
-      const trash = new PIXI.Text('×', {
-        fontSize: 30,
-        fill: 0xd32f2f,
-        fontWeight: 'bold'
-      });
-      trash.anchor.set(0.5);
-      trash.x = startX;
-      trash.y = iconY;
-      trash.eventMode = 'static';
-      trash.cursor = 'pointer';
-      trash.name = 'deleteIcon';
-
-      trash.on('pointerdown', (e) => {
-        e.stopPropagation();
-        if (confirm(`Supprimer définitivement ${box._id} ?`)) {
-          container.alpha = 0.3;
-          setTimeout(() => {
-            this.deleteBox.emit(box);
-          }, 150);
-        }
-      });
-
-      container.addChild(trash);
+  loyerIcon.on('pointerdown', (e) => {
+    e.stopPropagation();
+    
+    // Demander le nouveau loyer via prompt
+    const currentLoyer = box.loyer ?? 0;
+    const newLoyerStr = prompt(`Loyer actuel : ${currentLoyer.toLocaleString()} Ar\n\nNouveau loyer (en Ariary) :`, currentLoyer.toString());
+    
+    if (newLoyerStr === null) return; // Annulé
+    
+    const newLoyer = parseInt(newLoyerStr.replace(/\s/g, ''));
+    
+    if (isNaN(newLoyer) || newLoyer < 0) {
+      alert('Veuillez entrer un montant valide (nombre positif)');
+      return;
     }
+    
+    // Mettre à jour la box
+    box.loyer = newLoyer;
+    
+    // Émettre l'événement
+    this.loyerChange.emit({ box, newLoyer });
+    
+    // Animation visuelle
+    loyerIcon.scale.set(1.3);
+    setTimeout(() => loyerIcon.scale.set(1), 150);
+  });
+
+  container.addChild(loyerIcon);
+
+  // ═══════════════════════════════════════════════════════════
+  // Icône Rotation (↻)
+  // ═══════════════════════════════════════════════════════════
+  const rotateIcon = new PIXI.Text('↻', {
+    fontSize: 26,
+    fill: 0x0288d1,
+    fontWeight: 'bold'
+  });
+  rotateIcon.anchor.set(0.5);
+  rotateIcon.x = startX - gap;
+  rotateIcon.y = iconY;
+  rotateIcon.eventMode = 'static';
+  rotateIcon.cursor = 'pointer';
+  rotateIcon.name = 'rotateIcon';
+
+  rotateIcon.on('pointerdown', (e) => {
+    e.stopPropagation();
+    const current = box.rotation ?? 0;
+    box.rotation = (current + Math.PI / 2) % (Math.PI * 2);
+    container.rotation = box.rotation;
+    
+    textContainer.rotation = -box.rotation;
+
+    container.scale.set(1.08);
+    setTimeout(() => container.scale.set(1), 140);
+
+    this.boxPositionChanged.emit(box);
+
+    this.app?.renderer.render(this.app.stage);
+  });
+
+  container.addChild(rotateIcon);
+
+  // ═══════════════════════════════════════════════════════════
+  // Icône Suppression (×)
+  // ═══════════════════════════════════════════════════════════
+  const trash = new PIXI.Text('×', {
+    fontSize: 30,
+    fill: 0xd32f2f,
+    fontWeight: 'bold'
+  });
+  trash.anchor.set(0.5);
+  trash.x = startX;
+  trash.y = iconY;
+  trash.eventMode = 'static';
+  trash.cursor = 'pointer';
+  trash.name = 'deleteIcon';
+
+  trash.on('pointerdown', (e) => {
+    e.stopPropagation();
+    if (confirm(`Supprimer définitivement ${box.nom} ?`)) {
+      container.alpha = 0.3;
+      setTimeout(() => {
+        this.deleteBox.emit(box);
+      }, 150);
+    }
+  });
+
+  container.addChild(trash);
+}
 
     dragArea.on('pointerdown', e => {
       if (!this.editMode) return;

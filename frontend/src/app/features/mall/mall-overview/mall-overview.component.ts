@@ -54,6 +54,9 @@ export class MallCanvasComponent {
 
   protected boxs: Box[] = [];
   protected editingBoxes: Box[] = [];
+  
+  // 🆕 Track des boxes modifiées (par leur ID)
+  protected modifiedBoxIds: Set<string> = new Set();
 
   protected boutiques: Boutique[] = [];
   protected contrats: Contrat[] = [];
@@ -296,6 +299,62 @@ export class MallCanvasComponent {
     console.log('[MALL] Nouveau état:', group.expanded);
   }
 
+  /**
+   * 🆕 Obtenir les dimensions réelles selon le type
+   */
+  getRealDimensions(typeNom?: 'Petit' | 'Moyen' | 'Grand'): { label: string; surface: number } {
+    const dimensions = {
+      'Petit': { label: 'Petit (4m × 4m)', surface: 16 },
+      'Moyen': { label: 'Moyen (4m × 8m)', surface: 32 },
+      'Grand': { label: 'Grand (10m × 12m)', surface: 120 }
+    };
+    
+    // Valeur par défaut si typeNom est undefined ou invalide
+    if (!typeNom || !dimensions[typeNom]) {
+      return { label: 'Inconnu', surface: 0 };
+    }
+    
+    return dimensions[typeNom];
+  }
+
+  /**
+   * 🆕 Gérer le changement de loyer depuis le tableau ou la carte
+   */
+  onLoyerChange(event: { box: Box; newLoyer: number }) {
+    const list = this.editMode ? this.editingBoxes : this.boxs;
+    const target = list.find(b => b._id === event.box._id);
+    if (!target) return;
+
+    target.loyer = event.newLoyer;
+    console.log('[MALL] Loyer changé:', event.newLoyer, 'Ar pour', target.nom);
+
+    // 🆕 Marquer comme modifiée si en mode édition
+    if (this.editMode) {
+      this.modifiedBoxIds.add(target._id);
+      console.log('[MALL] 📝 Box marquée comme modifiée:', target.nom);
+      return; // Ne pas sauvegarder immédiatement
+    }
+
+    // Si pas en mode édition, sauvegarder immédiatement
+    this.boxService.updateBox(target._id, { loyer: target.loyer }).subscribe({
+      next: (updated) => {
+        const idx = this.boxs.findIndex(b => b._id === updated._id);
+        if (idx !== -1) this.boxs[idx] = updated;
+
+        if (this.viewMode === 'cards') {
+          this.updateStatusGroups();
+        }
+
+        console.log('[MALL] ✅ Loyer sauvegardé en base de données');
+      },
+      error: (err) => {
+        console.error('[MALL] ❌ Échec mise à jour loyer', err);
+        alert('Erreur lors de la sauvegarde du loyer. Veuillez réessayer.');
+        target.loyer = event.box.loyer;
+      }
+    });
+  }
+
   // ════════════════════════════════════════════════════════════
   // MÉTHODES EXISTANTES
   // ════════════════════════════════════════════════════════════
@@ -322,7 +381,11 @@ export class MallCanvasComponent {
 
   toggleEditMode() {
     if (this.editMode) {
-      this.saveChangesToDatabase();
+      // 🆕 Sauvegarder SEULEMENT les boxes modifiées
+      this.saveModifiedBoxes();
+    } else {
+      // Réinitialiser le tracking des modifications
+      this.modifiedBoxIds.clear();
     }
 
     this.editMode = !this.editMode;
@@ -338,6 +401,108 @@ export class MallCanvasComponent {
     setTimeout(() => {
       this.mallMapComp?.forceRedraw();
     }, 0);
+  }
+
+  private saveModifiedBoxes() {
+    const originalThisEtage = this.boxs.filter(b => b.etage === this.currentEtage);
+    const editedThisEtage = this.editingBoxes;
+
+    console.log('[MALL] Sauvegarde → original :', originalThisEtage.length, 'modifiées :', editedThisEtage.length);
+
+    const creationRequests: Observable<Box | null>[] = [];
+    const updateRequests: Observable<Box | null>[] = [];
+    const deleteRequests: Observable<any>[] = [];
+
+    // ═══════════════════════════════════════════════════════════
+    // 1. Détecter les SUPPRESSIONS
+    // ═══════════════════════════════════════════════════════════
+    originalThisEtage.forEach(orig => {
+      if (!editedThisEtage.some(e => e._id === orig._id)) {
+        console.log('[MALL] 🗑️ Suppression détectée :', orig.nom);
+        deleteRequests.push(
+          this.boxService.deleteBox(orig._id).pipe(
+            tap(() => console.log('[MALL] ✅ Box supprimée:', orig.nom)),
+            catchError((err: any) => {
+              console.error('[MALL] ❌ Échec suppression', orig.nom, err);
+              return of(null);
+            })
+          )
+        );
+      }
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    // 2. Détecter les CRÉATIONS et MODIFICATIONS
+    // ═══════════════════════════════════════════════════════════
+    editedThisEtage.forEach(edit => {
+      const orig = originalThisEtage.find(o => o._id === edit._id);
+
+      if (!orig) {
+        // CRÉATION : box avec ID temporaire
+        const { _id, ...payload } = edit as any;
+        console.log('[MALL] ➕ Création nouvelle box :', payload.nom);
+        creationRequests.push(
+          this.boxService.createBox(payload).pipe(
+            tap((created: Box) => {
+              console.log('[MALL] ✅ Box créée avec ID réel :', created._id);
+              const idx = this.boxs.findIndex(b => b._id === edit._id);
+              if (idx !== -1) this.boxs[idx] = created;
+              else this.boxs.push(created);
+            }),
+            catchError((err: any) => {
+              console.error('[MALL] ❌ Échec création', err);
+              return of(null);
+            })
+          )
+        );
+      } else if (this.modifiedBoxIds.has(edit._id)) {
+        // MODIFICATION : box marquée comme modifiée
+        console.log('[MALL] ✏️ Mise à jour détectée :', edit.nom);
+        updateRequests.push(
+          this.boxService.updateBox(edit._id, edit).pipe(
+            tap((updated: Box) => {
+              const idx = this.boxs.findIndex(b => b._id === updated._id);
+              if (idx !== -1) this.boxs[idx] = updated;
+              console.log('[MALL] ✅ Box mise à jour:', updated.nom);
+            }),
+            catchError((err: any) => {
+              console.error('[MALL] ❌ Échec mise à jour', edit.nom, err);
+              return of(null);
+            })
+          )
+        );
+      }
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    // 3. Exécuter toutes les requêtes
+    // ═══════════════════════════════════════════════════════════
+    const allRequests = [...deleteRequests, ...creationRequests, ...updateRequests];
+    
+    if (allRequests.length === 0) {
+      console.log('[MALL] Aucune modification à sauvegarder');
+      this.modifiedBoxIds.clear();
+      return;
+    }
+
+    console.log(`[MALL] 💾 Sauvegarde en cours... (${allRequests.length} requête(s))`);
+
+    forkJoin(allRequests).subscribe({
+      next: () => {
+        console.log('[MALL] ✅ Toutes les requêtes terminées → rechargement');
+        this.modifiedBoxIds.clear();
+        this.loadBoxes();
+        
+        if (this.viewMode === 'cards') {
+          this.updateStatusGroups();
+        }
+      },
+      error: (err) => {
+        console.error('[MALL] ❌ Erreur pendant la sauvegarde', err);
+        this.modifiedBoxIds.clear();
+        this.loadBoxes();
+      }
+    });
   }
 
   private saveChangesToDatabase() {
@@ -482,6 +647,14 @@ export class MallCanvasComponent {
     target.statut = event.newStatus;
     console.log('[MALL] Statut changé localement :', event.newStatus);
 
+    // 🆕 Marquer comme modifiée si en mode édition
+    if (this.editMode) {
+      this.modifiedBoxIds.add(target._id);
+      console.log('[MALL] 📝 Box marquée comme modifiée:', target.nom);
+      return; // Ne pas sauvegarder immédiatement
+    }
+
+    // Si pas en mode édition, sauvegarder immédiatement
     this.boxService.updateBox(target._id, { statut: target.statut }).subscribe({
       next: (updated) => {
         const idx = this.boxs.findIndex(b => b._id === updated._id);
@@ -503,8 +676,20 @@ export class MallCanvasComponent {
     if (index !== -1) {
       console.log('[MALL] Suppression locale :', box.nom);
       this.editingBoxes.splice(index, 1);
+      
+      // 🆕 Marquer comme modifiée (pour suppression)
+      this.modifiedBoxIds.add(box._id);
+      
       this.mallMapComp?.forceRedraw();
     }
+  }
+
+
+  onBoxModified(box: Box) {
+    if (!this.editMode) return;
+    
+    this.modifiedBoxIds.add(box._id);
+    console.log('[MALL] 📝 Box modifiée (position/rotation):', box.nom);
   }
 
   returnToMap(): void {
