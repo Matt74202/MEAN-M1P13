@@ -1,46 +1,78 @@
 <div class="mall-canvas-wrapper">
 
-  <!-- Sélecteur d'étage -->
-  <div class="etage-selector" *ngIf="!showInteriorView && !editMode">
-    <button 
-      mat-raised-button 
-      [color]="currentEtage === 'RC' ? 'primary' : ''" 
-      (click)="setEtage('RC')"
-      [disabled]="currentEtage === 'RC'"
-    >
-      Rez-de-chaussée
-    </button>
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- HEADER : Étage + Mode d'affichage -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <div class="mall-header" *ngIf="!showInteriorView && !editMode">
+    
+    <!-- Sélecteur d'étage -->
+    <div class="etage-selector">
+      <button 
+        mat-raised-button 
+        [color]="currentEtage === 'RC' ? 'primary' : ''" 
+        (click)="setEtage('RC')"
+        [disabled]="currentEtage === 'RC'"
+      >
+        Rez-de-chaussée
+      </button>
 
-    <button 
-      mat-raised-button 
-      [color]="currentEtage === 'FC' ? 'primary' : ''" 
-      (click)="setEtage('FC')"
-      [disabled]="currentEtage === 'FC'"
+      <button 
+        mat-raised-button 
+        [color]="currentEtage === 'FC' ? 'primary' : ''" 
+        (click)="setEtage('FC')"
+        [disabled]="currentEtage === 'FC'"
+      >
+        1ᵉʳ étage
+      </button>
+    </div>
+
+    <!-- 🆕 Sélecteur de mode d'affichage -->
+    <mat-button-toggle-group 
+      [value]="viewMode" 
+      (change)="setViewMode($event.value)"
+      class="view-mode-toggle"
     >
-      1ᵉʳ étage
-    </button>
+      <mat-button-toggle value="map">
+        <mat-icon>map</mat-icon>
+        <span>Carte</span>
+      </mat-button-toggle>
+      <mat-button-toggle value="cards">
+        <mat-icon>view_module</mat-icon>
+        <span>Liste</span>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
   </div>
 
-  <!-- 🆕 Filtre par type de commerce -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- FILTRES -->
+  <!-- ════════════════════════════════════════════════════════════ -->
   <div class="filter-section" *ngIf="!showInteriorView && !editMode && typeCommerceOptions.length > 0">
-    <h3 class="filter-title">Filtrer par type de commerce</h3>
-    <app-filter-chips
-      [items]="typeCommerceOptions"
-      [selected]="selectedTypeCommerce"
-      [allLabel]="'Tous les types'"
-      (select)="onTypeCommerceFilterChange($event)"
-    ></app-filter-chips>
+    
+    <!-- Filtre par type de commerce -->
+    <div class="filter-group">
+      <h3 class="filter-title">Filtrer par type de commerce</h3>
+      <app-filter-chips
+        [items]="typeCommerceOptions"
+        [selected]="selectedTypeCommerce"
+        [allLabel]="'Tous les types'"
+        (select)="onTypeCommerceFilterChange($event)"
+      ></app-filter-chips>
+    </div>
   </div>
 
-  <!-- Boutons d'ajout de boxes en mode édition -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- BOUTONS D'AJOUT en mode édition -->
+  <!-- ════════════════════════════════════════════════════════════ -->
   <div class="add-box-controls" *ngIf="editMode && !showInteriorView">
     <button mat-raised-button color="primary" (click)="addBox('PETIT')">+ Petit (4 m × 4 m)</button>
     <button mat-raised-button color="primary" (click)="addBox('MOYEN')">+ Moyen (4 m × 8 m)</button>
     <button mat-raised-button color="primary" (click)="addBox('GRAND')">+ Grand (10 m × 12 m)</button>
   </div>
 
-  <!-- Canvas Pixi.js -->
-  <div class="pixi-container">
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- MODE CARTE (PIXI.JS) -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <div class="pixi-container" *ngIf="viewMode === 'map'">
     <app-mall-map
       #mallMap
       [types]="types"
@@ -54,8 +86,110 @@
     ></app-mall-map>
   </div>
 
-  <!-- Bouton flottant pour activer/désactiver le mode édition -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- MODE CARTES -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <div class="cards-container" *ngIf="viewMode === 'cards'">
+    
+    <div class="status-group" *ngFor="let group of statusGroups">
+      
+      <!-- Header cliquable avec compteur -->
+      <div class="status-header" (click)="toggleGroupExpansion(group)">
+        <div class="status-header-left">
+          <mat-icon class="expand-icon" [class.expanded]="group.expanded">
+            {{ group.expanded ? 'expand_more' : 'chevron_right' }}
+          </mat-icon>
+          <h3>{{ group.status }}</h3>
+        </div>
+        <span class="count-badge">{{ group.count }}</span>
+      </div>
+
+      <!-- Liste des boxes (affichée seulement si expanded) -->
+      <div class="boxes-grid" *ngIf="group.expanded">
+        <mat-card 
+          *ngFor="let box of group.boxes" 
+          class="box-card"
+          [class.occupied]="box.boutique"
+          [class.libre]="!box.boutique && box.statut === 'LIBRE'"
+          [class.non-functional]="box.statut === 'NON_FONCTIONNEL'"
+        >
+          <mat-card-header>
+            <div class="box-card-title">
+              <div class="box-id">
+                <mat-icon class="box-icon">store</mat-icon>
+                <span class="box-name">{{ box.nom }}</span>
+              </div>
+              <!-- 🆕 Affichage des dimensions réelles -->
+              <span class="taille-badge" *ngIf="box.typeNom === 'Petit'">Petit (4m × 4m)</span>
+              <span class="taille-badge" *ngIf="box.typeNom === 'Moyen'">Moyen (4m × 8m)</span>
+              <span class="taille-badge" *ngIf="box.typeNom === 'Grand'">Grand (10m × 12m)</span>
+            </div>
+          </mat-card-header>
+
+          <mat-card-content>
+            
+            <!-- Détails de la box -->
+            <div class="box-details">
+              <div class="detail-row" *ngIf="box.width && box.height">
+                <mat-icon class="detail-icon">square_foot</mat-icon>
+                <span>{{ (box.width * box.height / 10000) | number:'1.0-1' }} m²</span>
+              </div>
+              <div class="detail-row" *ngIf="box.loyer">
+                <mat-icon class="detail-icon">payments</mat-icon>
+                <span class="loyer-amount">{{ box.loyer | number:'1.0-0' }} Ar</span>
+              </div>
+            </div>
+
+            <!-- Boutique occupante -->
+            <div class="boutique-info" *ngIf="box.boutique">
+              <div class="boutique-name">
+                <mat-icon class="shop-icon">shopping_bag</mat-icon>
+                <strong>{{ box.boutique.nom }}</strong>
+              </div>
+              <div 
+                class="type-commerce-badge"
+                [style.background-color]="getColorForType(box.boutique.typeCommerce)"
+              >
+                {{ box.boutique.typeCommerce }}
+              </div>
+              <div class="contrat-dates" *ngIf="box.contrat">
+                <mat-icon class="date-icon">event</mat-icon>
+                <span>{{ box.contrat.dateDebut | date:'dd/MM/yyyy' }} - {{ box.contrat.dateFin | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+
+            <!-- Box libre ou non fonctionnelle -->
+            <div class="empty-state" *ngIf="!box.boutique">
+              <mat-icon class="empty-icon">{{ box.statut === 'LIBRE' ? 'check_circle' : 'warning' }}</mat-icon>
+              <p>{{ box.statut === 'LIBRE' ? 'Disponible à la location' : 'Hors service' }}</p>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions>
+            <button mat-button color="primary">
+              <mat-icon>info</mat-icon>
+              Détails
+            </button>
+            <button mat-button *ngIf="box.statut === 'LIBRE' && !box.boutique">
+              <mat-icon>add_business</mat-icon>
+              Attribuer
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="empty-message" *ngIf="statusGroups.length === 0">
+      <mat-icon>inbox</mat-icon>
+      <p>Aucune box trouvée pour cet étage</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- BOUTON FLOTTANT : Mode édition (uniquement en mode carte) -->
+  <!-- ════════════════════════════════════════════════════════════ -->
   <button 
+    *ngIf="viewMode === 'map'"
     class="fab-edit" 
     mat-fab 
     color="primary" 

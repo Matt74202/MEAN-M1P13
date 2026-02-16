@@ -3,17 +3,27 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';  // 🆕
+import { MatCardModule } from '@angular/material/card';                  // 🆕
+import { MatChipsModule } from '@angular/material/chips';                // 🆕
 
 import { forkJoin, of, Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
 import { MallMapComponent } from '@app/shared/components/mall-map/mall-map.component';
 import { FilterChipsComponent } from '@shared/UI/filter/filter-chips.component';
+
 import { BoxService } from '@app/services/box.service';
 import { ContratService } from '@app/services/contrat.service';
 import { BoutiqueService } from '@app/services/boutique.service';
 
 import { TypeBoutique, Box, Boutique, Contrat, Etage } from '@app/model/mall-models';
+
+// 🆕 Interface pour boxes enrichies
+interface BoxWithDetails extends Box {
+  boutique?: Boutique;
+  contrat?: Contrat;
+}
 
 @Component({
   selector: 'app-mall-canvas',
@@ -23,6 +33,9 @@ import { TypeBoutique, Box, Boutique, Contrat, Etage } from '@app/model/mall-mod
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    MatButtonToggleModule,  // 🆕
+    MatCardModule,          // 🆕
+    MatChipsModule,         // 🆕
     MallMapComponent,
     FilterChipsComponent,
   ],
@@ -45,7 +58,7 @@ export class MallCanvasComponent {
   protected boutiques: Boutique[] = [];
   protected contrats: Contrat[] = [];
 
-  // 🆕 Filtre par type de commerce
+  // Filtre par type de commerce
   protected selectedTypeCommerce: string | null = null;
   protected typeCommerceOptions: { value: string; label: string }[] = [];
 
@@ -59,6 +72,12 @@ export class MallCanvasComponent {
   currentEtage: Etage = 'RC';
 
   isLoading = false;
+
+  // 🆕 Mode d'affichage : 'map' | 'cards'
+  viewMode: 'map' | 'cards' = 'map';
+
+  // 🆕 Groupes de statut pour le mode cards
+  statusGroups: { status: string; count: number; boxes: BoxWithDetails[]; expanded: boolean }[] = [];
 
   constructor(
     private boxService: BoxService,
@@ -90,8 +109,8 @@ export class MallCanvasComponent {
         this.contrats = contrats || [];
         this.boutiques = boutiques || [];
         
-        // 🆕 Générer les options de filtre
         this.generateTypeCommerceOptions();
+        this.updateStatusGroups(); // 🆕 Initialiser les groupes
         
         this.isLoading = false;
         this.mallMapComp?.forceRedraw();
@@ -107,19 +126,27 @@ export class MallCanvasComponent {
   }
 
   /**
-   * 🆕 Génère les options de filtre à partir des types de commerce présents
+   * Génère les options de filtre à partir des types de commerce présents
+   * dans les boutiques qui ont un contrat actif
    */
   private generateTypeCommerceOptions() {
-    // Récupérer tous les types de commerce uniques des boutiques
     const typesSet = new Set<string>();
     
-    this.boutiques.forEach(b => {
-      if (b.typeCommerce) {
-        typesSet.add(b.typeCommerce);
+    // Parcourir les contrats actifs
+    this.contrats.forEach(contrat => {
+      // Trouver la boutique associée
+      const boutique = this.boutiques.find(b => {
+        const boutiqueId = b._id?.toString() || b._id;
+        const contratBoutiqueId = contrat.idBoutique?.toString() || contrat.idBoutique;
+        return boutiqueId === contratBoutiqueId;
+      });
+
+      // Ajouter le type de commerce s'il existe
+      if (boutique?.typeCommerce) {
+        typesSet.add(boutique.typeCommerce);
       }
     });
 
-    // Convertir en tableau d'options triées
     this.typeCommerceOptions = Array.from(typesSet)
       .sort()
       .map(type => ({
@@ -131,28 +158,27 @@ export class MallCanvasComponent {
   }
 
   /**
-   * 🆕 Gère le changement de filtre
+   * Gère le changement de filtre
    */
   onTypeCommerceFilterChange(typeCommerce: string | null) {
     this.selectedTypeCommerce = typeCommerce;
     console.log('[MALL] Filtre changé:', typeCommerce || 'Tous');
+    this.updateStatusGroups(); // 🆕 Mettre à jour les groupes
     this.mallMapComp?.forceRedraw();
   }
 
   /**
-   * 🆕 Retourne les boxes filtrées selon le type de commerce sélectionné
+   * Retourne les boxes filtrées selon le type de commerce sélectionné
    */
   getFilteredBoxes(): Box[] {
+    const baseBoxes = this.editMode ? this.editingBoxes : this.boxs;
+    
+    // Filtre par type de commerce
     if (!this.selectedTypeCommerce) {
-      // Pas de filtre = toutes les boxes
-      return this.editMode ? this.editingBoxes : this.boxs;
+      return baseBoxes;
     }
 
-    // Filtrer les boxes qui ont un contrat actif avec une boutique du type sélectionné
-    const boxesToFilter = this.editMode ? this.editingBoxes : this.boxs;
-    
-    return boxesToFilter.filter(box => {
-      // Trouver le contrat actif pour cette box
+    return baseBoxes.filter(box => {
       const contrat = this.contrats.find(c => {
         const contratBoxId = c.idBox?.toString() || c.idBox;
         const boxId = box._id?.toString() || box._id;
@@ -161,7 +187,6 @@ export class MallCanvasComponent {
 
       if (!contrat) return false;
 
-      // Trouver la boutique associée au contrat
       const boutique = this.boutiques.find(b => {
         const boutiqueId = b._id?.toString() || b._id;
         const contratBoutiqueId = contrat.idBoutique?.toString() || contrat.idBoutique;
@@ -170,10 +195,110 @@ export class MallCanvasComponent {
 
       if (!boutique) return false;
 
-      // Vérifier si le type de commerce correspond
       return boutique.typeCommerce === this.selectedTypeCommerce;
     });
   }
+
+  // ════════════════════════════════════════════════════════════
+  // 🆕 MÉTHODES POUR LES 3 MODES D'AFFICHAGE
+  // ════════════════════════════════════════════════════════════
+
+  /**
+   * 🆕 Retourne les boxes avec leurs détails (boutique + contrat)
+   */
+  getBoxesWithDetails(): BoxWithDetails[] {
+    const filtered = this.getFilteredBoxes();
+    
+    return filtered.map(box => {
+      const contrat = this.contrats.find(c => {
+        const contratBoxId = c.idBox?.toString() || c.idBox;
+        const boxId = box._id?.toString() || box._id;
+        return contratBoxId === boxId && c.statut === 'ACTIF';
+      });
+
+      const boutique = contrat ? this.boutiques.find(b => {
+        const boutiqueId = b._id?.toString() || b._id;
+        const contratBoutiqueId = contrat.idBoutique?.toString() || contrat.idBoutique;
+        return boutiqueId === contratBoutiqueId;
+      }) : undefined;
+
+      return {
+        ...box,
+        boutique,
+        contrat
+      };
+    });
+  }
+
+  /**
+   * 🆕 Mettre à jour les groupes de statut
+   */
+  private updateStatusGroups() {
+    const boxesWithDetails = this.getBoxesWithDetails();
+    
+    const newGroups = [
+      { 
+        status: 'OCCUPÉ', 
+        count: boxesWithDetails.filter(b => b.boutique).length,
+        boxes: boxesWithDetails.filter(b => b.boutique),
+        expanded: true
+      },
+      { 
+        status: 'LIBRE', 
+        count: boxesWithDetails.filter(b => b.statut === 'LIBRE' && !b.boutique).length,
+        boxes: boxesWithDetails.filter(b => b.statut === 'LIBRE' && !b.boutique),
+        expanded: true
+      },
+      { 
+        status: 'NON FONCTIONNEL', 
+        count: boxesWithDetails.filter(b => b.statut === 'NON_FONCTIONNEL').length,
+        boxes: boxesWithDetails.filter(b => b.statut === 'NON_FONCTIONNEL'),
+        expanded: false
+      }
+    ].filter(g => g.count > 0);
+
+    // Préserver l'état expanded des groupes existants
+    newGroups.forEach(newGroup => {
+      const existingGroup = this.statusGroups.find(g => g.status === newGroup.status);
+      if (existingGroup) {
+        newGroup.expanded = existingGroup.expanded;
+      }
+    });
+
+    this.statusGroups = newGroups;
+  }
+
+  /**
+   * 🆕 Obtenir la couleur pour un type de commerce
+   */
+  getColorForType(typeCommerce?: string): string {
+    if (!typeCommerce) return '#9e9e9e';
+    const colorCode = this.boutiqueService.getColorForType(typeCommerce);
+    return '#' + colorCode.toString(16).padStart(6, '0');
+  }
+
+  /**
+   * 🆕 Changer le mode d'affichage
+   */
+  setViewMode(mode: 'map' | 'cards') {
+    this.viewMode = mode;
+    if (mode === 'cards') {
+      this.updateStatusGroups(); // 🆕 Rafraîchir les groupes
+    }
+  }
+
+  /**
+   * 🆕 Toggle l'expansion d'un groupe de statut
+   */
+  toggleGroupExpansion(group: { status: string; count: number; boxes: BoxWithDetails[]; expanded: boolean }) {
+    console.log('[MALL] Toggle groupe:', group.status, 'expanded:', group.expanded);
+    group.expanded = !group.expanded;
+    console.log('[MALL] Nouveau état:', group.expanded);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // MÉTHODES EXISTANTES
+  // ════════════════════════════════════════════════════════════
 
   private loadBoxes() {
     this.isLoading = true;
