@@ -115,12 +115,25 @@ export class BoutiqueHomeComponent implements OnInit {
 openProduitForm(produit?: Produit) {
 
   // ──────────────────────────────────────────────────────────────
+  // 🆕 Récupération des catégories existantes
+  // ──────────────────────────────────────────────────────────────
+  const existingCategories = this.categoryItems().map(c => c.value);
+  
+  // ──────────────────────────────────────────────────────────────
   // Définition des champs du formulaire
   // ──────────────────────────────────────────────────────────────
   const fields: FormField[] = [
     { name: 'nom', label: 'Nom du produit', type: 'text', required: true },
     { name: 'description', label: 'Description', type: 'textarea', required: false, rows: 5 },
-    { name: 'categorie', label: 'Catégorie', type: 'select', required: true, options: this.categoryItems() },
+    // 🆕 Champ avec option pour créer une nouvelle catégorie
+    { 
+      name: 'categorie', 
+      label: 'Catégorie', 
+      type: 'select-or-text', 
+      required: true, 
+      options: this.categoryItems(),
+      placeholder: 'Sélectionner ou créer une catégorie'
+    },
     { name: 'prix', label: 'Prix (Ar)', type: 'number', required: true },
     { name: 'image', label: 'Image', type: 'file', required: false },
     { name: 'stock', label: 'Stock disponible', type: 'number' },
@@ -178,7 +191,7 @@ openProduitForm(produit?: Produit) {
     formData.append('idBoutique', this.boutiqueId);
     formData.append('nom', values.nom || '');
     formData.append('description', values.description || '');
-    formData.append('categorie', values.categorie || '');
+    formData.append('categorie', values.categorie || ''); // 🆕 Peut être nouvelle ou existante
     formData.append('prix', prix.toString());
     formData.append('stock', (values.stock ?? 0).toString());
 

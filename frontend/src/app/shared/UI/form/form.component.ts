@@ -6,16 +6,18 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
+import { MatAutocompleteModule } from '@angular/material/autocomplete'; // 🆕
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'textarea' | 'number' | 'select' | 'email' | 'tel' | 'file';
+  type: 'text' | 'textarea' | 'number' | 'select' | 'select-or-text' | 'email' | 'tel' | 'file';
   placeholder?: string;
   required?: boolean;
   options?: { value: any; label: string }[];
   rows?: number;
+  hint?: string;
 }
 
 @Component({
@@ -29,6 +31,7 @@ export interface FormField {
     MatButtonModule,
     MatSelectModule,
     MatIconModule,
+    MatAutocompleteModule, // 🆕
   ],
   templateUrl: './form.component.html',
   styleUrls: ['./form.component.scss'],
@@ -50,6 +53,12 @@ export class FormComponent {
   cancel = output<void>();
 
   private fileNames = signal<Map<string, string>>(new Map());
+
+  // 🆕 Helper pour obtenir les suggestions formatées
+  getCategorySuggestions(options?: { value: any; label: string }[]): string {
+    if (!options || options.length === 0) return '';
+    return options.map(o => o.label).join(', ');
+  }
 
   triggerFileInput(fieldName: string) {
     const input = document.getElementById('file-' + fieldName) as HTMLInputElement;
