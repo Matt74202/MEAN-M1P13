@@ -1,0 +1,176 @@
+<div class="boutique-container">
+
+  <!-- ══ HEADER ══ -->
+  <div class="boutique-header">
+    <h1 class="boutique-title">Notre Boutique</h1>
+
+    <button mat-icon-button class="panier-btn"
+      (click)="vue.set(vue() === 'panier' ? 'catalogue' : 'panier')"
+      matTooltip="Mon panier">
+      <mat-icon
+        [matBadge]="nbArticles() > 0 ? nbArticles() : null"
+        matBadgeColor="warn"
+        matBadgeSize="small">
+        shopping_cart
+      </mat-icon>
+    </button>
+  </div>
+
+  <!-- ══ VUE CATALOGUE ══ -->
+  <div class="content-area" *ngIf="vue() === 'catalogue'">
+
+    <!-- Filtres -->
+    <div class="filter-section" *ngIf="categoryItems().length > 0">
+      <app-filter-chips
+        [items]="categoryItems()"
+        [selected]="selectedCategory()"
+        [allLabel]="'Tous les produits'"
+        (select)="onCategoryChange($event)"
+      />
+    </div>
+
+    <!-- Grille produits -->
+    <div class="products-grid">
+      @for (p of filteredProduits(); track p.id) {
+
+        <div class="product-card">
+
+          <!-- Image -->
+          <div class="image-container">
+            <img
+              *ngIf="p.imageUrl"
+              [src]="p.imageUrl"
+              [alt]="p.details.nom"
+              class="product-image"
+            />
+            <div *ngIf="!p.imageUrl" class="no-image">
+              <mat-icon>image_not_supported</mat-icon>
+            </div>
+          </div>
+
+          <!-- Infos -->
+          <div class="product-info">
+            <h3 class="product-title">{{ p.details.nom }}</h3>
+            <p class="price">{{ p.details.prix | number:'1.0-0' }} Ar</p>
+            <p class="description">{{ p.details.description }}</p>
+            <span class="category-chip" *ngIf="p.details.categorie">
+              {{ p.details.categorie }}
+            </span>
+          </div>
+
+          <!-- Actions -->
+          <div class="product-actions">
+
+            <!-- Sélecteur de quantité -->
+            <div class="quantite-selector">
+              <button mat-icon-button (click)="decrementer(p.id)">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span class="quantite-value">{{ getQuantite(p.id) }}</span>
+              <button mat-icon-button (click)="incrementer(p.id)">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+
+            <!-- Bouton ajouter -->
+            <button mat-flat-button class="btn-ajouter"
+              (click)="ajouterAuPanier(p)">
+              <mat-icon>add_shopping_cart</mat-icon>
+              Ajouter
+              <span *ngIf="quantiteEnPanier(p.id) > 0" class="deja-en-panier">
+                ({{ quantiteEnPanier(p.id) }} déjà)
+              </span>
+            </button>
+
+          </div>
+        </div>
+
+      } @empty {
+        <div class="empty-state">
+          <mat-icon>inventory_2</mat-icon>
+          <p>Aucun produit disponible</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ══ VUE PANIER ══ -->
+  <div class="content-area panier-view" *ngIf="vue() === 'panier'">
+
+    <div class="panier-header">
+      <button mat-icon-button (click)="vue.set('catalogue')">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h2>Mon Panier</h2>
+      <button mat-button color="warn"
+        *ngIf="panier().articles.length > 0"
+        (click)="viderPanier()">
+        <mat-icon>delete_sweep</mat-icon>
+        Tout vider
+      </button>
+    </div>
+
+    <!-- Articles -->
+    <div class="panier-articles" *ngIf="panier().articles.length > 0">
+
+      @for (article of panier().articles; track article.idProduit) {
+        <div class="panier-article">
+
+          <img *ngIf="article.image" [src]="article.image"
+            [alt]="article.nom" class="article-image" />
+          <div *ngIf="!article.image" class="article-image no-image">
+            <mat-icon>image_not_supported</mat-icon>
+          </div>
+
+          <div class="article-info">
+            <span class="article-nom">{{ article.nom }}</span>
+            <span class="article-prix">{{ article.prix | number:'1.0-0' }} Ar / unité</span>
+          </div>
+
+          <div class="article-quantite">
+            <button mat-icon-button (click)="modifierQuantite(article.idProduit, -1)">
+              <mat-icon>remove</mat-icon>
+            </button>
+            <span>{{ article.quantite }}</span>
+            <button mat-icon-button (click)="modifierQuantite(article.idProduit, +1)">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+
+          <span class="article-sous-total">
+            {{ article.sousTotal | number:'1.0-0' }} Ar
+          </span>
+
+          <button mat-icon-button color="warn"
+            (click)="supprimerArticle(article.idProduit)">
+            <mat-icon>close</mat-icon>
+          </button>
+
+        </div>
+      }
+
+      <!-- Total + commande -->
+      <div class="panier-footer">
+        <div class="panier-total">
+          <span>Total</span>
+          <strong>{{ totalPanier() | number:'1.0-0' }} Ar</strong>
+        </div>
+        <button mat-flat-button class="btn-commander" (click)="passerCommande()">
+          <mat-icon>check_circle</mat-icon>
+          Passer la commande
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Panier vide -->
+    <div class="empty-state" *ngIf="panier().articles.length === 0">
+      <mat-icon>shopping_cart</mat-icon>
+      <p>Votre panier est vide</p>
+      <button mat-flat-button (click)="vue.set('catalogue')">
+        Voir les produits
+      </button>
+    </div>
+
+  </div>
+</div>

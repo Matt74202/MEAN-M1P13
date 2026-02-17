@@ -8,6 +8,7 @@ const produitRoutes = require('./src/routes/produitRoutes');
 const boutiqueRoutes= require('./src/routes/boutiqueRoutes');
 const contratRoutes= require('./src/routes/contratRoutes');
 const userRoutes= require('./src/routes/userRoutes');
+const panierRoutes= require('./src/routes/panierRoutes');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/produits', produitRoutes);
 app.use('/api/boutiques', boutiqueRoutes);
 app.use('/api/contrats', contratRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/paniers', panierRoutes);
 
 // Pour debug en dev
 if (process.env.NODE_ENV === 'development') {
