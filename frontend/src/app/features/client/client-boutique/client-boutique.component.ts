@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute, Router } from '@angular/router'; 
 
 import { FilterChipsComponent } from '@app/shared/UI/filter/filter-chips.component';
 import { ProduitService } from '@app/services/produit.service';
@@ -31,10 +32,13 @@ export class ClientBoutiqueComponent implements OnInit {
   private produitService = inject(ProduitService);
   private panierService  = inject(PanierService);
   private snackBar       = inject(MatSnackBar);
+  private route          = inject(ActivatedRoute); 
+  private router         = inject(Router);         
 
-  // ── ID hardcodé pour l'instant ──
-  readonly clientId  = '6994753c7e66b10156cb0cf2';
-  readonly boutiqueId = '698f190319727b22bdcb0ce2';
+  // ── IDs ──
+  readonly clientId = '6994753c7e66b10156cb0cf2';
+  boutiqueId = '';
+  nomBoutique = signal<string>('');  
 
   // ── Vues ──
   vue = signal<'catalogue' | 'panier'>('catalogue');
@@ -61,15 +65,44 @@ export class ClientBoutiqueComponent implements OnInit {
   readonly nbArticles  = this.panierService.nbArticles;
   readonly totalPanier = this.panierService.total;
 
-  // ── Quantités sélectionnées par produit (avant ajout) ──
+  // ── Quantités sélectionnées par produit ──
   quantites = signal<Record<string, number>>({});
 
-  ngOnInit() {
-    this.produitService.getProduitsByBoutique(this.boutiqueId)
-      .subscribe(res => this.produits.set(res.produits || []));
-
-    this.panierService.charger(this.clientId).subscribe();
+ngOnInit() {
+  // ── 1. Lire depuis history.state ──
+  const state = window.history.state;
+  if (state?.nomBoutique) {
+    this.nomBoutique.set(state.nomBoutique);
+    localStorage.setItem('nomBoutique', state.nomBoutique); // ← sauvegarder
+  } else {
+    // ── 2. Fallback localStorage si refresh ──
+    const saved = localStorage.getItem('nomBoutique');
+    if (saved) this.nomBoutique.set(saved);
   }
+
+  this.route.params.subscribe(params => {
+    this.boutiqueId = params['id'];
+    this.loadProduits();
+  });
+
+  this.panierService.charger(this.clientId).subscribe();
+}
+
+loadProduits() {
+  if (!this.boutiqueId) return;
+
+  this.produitService.getProduitsByBoutique(this.boutiqueId)
+    .subscribe({
+      next: res => {
+        this.produits.set(res.produits || []);
+        // ── Ne pas écraser le nom si déjà défini ──
+        if (!this.nomBoutique()) {
+          this.nomBoutique.set('Boutique');
+        }
+      },
+      error: err => console.error('[BOUTIQUE] erreur API:', err)
+    });
+}
 
   // ── Catalogue ──
   onCategoryChange(value: string | null) {
@@ -99,7 +132,6 @@ export class ClientBoutiqueComponent implements OnInit {
           `✓ ${produit.details.nom} ajouté au panier`,
           '', { duration: 2000, panelClass: 'snack-success' }
         );
-        // Reset quantité
         this.quantites.update(q => ({ ...q, [produit.id]: 1 }));
       },
       error: () => this.snackBar.open('Erreur lors de l\'ajout', '', { duration: 2000 })
@@ -131,7 +163,10 @@ export class ClientBoutiqueComponent implements OnInit {
   }
 
   passerCommande() {
-    // À implémenter selon ta logique commande
     this.snackBar.open('Commande passée !', '', { duration: 3000 });
+  }
+
+  retourMall() {
+    this.router.navigate(['/client/mall']);
   }
 }

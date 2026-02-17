@@ -2,7 +2,11 @@
 
   <!-- ══ HEADER ══ -->
   <div class="boutique-header">
-    <h1 class="boutique-title">Notre Boutique</h1>
+    <button mat-icon-button (click)="retourMall()" matTooltip="Retour au mall">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+
+    <h1 class="boutique-title">{{ nomBoutique() }}</h1>
 
     <button mat-icon-button class="panier-btn"
       (click)="vue.set(vue() === 'panier' ? 'catalogue' : 'panier')"
@@ -10,7 +14,8 @@
       <mat-icon
         [matBadge]="nbArticles() > 0 ? nbArticles() : null"
         matBadgeColor="warn"
-        matBadgeSize="small">
+        matBadgeSize="small"
+        aria-hidden="false">
         shopping_cart
       </mat-icon>
     </button>
@@ -52,7 +57,9 @@
           <div class="product-info">
             <h3 class="product-title">{{ p.details.nom }}</h3>
             <p class="price">{{ p.details.prix | number:'1.0-0' }} Ar</p>
-            <p class="description">{{ p.details.description }}</p>
+            <p class="description" *ngIf="p.details.description">
+              {{ p.details.description }}
+            </p>
             <span class="category-chip" *ngIf="p.details.categorie">
               {{ p.details.categorie }}
             </span>
@@ -173,4 +180,5 @@
     </div>
 
   </div>
+
 </div>
