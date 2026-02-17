@@ -30,6 +30,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   @Input() types: TypeBoutique[] = [];
   @Input() boxs: Box[] = [];
   @Input() boutiques: Boutique[] = [];
+  @Input() users: any[] = [];  // 🆕 Ajouter cet input
   @Input() contrats: Contrat[] = [];
   @Input() editMode = false;
   @Input() currentEtage: Etage = 'RC';
@@ -116,13 +117,32 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (this.app && (changes['editMode'] || changes['currentEtage'] || changes['boxs'] || changes['contrats'] || changes['boutiques'])) {
+    if (!this.app) return;
+
+    // Si users change → vider le cache pour forcer la recréation
+    if (changes['users']) {
+      this.boxesContainers.forEach(cont => this.mapContent.removeChild(cont));
+      this.boxesContainers.clear();
+    }
+
+    if (
+      changes['editMode'] || 
+      changes['currentEtage'] || 
+      changes['boxs'] || 
+      changes['contrats'] || 
+      changes['boutiques'] ||
+      changes['users']
+    ) {
       this.drawMap();
     }
   }
 
   public forceRedraw() {
     this.drawMap(false);
+  }
+
+   private getContratBoxId(contrat: any): string {
+    return this.toStringId(contrat.idBox || contrat.boxId);
   }
 
   private drawMap(isInitial = false) {
@@ -187,33 +207,57 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
 
   private getActiveContratForBox(boxId: string): Contrat | undefined {
     const now = new Date();
-    
-    const activeContrat = this.contrats.find(c => {
-      const contratBoxId = this.toStringId(c.idBox);
-      const currentBoxId = this.toStringId(boxId);
-      
-      if (contratBoxId !== currentBoxId) return false;
+    return this.contrats.find(c => {
+      const contratBoxId = this.getContratBoxId(c); 
+      if (contratBoxId !== this.toStringId(boxId)) return false;
       if (c.statut !== 'ACTIF') return false;
-
       const debut = new Date(c.dateDebut);
-      const fin = new Date(c.dateFin);
+      const fin   = new Date(c.dateFin);
       return now >= debut && now <= fin;
     });
-
-    return activeContrat;
   }
 
   private getBoutiqueForContrat(contrat: Contrat): Boutique | undefined {
-    if (contrat.idBoutique && typeof contrat.idBoutique === 'object' && (contrat.idBoutique as any).nom) {
-      return contrat.idBoutique as any;
-    }
-    
-    const boutique = this.boutiques.find(b => 
+
+  // ── Cas 1 : idBoutique déjà peuplé (objet avec .nom) ──
+  if (contrat.idBoutique && typeof contrat.idBoutique === 'object' && (contrat.idBoutique as any).nom) {
+    return contrat.idBoutique as any;
+  }
+
+  // ── Cas 2 : idBoutique est un ID string ──
+  if (contrat.idBoutique) {
+    return this.boutiques.find(b =>
       this.toStringId(b._id) === this.toStringId(contrat.idBoutique)
     );
-
-    return boutique;
   }
+
+  // ── Cas 3 : userId ──
+  if ((contrat as any).userId) {
+    const userId = this.toStringId((contrat as any).userId);
+    console.log('[MAP] Contrat userId détecté:', userId);
+    console.log('[MAP] Users disponibles:', this.users);
+    console.log('[MAP] Nombre de users:', this.users?.length);
+
+    const user = this.users?.find((u: any) => {
+      const uid = this.toStringId(u._id);
+      console.log('[MAP] Comparaison:', uid, '===', userId, '->', uid === userId);
+      return uid === userId;
+    });
+
+    console.log('[MAP] User trouvé:', user);
+
+    if (user) {
+      return {
+        _id:          user._id,
+        nom:          user.nom,
+        typeCommerce: (user as any).TypeCommerce ?? 'Inconnu',
+        mail:         user.mail,
+      } as unknown as Boutique;
+    }
+  }
+
+  return undefined;
+}
 
   private getColorForType(typeCommerce: string): number {
     return this.boutiqueService.getColorForType(typeCommerce);

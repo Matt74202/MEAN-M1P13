@@ -16,6 +16,7 @@ import { FilterChipsComponent } from '@shared/UI/filter/filter-chips.component';
 import { BoxService } from '@app/services/box.service';
 import { ContratService } from '@app/services/contrat.service';
 import { BoutiqueService } from '@app/services/boutique.service';
+import { UserService } from '@app/services/user.service';
 
 import { TypeBoutique, Box, Boutique, Contrat, Etage } from '@app/model/mall-models';
 
@@ -60,6 +61,9 @@ export class MallCanvasComponent {
 
   protected boutiques: Boutique[] = [];
   protected contrats: Contrat[] = [];
+  protected users: any[] = [];
+  // Ajouter cette propriété
+protected filteredBoxes: Box[] = [];
 
   // Filtre par type de commerce
   protected selectedTypeCommerce: string | null = null;
@@ -85,7 +89,8 @@ export class MallCanvasComponent {
   constructor(
     private boxService: BoxService,
     private contratService: ContratService,
-    private boutiqueService: BoutiqueService
+    private boutiqueService: BoutiqueService,
+    private userService: UserService, 
   ) {
     this.loadData();
   }
@@ -98,34 +103,37 @@ export class MallCanvasComponent {
     console.log(`[MALL] Chargement des données pour l'étage : ${this.currentEtage}`);
 
     forkJoin({
-      boxes: this.boxService.getBoxes(this.currentEtage).pipe(catchError(() => of([]))),
-      contrats: this.contratService.getContrats({ statut: 'ACTIF' }).pipe(catchError(() => of([]))),
-      boutiques: this.boutiqueService.getBoutiques().pipe(catchError(() => of([])))
-    }).subscribe({
-      next: ({ boxes, contrats, boutiques }) => {
-        console.log('[MALL] Données reçues :', { 
-          boxes: boxes.length, 
-          contrats: contrats.length, 
-          boutiques: boutiques.length 
-        });
-        this.boxs = boxes || [];
-        this.contrats = contrats || [];
-        this.boutiques = boutiques || [];
-        
-        this.generateTypeCommerceOptions();
-        this.updateStatusGroups(); // 🆕 Initialiser les groupes
-        
-        this.isLoading = false;
-        this.mallMapComp?.forceRedraw();
-      },
-      error: (err) => {
-        console.error('[MALL] Erreur chargement données :', err);
-        this.isLoading = false;
-        this.boxs = [];
-        this.contrats = [];
-        this.boutiques = [];
-      }
-    });
+  boxes:     this.boxService.getBoxes(this.currentEtage).pipe(catchError(() => of([]))),
+  contrats:  this.contratService.getContrats({ statut: 'ACTIF' }).pipe(catchError(() => of([]))),
+  boutiques: this.boutiqueService.getBoutiques().pipe(catchError(() => of([]))),
+  users:     this.userService.getUsers().pipe(catchError(() => of([]))),
+      }).subscribe({
+        next: ({ boxes, contrats, boutiques, users }) => {
+          this.boxs      = boxes     || [];
+          this.contrats  = contrats  || [];
+          this.boutiques = boutiques || [];
+          this.users     = users     || [];
+
+          this.filteredBoxes = this.getFilteredBoxes(); // ← ajouter
+
+          this.generateTypeCommerceOptions();
+          this.updateStatusGroups();
+          this.isLoading = false;
+          this.mallMapComp?.forceRedraw();
+        },
+        error: (err) => {
+          console.error('[MALL] Erreur chargement données :', err);
+          this.isLoading = false;
+          this.boxs      = [];
+          this.contrats  = [];
+          this.boutiques = [];
+          this.users     = [];              
+        }
+      });
+  }
+
+  private getContratBoxId(contrat: any): string {
+    return contrat.idBox?.toString() || contrat.boxId?.toString() || '';
   }
 
   /**
@@ -133,74 +141,80 @@ export class MallCanvasComponent {
    * dans les boutiques qui ont un contrat actif
    */
   private generateTypeCommerceOptions() {
-    const typesSet = new Set<string>();
-    
-    // Parcourir les contrats actifs
-    this.contrats.forEach(contrat => {
-      // Trouver la boutique associée
-      const boutique = this.boutiques.find(b => {
-        const boutiqueId = b._id?.toString() || b._id;
-        const contratBoutiqueId = contrat.idBoutique?.toString() || contrat.idBoutique;
-        return boutiqueId === contratBoutiqueId;
-      });
+  const typesSet = new Set<string>();
 
-      // Ajouter le type de commerce s'il existe
-      if (boutique?.typeCommerce) {
-        typesSet.add(boutique.typeCommerce);
-      }
-    });
+  this.contrats.forEach(contrat => {
+    let typeCommerce: string | undefined;
 
-    this.typeCommerceOptions = Array.from(typesSet)
-      .sort()
-      .map(type => ({
-        value: type,
-        label: type
-      }));
+    if (contrat.idBoutique) {
+      // Cas boutique classique
+      const boutique = this.boutiques.find(b =>
+        b._id?.toString() === contrat.idBoutique?.toString()
+      );
+      typeCommerce = boutique?.typeCommerce;
 
-    console.log('[MALL] Options de filtre générées:', this.typeCommerceOptions);
-  }
+    } else if ((contrat as any).userId) {
+      // Cas user (binôme)
+      const user = this.users.find((u: any) =>
+        u._id?.toString() === (contrat as any).userId?.toString()
+      );
+      typeCommerce = (user as any)?.TypeCommerce;
+    }
+
+    if (typeCommerce) typesSet.add(typeCommerce);
+  });
+
+  this.typeCommerceOptions = Array.from(typesSet).sort().map(type => ({
+    value: type,
+    label: type
+  }));
+}
 
   /**
    * Gère le changement de filtre
    */
   onTypeCommerceFilterChange(typeCommerce: string | null) {
-    this.selectedTypeCommerce = typeCommerce;
-    console.log('[MALL] Filtre changé:', typeCommerce || 'Tous');
-    this.updateStatusGroups(); // 🆕 Mettre à jour les groupes
-    this.mallMapComp?.forceRedraw();
-  }
+  this.selectedTypeCommerce = typeCommerce;
+  this.filteredBoxes = this.getFilteredBoxes(); // ← recalculer
+  this.updateStatusGroups();
+  this.mallMapComp?.forceRedraw();
+}
 
   /**
    * Retourne les boxes filtrées selon le type de commerce sélectionné
    */
   getFilteredBoxes(): Box[] {
-    const baseBoxes = this.editMode ? this.editingBoxes : this.boxs;
-    
-    // Filtre par type de commerce
-    if (!this.selectedTypeCommerce) {
-      return baseBoxes;
+  const baseBoxes = this.editMode ? this.editingBoxes : this.boxs;
+  
+  if (!this.selectedTypeCommerce) {
+    return baseBoxes;
+  }
+
+  return baseBoxes.filter(box => {
+    const contrat = this.contrats.find(c =>
+      this.getContratBoxId(c) === box._id?.toString() && c.statut === 'ACTIF'
+    );
+    if (!contrat) return false;
+
+    // Cas boutique classique
+    if (contrat.idBoutique) {
+      const boutique = this.boutiques.find(b =>
+        b._id?.toString() === contrat.idBoutique?.toString()
+      );
+      return boutique?.typeCommerce === this.selectedTypeCommerce;
     }
 
-    return baseBoxes.filter(box => {
-      const contrat = this.contrats.find(c => {
-        const contratBoxId = c.idBox?.toString() || c.idBox;
-        const boxId = box._id?.toString() || box._id;
-        return contratBoxId === boxId && c.statut === 'ACTIF';
-      });
+    // Cas userId
+    if ((contrat as any).userId) {
+      const user = this.users.find((u: any) =>
+        u._id?.toString() === (contrat as any).userId?.toString()
+      );
+      return (user as any)?.TypeCommerce === this.selectedTypeCommerce;
+    }
 
-      if (!contrat) return false;
-
-      const boutique = this.boutiques.find(b => {
-        const boutiqueId = b._id?.toString() || b._id;
-        const contratBoutiqueId = contrat.idBoutique?.toString() || contrat.idBoutique;
-        return boutiqueId === contratBoutiqueId;
-      });
-
-      if (!boutique) return false;
-
-      return boutique.typeCommerce === this.selectedTypeCommerce;
-    });
-  }
+    return false;
+  });
+}
 
   // ════════════════════════════════════════════════════════════
   // 🆕 MÉTHODES POUR LES 3 MODES D'AFFICHAGE
@@ -210,28 +224,39 @@ export class MallCanvasComponent {
    * 🆕 Retourne les boxes avec leurs détails (boutique + contrat)
    */
   getBoxesWithDetails(): BoxWithDetails[] {
-    const filtered = this.getFilteredBoxes();
-    
-    return filtered.map(box => {
-      const contrat = this.contrats.find(c => {
-        const contratBoxId = c.idBox?.toString() || c.idBox;
-        const boxId = box._id?.toString() || box._id;
-        return contratBoxId === boxId && c.statut === 'ACTIF';
-      });
+  return this.filteredBoxes.map(box => {
+    const contrat = this.contrats.find(c =>
+      this.getContratBoxId(c) === box._id?.toString() && c.statut === 'ACTIF'
+    );
+    const boutique = contrat ? this.getBoutiqueFromContrat(contrat) : undefined;
+    return { ...box, boutique, contrat };
+  });
+}
 
-      const boutique = contrat ? this.boutiques.find(b => {
-        const boutiqueId = b._id?.toString() || b._id;
-        const contratBoutiqueId = contrat.idBoutique?.toString() || contrat.idBoutique;
-        return boutiqueId === contratBoutiqueId;
-      }) : undefined;
-
-      return {
-        ...box,
-        boutique,
-        contrat
-      };
-    });
+  // Méthode utilitaire à ajouter dans MallCanvasComponent
+  private getBoutiqueFromContrat(contrat: Contrat): Boutique | undefined {
+  // Cas idBoutique
+  if (contrat.idBoutique) {
+    return this.boutiques.find(b =>
+      b._id?.toString() === contrat.idBoutique?.toString()
+    );
   }
+  // Cas userId → construire un objet Boutique depuis le user
+  if ((contrat as any).userId) {
+    const user = this.users.find((u: any) =>
+      u._id?.toString() === (contrat as any).userId?.toString()
+    );
+    if (user) {
+      return {
+        _id:          user._id,
+        nom:          user.nom,
+        typeCommerce: user.TypeCommerce ?? 'Inconnu',
+        mail:         user.mail,
+      } as unknown as Boutique;
+    }
+  }
+  return undefined;
+}
 
   /**
    * 🆕 Mettre à jour les groupes de statut

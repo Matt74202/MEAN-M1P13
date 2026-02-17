@@ -4,7 +4,12 @@ const contratSchema = new mongoose.Schema({
   idBoutique: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Boutique',
-    required: true,
+    required: false,  // optionnel
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false,  // optionnel
   },
   idBox: {
     type: mongoose.Schema.Types.ObjectId,
@@ -36,8 +41,11 @@ const contratSchema = new mongoose.Schema({
 
 // Validation: dateFin doit être après dateDebut
 contratSchema.pre('save', function(next) {
+  if (!this.idBoutique && !this.userId) {
+    return next(new Error('Un contrat doit avoir soit idBoutique soit userId'));
+  }
   if (this.dateFin <= this.dateDebut) {
-    next(new Error('La date de fin doit être postérieure à la date de début'));
+    return next(new Error('La date de fin doit être postérieure à la date de début'));
   }
   next();
 });

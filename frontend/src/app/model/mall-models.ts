@@ -34,6 +34,7 @@ export interface Contrat {
   _id: string;
   idBoutique: string;
   idBox: string;
+  boxId?: any;  
   duree: number;
   dateDebut: Date;
   dateFin: Date;

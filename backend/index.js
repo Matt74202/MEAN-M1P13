@@ -7,7 +7,7 @@ const boxRoutes = require('./src/routes/boxRoutes');
 const produitRoutes = require('./src/routes/produitRoutes');
 const boutiqueRoutes= require('./src/routes/boutiqueRoutes');
 const contratRoutes= require('./src/routes/contratRoutes');
-
+const userRoutes= require('./src/routes/userRoutes');
 
 const app = express();
 
@@ -39,6 +39,7 @@ app.use('/api/boxes', boxRoutes);
 app.use('/api/produits', produitRoutes);
 app.use('/api/boutiques', boutiqueRoutes);
 app.use('/api/contrats', contratRoutes);
+app.use('/api/users', userRoutes);
 
 // Pour debug en dev
 if (process.env.NODE_ENV === 'development') {

@@ -22,11 +22,11 @@ exports.getAllContrats = async (req, res) => {
     const contrats = await Contrat.find(filter)
       .sort({ dateDebut: -1 });
 
-    // Transformer les contrats pour avoir des strings simples
     const contratsFormatted = contrats.map(c => ({
       _id: c._id.toString(),
-      idBoutique: c.idBoutique.toString(),  // ← String au lieu d'objet
-      idBox: c.idBox.toString(),            // ← String au lieu d'objet
+      idBoutique: c.idBoutique ? c.idBoutique.toString() : undefined,
+      userId:     c.userId     ? c.userId.toString()     : undefined,
+      idBox: c.idBox.toString(),
       duree: c.duree,
       dateDebut: c.dateDebut,
       dateFin: c.dateFin,
