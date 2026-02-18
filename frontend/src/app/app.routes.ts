@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { MallCanvasComponent } from '@app/features/mall/mall-overview/mall-overview.component';  
 import { ClientBoutiqueComponent } from '@app/features/client/client-boutique/client-boutique.component'; 
 import { ClientMallComponent } from '@app/features/client/client-mall/client-mall.component'; 
+import { FraisLivraisonComponent } from './features/mall/frais-livraison/frais-livraison.component';
 
 
 export const routes: Routes = [
@@ -17,5 +18,9 @@ export const routes: Routes = [
     path: 'client/boutique/:id',
     component: ClientBoutiqueComponent  // ta page existante
   },
+  {
+    path: 'mall/frais',
+    component: FraisLivraisonComponent
+  }
 
 ];
