@@ -3,6 +3,7 @@ import { MallCanvasComponent } from '@app/features/mall/mall-overview/mall-overv
 import { ClientBoutiqueComponent } from '@app/features/client/client-boutique/client-boutique.component'; 
 import { ClientMallComponent } from '@app/features/client/client-mall/client-mall.component'; 
 import { FraisLivraisonComponent } from './features/mall/frais-livraison/frais-livraison.component';
+import { CommandeValidationComponent } from './features/client/commande-validation/commande-validation.component';
 
 
 export const routes: Routes = [
@@ -15,12 +16,20 @@ export const routes: Routes = [
     component: ClientMallComponent
   },
   {
+    path: 'client',
+    component: ClientMallComponent
+  },
+  {
     path: 'client/boutique/:id',
-    component: ClientBoutiqueComponent  // ta page existante
+    component: ClientBoutiqueComponent  
   },
   {
     path: 'mall/frais',
     component: FraisLivraisonComponent
+  },
+    {
+    path: 'client/commande-validation',
+    component: CommandeValidationComponent
   }
 
 ];

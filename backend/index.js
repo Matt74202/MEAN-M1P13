@@ -44,6 +44,7 @@ app.use('/api/contrats', contratRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/paniers', panierRoutes);
 app.use('/api/frais', fraisLivraisonRoutes);
+app.use('/api/achats', require('./src/routes/achatRoutes'));
 
 // Pour debug en dev
 if (process.env.NODE_ENV === 'development') {

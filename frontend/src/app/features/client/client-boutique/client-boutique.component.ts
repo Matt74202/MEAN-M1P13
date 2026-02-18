@@ -163,7 +163,7 @@ loadProduits() {
   }
 
   passerCommande() {
-    this.snackBar.open('Commande passée !', '', { duration: 3000 });
+    this.router.navigate(['/client/commande-validation']);
   }
 
   retourMall() {

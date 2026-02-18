@@ -1,0 +1,271 @@
+<div class="commande-container">
+
+  <div class="header">
+    <button mat-icon-button (click)="annuler()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Validation de commande</h1>
+  </div>
+
+  <div class="stepper-container">
+
+    <!-- ══ ÉTAPE 1 : Type de livraison ══ -->
+    <div class="step" *ngIf="etapeActuelle() === 1">
+      <h2>Mode de livraison</h2>
+
+      <mat-radio-group [(ngModel)]="typeLivraison">
+        <mat-radio-button value="livraison" class="radio-option">
+          <div class="radio-content">
+            <mat-icon>local_shipping</mat-icon>
+            <div>
+              <strong>Livraison à domicile</strong>
+              <p>Recevez votre commande à l'adresse de votre choix</p>
+            </div>
+          </div>
+        </mat-radio-button>
+
+        <mat-radio-button value="recuperation" class="radio-option">
+          <div class="radio-content">
+            <mat-icon>store</mat-icon>
+            <div>
+              <strong>Récupération sur place</strong>
+              <p>Retirez votre commande au point de vente</p>
+            </div>
+          </div>
+        </mat-radio-button>
+      </mat-radio-group>
+
+      <button class="btn-primary" (click)="nextStep()">
+        Continuer
+      </button>
+    </div>
+
+    <!-- ══ ÉTAPE 2 : Détails livraison/récupération ══ -->
+    <div class="step" *ngIf="etapeActuelle() === 2">
+
+      <!-- Si livraison -->
+      <div *ngIf="typeLivraison() === 'livraison'">
+        <h2>Adresse de livraison</h2>
+
+        <!-- Téléphone obligatoire ── -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Téléphone accessible</mat-label>
+          <input matInput [(ngModel)]="telephone" 
+            placeholder="034 00 000 00" required />
+          <mat-icon matPrefix>phone</mat-icon>
+        </mat-form-field>
+
+        <!-- Champ de recherche avec suggestions -->
+        <div class="search-wrapper">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Rechercher une adresse</mat-label>
+            <input
+              matInput
+              [(ngModel)]="adresseInput"
+              (ngModelChange)="onAdresseInput()"
+              placeholder="Ex : Analakely, Antananarivo"
+              autocomplete="off"
+            />
+            <mat-icon matPrefix>search</mat-icon>
+            <mat-icon matSuffix *ngIf="rechercheEnCours()">sync</mat-icon>
+          </mat-form-field>
+
+          <!-- Liste de suggestions Nominatim -->
+          <ul class="suggestions-list" *ngIf="suggestions().length > 0">
+            <li
+              *ngFor="let s of suggestions()"
+              (click)="selectionnerSuggestion(s)"
+            >
+              <mat-icon>location_on</mat-icon>
+              <span>{{ s.display_name }}</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Hint : clic ou glisser sur la carte -->
+        <p class="map-hint">
+          <mat-icon>touch_app</mat-icon>
+          Cliquez sur la carte ou déplacez le marqueur pour affiner votre position
+        </p>
+
+        <!-- Carte Leaflet -->
+        <div id="livraison-map" class="leaflet-map"></div>
+
+        <!-- Adresse sélectionnée + infos distance/frais -->
+        <div class="adresse-info" *ngIf="adresse()">
+          <mat-icon>check_circle</mat-icon>
+          <div>
+            <p class="adresse-text">{{ adresse() }}</p>
+            <p class="text-muted">
+              Distance : {{ distance() | number:'1.1-1' }} km &nbsp;·&nbsp;
+              Frais de livraison : <strong>{{ frais() | number:'1.0-0' }} Ar</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Si récupération -->
+      <div *ngIf="typeLivraison() === 'recuperation'">
+        <h2>Numéro de téléphone</h2>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Téléphone</mat-label>
+          <input matInput [(ngModel)]="telephone"
+            placeholder="034 00 000 00" />
+          <mat-icon matPrefix>phone</mat-icon>
+        </mat-form-field>
+
+        <div class="info-box">
+          <mat-icon>info</mat-icon>
+          <p>Nous vous contacterons à ce numéro pour confirmer votre commande.</p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-secondary" (click)="prevStep()">Retour</button>
+        <button class="btn-primary" (click)="nextStep()">Continuer</button>
+      </div>
+    </div>
+
+    <!-- ══ ÉTAPE 3 : Mode de paiement ══ -->
+    <div class="step" *ngIf="etapeActuelle() === 3">
+      <h2>Mode de paiement</h2>
+
+      <mat-radio-group [(ngModel)]="modePaiement">
+        <mat-radio-button value="Espèces" class="radio-option">
+          <div class="radio-content">
+            <mat-icon>payments</mat-icon>
+            <strong>Espèces</strong>
+          </div>
+        </mat-radio-button>
+
+        <mat-radio-button value="Orange Money" class="radio-option">
+          <div class="radio-content">
+            <span class="emoji">🟠</span>
+            <strong>Orange Money</strong>
+          </div>
+        </mat-radio-button>
+
+        <mat-radio-button value="Airtel Money" class="radio-option">
+          <div class="radio-content">
+            <span class="emoji">🔴</span>
+            <strong>Airtel Money</strong>
+          </div>
+        </mat-radio-button>
+
+        <mat-radio-button value="MVola" class="radio-option">
+          <div class="radio-content">
+            <span class="emoji">🟡</span>
+            <strong>MVola</strong>
+          </div>
+        </mat-radio-button>
+
+        <mat-radio-button value="Carte" class="radio-option">
+          <div class="radio-content">
+            <mat-icon>credit_card</mat-icon>
+            <strong>Carte bancaire</strong>
+          </div>
+        </mat-radio-button>
+      </mat-radio-group>
+
+      <div class="actions">
+        <button class="btn-secondary" (click)="prevStep()">Retour</button>
+        <button class="btn-primary" (click)="nextStep()">Continuer</button>
+      </div>
+    </div>
+
+    <!-- ══ ÉTAPE 4 : Récapitulatif (style facture) ══ -->
+    <div class="step facture" *ngIf="etapeActuelle() === 4">
+
+      <!-- En-tête facture -->
+      <div class="facture-header">
+        <div class="facture-titre">
+          <span class="facture-label">BON DE COMMANDE</span>
+          <span class="facture-num">#{{ clientId.slice(-6).toUpperCase() }}</span>
+        </div>
+        <div class="facture-meta">
+          <div class="facture-meta-row">
+            <mat-icon>calendar_today</mat-icon>
+            <span>{{ today | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="facture-meta-row">
+            <mat-icon>{{ typeLivraison() === 'livraison' ? 'local_shipping' : 'store' }}</mat-icon>
+            <span>{{ typeLivraison() === 'livraison' ? 'Livraison à domicile' : 'Récupération sur place' }}</span>
+          </div>
+          <div class="facture-meta-row">
+            <mat-icon>payments</mat-icon>
+            <span>{{ modePaiement() }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="facture-divider"></div>
+
+      <!-- Adresse ou téléphone -->
+       <div class="facture-destinataire">
+        <span class="facture-section-label">CONTACT</span>
+        <p>{{ telephone() }}</p>
+      </div>
+
+      <div class="facture-destinataire" *ngIf="typeLivraison() === 'livraison'">
+        <span class="facture-section-label">ADRESSE DE LIVRAISON</span>
+        <p>{{ adresse() }}</p>
+      </div>
+
+      <div class="facture-divider"></div>
+
+      <!-- Tableau des articles -->
+      <span class="facture-section-label">ARTICLES</span>
+      <table class="facture-table">
+        <thead>
+          <tr>
+            <th class="col-article">Article</th>
+            <th class="col-qty">Qté</th>
+            <th class="col-pu">Prix unit.</th>
+            <th class="col-total">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let article of panier().articles">
+            <td class="col-article">{{ article.nom }}</td>
+            <td class="col-qty">{{ article.quantite }}</td>
+            <td class="col-pu">{{ article.prix | number:'1.0-0' }} Ar</td>
+            <td class="col-total">{{ article.sousTotal | number:'1.0-0' }} Ar</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="facture-divider"></div>
+
+      <!-- Totaux -->
+      <div class="facture-totaux">
+        <div class="facture-total-row">
+          <span>Sous-total</span>
+          <span>{{ total() | number:'1.0-0' }} Ar</span>
+        </div>
+        <div class="facture-total-row" *ngIf="typeLivraison() === 'livraison'">
+          <span>Frais de livraison ({{ distance() | number:'1.1-1' }} km)</span>
+          <span>{{ frais() | number:'1.0-0' }} Ar</span>
+        </div>
+        <div class="facture-total-row grand-total">
+          <span>TOTAL À PAYER</span>
+          <span>{{ totalAvecFrais() | number:'1.0-0' }} Ar</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button class="btn-secondary" (click)="prevStep()">
+          <mat-icon>edit</mat-icon> Modifier
+        </button>
+        <button class="btn-primary btn-validate" (click)="validerCommande()">
+          <mat-icon>check_circle</mat-icon>
+          Confirmer la commande
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
