@@ -4,6 +4,7 @@ import { ClientBoutiqueComponent } from '@app/features/client/client-boutique/cl
 import { ClientMallComponent } from '@app/features/client/client-mall/client-mall.component'; 
 import { FraisLivraisonComponent } from './features/mall/frais-livraison/frais-livraison.component';
 import { CommandeValidationComponent } from './features/client/commande-validation/commande-validation.component';
+import { CarteFideliteConfigComponent } from './features/boutique/carte-fidelite/carte-fidelite-config.component';
 
 
 export const routes: Routes = [
@@ -30,6 +31,10 @@ export const routes: Routes = [
     {
     path: 'client/commande-validation',
     component: CommandeValidationComponent
+  },
+  {
+    path: 'boutique/carte-fidelite',
+    component: CarteFideliteConfigComponent
   }
 
 ];
