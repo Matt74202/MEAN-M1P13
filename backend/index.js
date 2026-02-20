@@ -41,6 +41,7 @@ app.use('/api/frais',          fraisLivraisonRoutes);
 app.use('/api/achats',         require('./src/routes/achatRoutes'));
 app.use('/api/carte-fidelite', require('./src/routes/carteFideliteRoutes'));
 app.use('/api/cartes-client',  carteClientRoutes);
+app.use('/api/promotions', require('./src/routes/promotionRoutes'));
 
 if (process.env.NODE_ENV === 'development') {
   mongoose.set('debug', true);

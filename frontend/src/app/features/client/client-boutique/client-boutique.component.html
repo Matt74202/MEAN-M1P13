@@ -42,12 +42,12 @@
 
           <!-- Image -->
           <div class="image-container">
-            <img
-              *ngIf="p.imageUrl"
-              [src]="p.imageUrl"
-              [alt]="p.details.nom"
-              class="product-image"
-            />
+            @if (getPromotion(p.id)) {
+              <div class="promo-badge-image">
+                −{{ getPromotion(p.id)!.details.pourcentage }}%
+              </div>
+            }
+            <img *ngIf="p.imageUrl" [src]="p.imageUrl" [alt]="p.details.nom" class="product-image"/>
             <div *ngIf="!p.imageUrl" class="no-image">
               <mat-icon>image_not_supported</mat-icon>
             </div>
@@ -56,13 +56,22 @@
           <!-- Infos -->
           <div class="product-info">
             <h3 class="product-title">{{ p.details.nom }}</h3>
-            <p class="price">{{ p.details.prix | number:'1.0-0' }} Ar</p>
-            <p class="description" *ngIf="p.details.description">
-              {{ p.details.description }}
-            </p>
-            <span class="category-chip" *ngIf="p.details.categorie">
-              {{ p.details.categorie }}
-            </span>
+
+            <!-- Prix avec ou sans promo -->
+            <div class="price-block">
+              @if (getPromotion(p.id)) {
+                <span class="prix-barre">{{ p.details.prix | number:'1.0-0' }} Ar</span>
+                <span class="prix-promo">{{ getPrixPromo(p) | number:'1.0-0' }} Ar</span>
+                <span class="promo-label-inline">
+                  {{ getPromotion(p.id)!.details.description || 'Promo' }}
+                </span>
+              } @else {
+                <span class="price">{{ p.details.prix | number:'1.0-0' }} Ar</span>
+              }
+            </div>
+
+            <p class="description" *ngIf="p.details.description">{{ p.details.description }}</p>
+            <span class="category-chip" *ngIf="p.details.categorie">{{ p.details.categorie }}</span>
           </div>
 
           <!-- Actions -->

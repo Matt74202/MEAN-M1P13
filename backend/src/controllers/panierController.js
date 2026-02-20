@@ -28,13 +28,13 @@ exports.getPanier = async (req, res) => {
 // ── POST : Ajouter ou incrémenter un article ──
 exports.ajouterArticle = async (req, res) => {
   try {
-    const { idProduit, quantite = 1 } = req.body;
+    const { idProduit, quantite, prix } = req.body;
 
     // Vérifier que le produit existe
     const produit = await Produit.findById(idProduit);
-    if (!produit) {
-      return res.status(404).json({ success: false, message: 'Produit non trouvé' });
-    }
+    if (!produit) return res.status(404).json({ message: 'Produit introuvable' });
+
+    const prixUnitaire = (prix !== undefined && prix > 0) ? prix : produit.details.prix;
 
     // Récupérer ou créer le panier
     let panier = await Panier.findOne({
@@ -57,19 +57,20 @@ exports.ajouterArticle = async (req, res) => {
     );
 
     if (idx >= 0) {
-      panier.articles[idx].quantite  += quantite;
-      panier.articles[idx].sousTotal  =
-        panier.articles[idx].prix * panier.articles[idx].quantite;
+      panier.articles[idx].prix     = prixUnitaire;  
+      panier.articles[idx].quantite += quantite;
+      panier.articles[idx].sousTotal = prixUnitaire * panier.articles[idx].quantite;
     } else {
       // Nouvel article → snapshot des infos produit
+      console.log('prixUnitaire calculé:', prixUnitaire, '| prix reçu:', prix, '| prix produit:', produit.details.prix);
       panier.articles.push({
-        idProduit,
-        nom:      produit.details.nom,
-        prix:     produit.details.prix,
-        image:    produit.imageUrl || '',
-        quantite,
-        sousTotal: produit.details.prix * quantite
-      });
+      idProduit,
+      nom:      produit.details.nom,
+      prix:     prixUnitaire,       
+      image:    produit.imageUrl || '',
+      quantite,
+      sousTotal: prixUnitaire * quantite 
+    });
     }
 
     // Recalculer le total

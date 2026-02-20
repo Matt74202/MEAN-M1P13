@@ -1,22 +1,36 @@
-<mat-card class="product-card" [class.edit-mode]="editMode()">
+<mat-card class="product-card" [class.edit-mode]="editMode()" [class.en-promo]="promotion()">
 
   <div class="image-container">
-    <img [src]="produit().imageUrl || 'https://placehold.co/400x320?text=Photo+produit'" 
-         alt="{{produit().details.nom}}"
+    <!-- Badge promo sur l'image -->
+    @if (promotion()) {
+      <div class="promo-badge-image">
+        −{{ promotion()!.details.pourcentage }}%
+      </div>
+    }
+    <img [src]="produit().imageUrl || 'https://placehold.co/400x320?text=Photo+produit'"
+         alt="{{ produit().details.nom }}"
          class="product-image">
   </div>
 
   <mat-card-content>
     <h3 class="product-title">{{ produit().details.nom }}</h3>
-    <div class="price">{{ produit().details.prix | number:'1.0-0' }} Ar</div>
-    
+
+    <!-- Prix : barré + promo si promotion active, sinon prix normal -->
+    <div class="price-block">
+      @if (promotion()) {
+        <span class="prix-barre">{{ produit().details.prix | number:'1.0-0' }} Ar</span>
+        <span class="prix-promo">{{ prixPromo | number:'1.0-0' }} Ar</span>
+        <span class="promo-label-inline">{{ promotion()!.details.description || 'Promo' }}</span>
+      } @else {
+        <span class="price">{{ produit().details.prix | number:'1.0-0' }} Ar</span>
+      }
+    </div>
+
     <div class="description-wrapper">
-      <p class="description"
-         [class.expanded]="expanded()">
+      <p class="description" [class.expanded]="expanded()">
         {{ produit().details.description }}
       </p>
-
-      <span class="show-more" 
+      <span class="show-more"
             (click)="toggleExpand(); $event.stopPropagation()"
             *ngIf="(produit().details?.description?.length ?? 0) > 140 || expanded()">
         {{ expanded() ? 'Voir moins' : 'Voir plus...' }}
@@ -28,12 +42,45 @@
 
   @if (editMode()) {
     <mat-card-actions class="edit-actions">
-      <button mat-icon-button (click)="edit.emit(produit())">
+
+      <!-- Modifier le produit -->
+      <button mat-icon-button matTooltip="Modifier le produit"
+        (click)="edit.emit(produit())">
         <mat-icon>edit</mat-icon>
       </button>
-      <button mat-icon-button color="warn" (click)="deleted.emit(produit().id)">
+
+      <!-- Supprimer le produit -->
+      <button mat-icon-button color="warn" matTooltip="Supprimer"
+        (click)="deleted.emit(produit().id)">
         <mat-icon>delete</mat-icon>
       </button>
+
+      <!-- Séparateur visuel -->
+      <span class="actions-divider"></span>
+
+      <!-- Promotion : différent selon état -->
+      @if (promotion()) {
+        <!-- Modifier la promo existante -->
+        <button mat-icon-button color="accent"
+          matTooltip="Modifier la promotion (−{{ promotion()!.details.pourcentage }}%)"
+          (click)="promo.emit(produit())">
+          <mat-icon>local_offer</mat-icon>
+        </button>
+        <!-- Arrêter la promo -->
+        <button mat-icon-button color="warn"
+          matTooltip="Arrêter la promotion"
+          (click)="stopPromo.emit(produit())">
+          <mat-icon>timer_off</mat-icon>  
+        </button>
+      } @else {
+        <!-- Créer une promo -->
+        <button mat-icon-button
+          matTooltip="Mettre en promotion"
+          (click)="promo.emit(produit())">
+          <mat-icon>local_offer</mat-icon>
+        </button>
+      }
+
     </mat-card-actions>
   }
 

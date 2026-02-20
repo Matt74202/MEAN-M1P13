@@ -259,3 +259,60 @@
   mat-icon { font-size: 3.5rem; width: 3.5rem; height: 3.5rem; margin-bottom: 1rem; }
   p        { font-size: 1.1rem; margin: 0 0 1.5rem; }
 }
+
+// ── Promotions ──
+
+.image-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.promo-badge-image {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  background: #f97316;
+  color: white;
+  font-weight: 800;
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 50px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.price-block {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 4px 0 6px;
+}
+
+.prix-barre {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #888);
+  text-decoration: line-through;
+  font-weight: 400;
+}
+
+.prix-promo {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #f97316;
+}
+
+.promo-label-inline {
+  font-size: 0.7rem;
+  background: #fff7ed;
+  color: #f97316;
+  border: 1px solid #fed7aa;
+  padding: 2px 7px;
+  border-radius: 50px;
+  font-weight: 600;
+}
+
+// Bordure subtile sur la card en promo
+.product-card:has(.promo-badge-image) {
+  border: 1.5px solid #fdba74;
+}

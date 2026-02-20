@@ -27,6 +27,22 @@
           </mat-form-field>
         }
 
+        <!-- Date -->
+        @if (field.type === 'date') {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ field.label }}</mat-label>
+            <input
+              matInput
+              type="date"
+              [formControlName]="field.name"
+              [required]="field.required || false"
+            />
+            @if (formGroup().get(field.name)?.hasError('required') && formGroup().get(field.name)?.touched) {
+              <mat-error>{{ field.label }} est requis</mat-error>
+            }
+          </mat-form-field>
+        }
+
         <!-- Textarea -->
         @if (field.type === 'textarea') {
           <mat-form-field appearance="outline" class="full-width">
@@ -59,7 +75,7 @@
           </mat-form-field>
         }
 
-       <!-- 🆕 Select OU Texte libre avec autocomplete -->
+        <!-- Select OU Texte libre avec autocomplete -->
         @if (field.type === 'select-or-text') {
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>{{ field.label }}</mat-label>
@@ -70,22 +86,16 @@
               [matAutocomplete]="auto"
               [required]="field.required || false"
             />
-            
             <mat-autocomplete #auto="matAutocomplete">
               @for (option of field.options; track option.value) {
                 <mat-option [value]="option.value">{{ option.label }}</mat-option>
               }
             </mat-autocomplete>
-            
             @if (formGroup().get(field.name)?.hasError('required') && formGroup().get(field.name)?.touched) {
               <mat-error>{{ field.label }} est requis</mat-error>
             }
-            
-            <!-- Afficher les catégories existantes comme hint -->
             @if (field.options && field.options.length > 0) {
-              <mat-hint>
-                Suggestions : {{ getCategorySuggestions(field.options) }}
-              </mat-hint>
+              <mat-hint>Suggestions : {{ getCategorySuggestions(field.options) }}</mat-hint>
             }
           </mat-form-field>
         }
@@ -109,7 +119,6 @@
               <mat-error>{{ field.label }} est requis</mat-error>
             }
           </mat-form-field>
-          <!-- Input file caché (en dehors du mat-form-field) -->
           <input
             [id]="'file-' + field.name"
             type="file"
@@ -117,8 +126,6 @@
             style="display: none;"
           />
         }
-
-
 
       </div>
     }

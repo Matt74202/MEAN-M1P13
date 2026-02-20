@@ -1,15 +1,18 @@
-    <div class="products-grid">
-      @for (p of produits(); track p.id) {
-        <app-product-card
-          [produit]="p"
-          [editMode]="editMode()"
-          (deleted)="produitDeleted.emit($event)"
-          (updated)="produitUpdated.emit($event)"
-          (edit)="edit.emit($event)"
-        />
-      } @empty {
-        <div class="empty-state">
-          <h3>Aucun produit pour le moment</h3>
-        </div>
-      }
+<div class="products-grid">
+  @for (p of produits(); track p.id) {
+    <app-product-card
+      [produit]="p"
+      [editMode]="editMode()"
+      [promotion]="getPromotion(p.id)"
+      (deleted)="produitDeleted.emit($event)"
+      (updated)="produitUpdated.emit($event)"
+      (edit)="edit.emit($event)"
+      (promo)="promo.emit($event)"
+      (stopPromo)="stopPromo.emit($event)"
+    />
+  } @empty {
+    <div class="empty-state">
+      <h3>Aucun produit pour le moment</h3>
     </div>
+  }
+</div>

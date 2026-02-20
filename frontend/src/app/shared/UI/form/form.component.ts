@@ -6,13 +6,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
-import { MatAutocompleteModule } from '@angular/material/autocomplete'; // 🆕
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'textarea' | 'number' | 'select' | 'select-or-text' | 'email' | 'tel' | 'file';
+  type: 'text' | 'textarea' | 'number' | 'select' | 'select-or-text' | 'email' | 'tel' | 'file' | 'date'; // ← ajouté
   placeholder?: string;
   required?: boolean;
   options?: { value: any; label: string }[];
@@ -31,7 +31,7 @@ export interface FormField {
     MatButtonModule,
     MatSelectModule,
     MatIconModule,
-    MatAutocompleteModule, // 🆕
+    MatAutocompleteModule,
   ],
   templateUrl: './form.component.html',
   styleUrls: ['./form.component.scss'],
@@ -40,13 +40,12 @@ export class FormComponent {
 
   private data = inject(MAT_DIALOG_DATA);
 
-  title = signal<string>(this.data.title);
-  subtitle = signal<string | undefined>(this.data.subtitle);
-  fields = signal<FormField[]>(this.data.fields);
-  formGroup = signal<FormGroup>(this.data.formGroup);
-
-  submitLabel = signal<string>(this.data.submitLabel ?? 'Enregistrer');
-  showCancel = signal<boolean>(this.data.showCancel ?? true);
+  title        = signal<string>(this.data.title);
+  subtitle     = signal<string | undefined>(this.data.subtitle);
+  fields       = signal<FormField[]>(this.data.fields);
+  formGroup    = signal<FormGroup>(this.data.formGroup);
+  submitLabel  = signal<string>(this.data.submitLabel ?? 'Enregistrer');
+  showCancel   = signal<boolean>(this.data.showCancel ?? true);
   isSubmitting = signal<boolean>(false);
 
   submit = output<void>();
@@ -54,7 +53,6 @@ export class FormComponent {
 
   private fileNames = signal<Map<string, string>>(new Map());
 
-  // 🆕 Helper pour obtenir les suggestions formatées
   getCategorySuggestions(options?: { value: any; label: string }[]): string {
     if (!options || options.length === 0) return '';
     return options.map(o => o.label).join(', ');
@@ -62,9 +60,7 @@ export class FormComponent {
 
   triggerFileInput(fieldName: string) {
     const input = document.getElementById('file-' + fieldName) as HTMLInputElement;
-    if (input) {
-      input.click();
-    }
+    if (input) input.click();
   }
 
   onFileChange(event: Event, fieldName: string) {
@@ -72,7 +68,6 @@ export class FormComponent {
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
       this.formGroup().get(fieldName)?.setValue(file);
-      
       const newMap = new Map(this.fileNames());
       newMap.set(fieldName, file.name);
       this.fileNames.set(newMap);

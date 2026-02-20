@@ -64,11 +64,15 @@ export class PanierService {
   }
 
   // ── Ajouter un article ──
-  ajouter(clientId: string, idProduit: string, quantite = 1): Observable<Panier> {
-    return this.http.post<Panier>(`${this.apiUrl}/${clientId}/articles`, {
-      idProduit, quantite
-    }).pipe(
+  ajouter(clientId: string, idProduit: string, quantite = 1, prix?: number): Observable<Panier> {
+    const body: any = { idProduit, quantite };
+    if (prix !== undefined) body.prix = prix;
+    
+    console.log('>>> BODY ENVOYÉ:', JSON.stringify(body));
+    
+    return this.http.post<Panier>(`${this.apiUrl}/${clientId}/articles`, body).pipe(
       tap(panier => {
+        console.log('>>> PANIER REÇU:', JSON.stringify(panier.articles));
         this._panier.set(panier);
         this.sauvegarderLocal(panier);
       })

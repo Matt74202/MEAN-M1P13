@@ -5,11 +5,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, Router } from '@angular/router'; 
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { FilterChipsComponent } from '@app/shared/UI/filter/filter-chips.component';
 import { ProduitService } from '@app/services/produit.service';
 import { PanierService } from '@app/services/panier.service';
+import { PromotionService, Promotion } from '@app/services/promotion.service';
 import { Produit } from '@app/model/produit-models';
 
 @Component({
@@ -29,16 +30,20 @@ import { Produit } from '@app/model/produit-models';
 })
 export class ClientBoutiqueComponent implements OnInit {
 
-  private produitService = inject(ProduitService);
-  private panierService  = inject(PanierService);
-  private snackBar       = inject(MatSnackBar);
-  private route          = inject(ActivatedRoute); 
-  private router         = inject(Router);         
+  private produitService   = inject(ProduitService);
+  private panierService    = inject(PanierService);
+  private promotionService = inject(PromotionService);
+  private snackBar         = inject(MatSnackBar);
+  private route            = inject(ActivatedRoute);
+  private router           = inject(Router);
 
   // ── IDs ──
   readonly clientId = '6994753c7e66b10156cb0cf2';
-  boutiqueId = '';
-  nomBoutique = signal<string>('');  
+  boutiqueId  = '';
+  nomBoutique = signal<string>('');
+
+  // ── Promotions actives : map idProduit → Promotion ──
+  promotionsActives = signal<Map<string, Promotion>>(new Map());
 
   // ── Vues ──
   vue = signal<'catalogue' | 'panier'>('catalogue');
@@ -68,41 +73,61 @@ export class ClientBoutiqueComponent implements OnInit {
   // ── Quantités sélectionnées par produit ──
   quantites = signal<Record<string, number>>({});
 
-ngOnInit() {
-  const state = window.history.state;
+  // ────────────────────────────────────────────────
+  ngOnInit() {
+    const state = window.history.state;
 
-  this.route.params.subscribe(params => {
-    this.boutiqueId = params['id'];
-    localStorage.setItem('boutiqueId', this.boutiqueId); // ← déplacer ICI, après assignation
-    this.loadProduits();
-  });
+    this.route.params.subscribe(params => {
+      this.boutiqueId = params['id'];
+      localStorage.setItem('boutiqueId', this.boutiqueId);
+      this.loadProduits();
+      this.loadPromotionsActives();
+    });
 
-  if (state?.nomBoutique) {
-    this.nomBoutique.set(state.nomBoutique);
-    localStorage.setItem('nomBoutique', state.nomBoutique);
-  } else {
-    const saved = localStorage.getItem('nomBoutique');
-    if (saved) this.nomBoutique.set(saved);
+    if (state?.nomBoutique) {
+      this.nomBoutique.set(state.nomBoutique);
+      localStorage.setItem('nomBoutique', state.nomBoutique);
+    } else {
+      const saved = localStorage.getItem('nomBoutique');
+      if (saved) this.nomBoutique.set(saved);
+    }
+
+    this.panierService.charger(this.clientId).subscribe();
   }
 
-  this.panierService.charger(this.clientId).subscribe();
-}
-
-loadProduits() {
-  if (!this.boutiqueId) return;
-
-  this.produitService.getProduitsByBoutique(this.boutiqueId)
-    .subscribe({
+  loadProduits() {
+    if (!this.boutiqueId) return;
+    this.produitService.getProduitsByBoutique(this.boutiqueId).subscribe({
       next: res => {
         this.produits.set(res.produits || []);
-        // ── Ne pas écraser le nom si déjà défini ──
-        if (!this.nomBoutique()) {
-          this.nomBoutique.set('Boutique');
-        }
+        if (!this.nomBoutique()) this.nomBoutique.set('Boutique');
       },
       error: err => console.error('[BOUTIQUE] erreur API:', err)
     });
-}
+  }
+
+  loadPromotionsActives() {
+    if (!this.boutiqueId) return;
+    this.promotionService.getPromotionsActives(this.boutiqueId).subscribe({
+      next: (promos) => {
+        const map = new Map<string, Promotion>();
+        promos.forEach(p => map.set(p.details.idProduit, p));
+        this.promotionsActives.set(map);
+      },
+      error: () => {}
+    });
+  }
+
+  // ── Helpers promotion ──
+  getPromotion(idProduit: string): Promotion | undefined {
+    return this.promotionsActives().get(idProduit);
+  }
+
+  getPrixPromo(produit: Produit): number {
+    const promo = this.getPromotion(produit.id);
+    if (!promo) return produit.details.prix;
+    return Math.round(produit.details.prix * (1 - promo.details.pourcentage / 100));
+  }
 
   // ── Catalogue ──
   onCategoryChange(value: string | null) {
@@ -125,13 +150,12 @@ loadProduits() {
   }
 
   ajouterAuPanier(produit: Produit) {
-    const qte = this.getQuantite(produit.id);
-    this.panierService.ajouter(this.clientId, produit.id, qte).subscribe({
+    const qte      = this.getQuantite(produit.id);
+    const prixReel = this.getPrixPromo(produit); 
+
+    this.panierService.ajouter(this.clientId, produit.id, qte, prixReel).subscribe({
       next: () => {
-        this.snackBar.open(
-          `✓ ${produit.details.nom} ajouté au panier`,
-          '', { duration: 2000, panelClass: 'snack-success' }
-        );
+        this.snackBar.open(`✓ ${produit.details.nom} ajouté au panier`, '', { duration: 2000 });
         this.quantites.update(q => ({ ...q, [produit.id]: 1 }));
       },
       error: () => this.snackBar.open('Erreur lors de l\'ajout', '', { duration: 2000 })
