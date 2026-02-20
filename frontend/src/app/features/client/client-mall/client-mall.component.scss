@@ -1,0 +1,255 @@
+.client-mall-wrapper {
+  min-height: 100vh;
+  background: #fafafa;
+  font-family: 'Garet', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Header ──
+.mall-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 2.5rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.mall-title {
+  margin: 0 0 0.3rem;
+  font-family: 'Perandory Condensed', system-ui, sans-serif;
+  font-size: 2rem;
+  font-weight: 400;
+  color: #445c3f;
+}
+
+.mall-subtitle {
+  margin: 0;
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.etage-selector {
+  display: flex;
+  gap: 0.8rem;
+
+  button {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s;
+
+    &.active {
+      background: #1976d2;
+      color: white;
+      border-color: #1976d2;
+    }
+  }
+}
+
+.view-toggle {
+  ::ng-deep .mat-button-toggle-checked {
+    background: #1976d2;
+    color: white;
+  }
+
+  ::ng-deep .mat-button-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 1rem;
+  }
+}
+
+// ── Filtres ──
+.filter-bar {
+  padding: 1rem 2.5rem;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+// ── Loading ──
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem;
+  color: #aaa;
+  gap: 1rem;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .spin { animation: spin 1s linear infinite; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+// ── Carte ──
+.map-container {
+  flex: 1;
+  min-height: 600px;
+  max-height: calc(100vh - 220px);
+}
+
+// ── Vue boutiques ──
+.boutiques-container {
+  padding: 2rem 2.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.boutiques-count {
+  color: #888;
+  font-size: 0.95rem;
+  margin: 0 0 1.5rem;
+}
+
+.boutiques-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+// ── Carte boutique ──
+.boutique-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+
+    .voir-produits { color: #1976d2; }
+    .voir-produits mat-icon { transform: translateX(4px); }
+  }
+}
+
+.card-color-bar {
+  height: 5px;
+  width: 100%;
+}
+
+.card-body {
+  padding: 1.3rem 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+
+  .store-icon {
+    color: #555;
+    margin-top: 0.1rem;
+    font-size: 1.6rem;
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+}
+
+.boutique-nom {
+  margin: 0 0 0.2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.box-ref {
+  font-size: 0.82rem;
+  color: #aaa;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.3rem 0.9rem;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.83rem;
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+.contrat-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #888;
+  font-size: 0.88rem;
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.card-footer {
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.voir-produits {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #888;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s;
+
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    transition: transform 0.2s;
+  }
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem;
+  color: #bbb;
+  gap: 1rem;
+
+  mat-icon { font-size: 4rem; width: 4rem; height: 4rem; }
+  p { font-size: 1.1rem; }
+}
+
+@media (max-width: 768px) {
+  .mall-header { padding: 1.2rem; flex-direction: column; }
+  .header-controls { flex-direction: column; width: 100%; }
+  .etage-selector { width: 100%; button { flex: 1; } }
+  .boutiques-container { padding: 1.2rem; }
+  .boutiques-grid { grid-template-columns: 1fr; }
+}

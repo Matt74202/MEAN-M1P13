@@ -1,0 +1,33 @@
+<div class="boutique-container">
+
+  <header class="boutique-header">
+    <h1 class="boutique-title">{{ nomBoutique() }}</h1>
+
+    <app-edit-products-toolbar
+      [editMode]="editMode()"
+      (toggleEdit)="toggleEditMode()"
+      (addProduit)="openProduitForm()"
+    ></app-edit-products-toolbar>
+  </header>
+
+  <main class="content-area">
+    <app-filter-chips
+      [items]="categoryItems()"
+      [selected]="selectedCategory()"
+      (select)="onCategoryChange($event)"
+      allLabel="Toutes les catégories"
+    />
+
+    <app-product-grid
+      [produits]="filteredProduits()"
+      [editMode]="editMode()"
+      [promotionsMap]="promotionsMap()"
+      (produitDeleted)="onProduitDeleted($event)"
+      (produitUpdated)="onProduitUpdated($event)"
+      (edit)="openProduitForm($event)"
+      (promo)="openPromotionForm($event)"
+      (stopPromo)="supprimerPromotion($event)"
+    ></app-product-grid>
+  </main>
+
+</div>

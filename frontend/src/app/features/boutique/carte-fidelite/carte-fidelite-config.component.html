@@ -1,0 +1,212 @@
+<div class="config-container">
+
+  <div class="header">
+    <h1>Carte de Fidélité</h1>
+    <p class="subtitle">Configurez votre carte de fidélité à tamponner</p>
+  </div>
+
+  <div class="content-grid">
+
+    <!-- ══ CONFIGURATION ══ -->
+    <div class="config-section">
+
+      <!-- Design -->
+      <mat-card class="config-card">
+        <mat-card-header>
+          <mat-card-title><mat-icon>palette</mat-icon>Design de la carte</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Slogan</mat-label>
+            <input matInput [(ngModel)]="design.slogan" />
+          </mat-form-field>
+          <div class="color-row">
+            <div class="color-picker">
+              <label>Couleur principale</label>
+              <input type="color" [(ngModel)]="design.couleur1" />
+              <span>{{ design.couleur1 }}</span>
+            </div>
+            <div class="color-picker">
+              <label>Couleur secondaire</label>
+              <input type="color" [(ngModel)]="design.couleur2" />
+              <span>{{ design.couleur2 }}</span>
+            </div>
+          </div>
+          <div class="slider-field">
+            <label>Nombre de cases ({{ design.nombreCases }})</label>
+            <mat-slider min="4" max="20" step="1" discrete [displayWith]="formatLabel">
+              <input matSliderThumb [(ngModel)]="design.nombreCases" />
+            </mat-slider>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Paliers de récompense -->
+      <mat-card class="config-card">
+        <mat-card-header>
+          <mat-card-title><mat-icon>loyalty</mat-icon>Paliers de récompense</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+
+          <div class="palier-list">
+            @for (palier of paliers; track $index) {
+              <div class="palier-row">
+                <div class="palier-header">
+                  <span class="palier-num">Palier {{ $index + 1 }}</span>
+                  <button mat-icon-button color="warn" (click)="supprimerPalier($index)"
+                    [disabled]="paliers.length === 1">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+
+                <div class="palier-fields">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Achat n°</mat-label>
+                    <input matInput type="number" [(ngModel)]="palier.achatNumero"
+                      [min]="1" [max]="design.nombreCases" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Type</mat-label>
+                    <mat-select [(ngModel)]="palier.type">
+                      <mat-option value="pourcentage">% Réduction</mat-option>
+                      <mat-option value="montant">Montant (Ar)</mat-option>
+                      <mat-option value="gratuit">Produit gratuit</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" *ngIf="palier.type !== 'gratuit'">
+                    <mat-label>Valeur</mat-label>
+                    <input matInput type="number" [(ngModel)]="palier.valeur" min="1" />
+                    <span matSuffix>{{ palier.type === 'pourcentage' ? '%' : 'Ar' }}</span>
+                  </mat-form-field>
+                </div>
+
+                <div class="description-preview">
+                  <mat-icon>info</mat-icon>
+                  <span>Au {{ palier.achatNumero }}e achat : {{ getPalierLabel(palier) }}</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <button mat-stroked-button class="add-palier-btn" (click)="ajouterPalier()">
+            <mat-icon>add</mat-icon>
+            Ajouter un palier
+          </button>
+
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Activation -->
+      <mat-card class="config-card">
+        <mat-card-content>
+          <mat-slide-toggle [(ngModel)]="actif" color="accent">
+            <span class="toggle-label">
+              Programme {{ actif ? 'activé' : 'désactivé' }}
+            </span>
+          </mat-slide-toggle>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button mat-stroked-button (click)="reinitialiserDemo()">
+          <mat-icon>refresh</mat-icon>
+          Réinitialiser démo
+        </button>
+        <button mat-raised-button color="primary" (click)="save()">
+          <mat-icon>save</mat-icon>Enregistrer
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ══ APERÇU CARTE PHYSIQUE ══ -->
+    <div class="preview-section">
+
+      <div class="carte-physique"
+        [style.background]="'linear-gradient(135deg, ' + design.couleur1 + ' 0%, ' + design.couleur2 + ' 100%)'"
+        [style.--c1]="design.couleur1"
+        [style.--c2]="design.couleur2">
+
+        <!-- En-tête -->
+        <div class="carte-header">
+          <div class="carte-logo">
+            <mat-icon>card_giftcard</mat-icon>
+          </div>
+          <div class="carte-title">
+           <h3>{{ nomBoutique() }} × Dyve </h3>
+            <p>{{ design.slogan }}</p>
+          </div>
+        </div>
+
+        <!-- Grille de cases -->
+        <div class="cases-grid"
+          [style.grid-template-columns]="'repeat(' + maxColumns + ', 1fr)'">
+          @for (i of casesArray; track i) {
+            <div class="case-tampon"
+              [class.remplie]="i < casesRemplies()"
+              [class.has-palier]="getPalierPourCase(i) !== null"
+              (click)="toggleCase(i)">
+              <div class="case-inner">
+                @if (i < casesRemplies()) {
+                  <!-- Case tamponnée : afficher la récompense si palier, sinon check -->
+                  @if (getPalierPourCase(i); as palier) {
+                    <span class="palier-stamp">{{ getPalierLabel(palier) }}</span>
+                  } @else {
+                    <mat-icon>check</mat-icon>
+                  }
+                } @else {
+                  <!-- Case vide : afficher le label de palier ou le numéro -->
+                  @if (getPalierPourCase(i); as palier) {
+                    <div class="palier-preview">
+                      <span class="palier-num-case">{{ i + 1 }}</span>
+                      <span class="palier-reward-label">{{ getPalierLabel(palier) }}</span>
+                    </div>
+                  } @else {
+                    <span>{{ i + 1 }}</span>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Barre de progression -->
+        <div class="progress-section">
+          <div class="progress-bar">
+            <div class="progress-fill"
+              [style.width.%]="(casesRemplies() / design.nombreCases) * 100"></div>
+          </div>
+          <p class="progress-text">{{ casesRemplies() }} / {{ design.nombreCases }} achats</p>
+        </div>
+
+        <!-- Récap paliers -->
+        <div class="carte-reward">
+          @for (palier of paliers; track $index) {
+            <div class="reward-badge">
+              <mat-icon>emoji_events</mat-icon>
+              <span>{{ getPalierLabel(palier) }}</span>
+              <span class="reward-at">au {{ palier.achatNumero }}e achat</span>
+            </div>
+          }
+        </div>
+
+        <!-- Footer -->
+        <div class="carte-footer">
+          <mat-icon>verified</mat-icon>
+          <span>Programme actif</span>
+        </div>
+
+      </div> <!-- fin .carte-physique -->
+
+      <div class="demo-info">
+        <mat-icon>touch_app</mat-icon>
+        <span>Cliquez sur les cases pour simuler les tampons</span>
+      </div>
+
+    </div> <!-- fin .preview-section -->
+
+  </div>
+</div>
