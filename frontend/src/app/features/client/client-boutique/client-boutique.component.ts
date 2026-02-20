@@ -69,21 +69,21 @@ export class ClientBoutiqueComponent implements OnInit {
   quantites = signal<Record<string, number>>({});
 
 ngOnInit() {
-  // ── 1. Lire depuis history.state ──
   const state = window.history.state;
-  if (state?.nomBoutique) {
-    this.nomBoutique.set(state.nomBoutique);
-    localStorage.setItem('nomBoutique', state.nomBoutique); // ← sauvegarder
-  } else {
-    // ── 2. Fallback localStorage si refresh ──
-    const saved = localStorage.getItem('nomBoutique');
-    if (saved) this.nomBoutique.set(saved);
-  }
 
   this.route.params.subscribe(params => {
     this.boutiqueId = params['id'];
+    localStorage.setItem('boutiqueId', this.boutiqueId); // ← déplacer ICI, après assignation
     this.loadProduits();
   });
+
+  if (state?.nomBoutique) {
+    this.nomBoutique.set(state.nomBoutique);
+    localStorage.setItem('nomBoutique', state.nomBoutique);
+  } else {
+    const saved = localStorage.getItem('nomBoutique');
+    if (saved) this.nomBoutique.set(saved);
+  }
 
   this.panierService.charger(this.clientId).subscribe();
 }

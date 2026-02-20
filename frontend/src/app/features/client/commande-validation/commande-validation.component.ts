@@ -13,11 +13,12 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 import { PanierService } from '@app/services/panier.service';
 import { AchatService } from '@app/services/achat.service';
+import { CarteClientService, CarteClientResponse } from '@app/services/carteClient.service';
+import { BoutiqueService } from '@app/services/boutique.service';
+import { Palier } from '@app/services/carte-fidelite.service';
 
-// ── Types Leaflet (chargé dynamiquement) ──────────────────────────────────────
 declare const L: any;
 
-// ── Type retour Nominatim ─────────────────────────────────────────────────────
 interface NominatimResult {
   lat: string;
   lon: string;
@@ -28,93 +29,129 @@ interface NominatimResult {
   selector: 'app-commande-validation',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    HttpClientModule,
-    MatButtonModule,
-    MatIconModule,
-    MatRadioModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatSnackBarModule,
-    MatStepperModule,
+    CommonModule, FormsModule, HttpClientModule,
+    MatButtonModule, MatIconModule, MatRadioModule,
+    MatInputModule, MatFormFieldModule, MatSnackBarModule, MatStepperModule,
   ],
   templateUrl: './commande-validation.component.html',
   styleUrl: './commande-validation.component.scss',
 })
 export class CommandeValidationComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  // ── Référence au div de la carte ──────────────────────────────────────────
   @ViewChild('mapContainer') mapContainer!: ElementRef;
 
-  private panierService = inject(PanierService);
-  private achatService  = inject(AchatService);
-  private snackBar      = inject(MatSnackBar);
-  private router        = inject(Router);
-  private http          = inject(HttpClient);
+  private panierService      = inject(PanierService);
+  private achatService       = inject(AchatService);
+  private carteClientService = inject(CarteClientService);
+  private boutiqueService    = inject(BoutiqueService);
+  private snackBar           = inject(MatSnackBar);
+  private router             = inject(Router);
+  private http               = inject(HttpClient);
 
   readonly clientId = '6994753c7e66b10156cb0cf2';
-  readonly today = new Date();
+  readonly today    = new Date();
 
-  // Coordonnées du magasin / point de référence (Antananarivo centre)
   private readonly STORE_LAT = -18.8752;
   private readonly STORE_LNG = 47.5195;
 
-  // ── État ──────────────────────────────────────────────────────────────────
+  // ── Panier ──
   readonly panier = this.panierService.panier;
   readonly total  = computed(() => this.panier().total);
 
-  // ── Étapes ───────────────────────────────────────────────────────────────
+  // ── Étapes ──
   etapeActuelle = signal(1);
 
-  // ── Choix ────────────────────────────────────────────────────────────────
+  // ── Choix ──
   typeLivraison = signal<'livraison' | 'recuperation' | null>(null);
   modePaiement  = signal<string | null>(null);
   telephone     = signal('');
 
-  // ── Livraison ────────────────────────────────────────────────────────────
+  // ── Livraison ──
   adresse   = signal('');
   latitude  = signal(this.STORE_LAT);
   longitude = signal(this.STORE_LNG);
   distance  = signal(0);
   frais     = signal(0);
 
-  // ── Carte Leaflet ─────────────────────────────────────────────────────────
+  // ── Leaflet ──
   private map: any = null;
   private marker: any = null;
   private leafletLoaded = false;
 
-  // ── Recherche d'adresse ───────────────────────────────────────────────────
-  adresseInput   = '';
-  suggestions    = signal<NominatimResult[]>([]);
+  // ── Recherche adresse ──
+  adresseInput     = '';
+  suggestions      = signal<NominatimResult[]>([]);
   rechercheEnCours = signal(false);
   private searchTimeout: any = null;
 
-  readonly totalAvecFrais = computed(() => {
-    return this.typeLivraison() === 'livraison'
+  readonly totalAvecFrais = computed(() =>
+    this.typeLivraison() === 'livraison'
+      ? this.total() + this.frais()
+      : this.total()
+  );
+
+  // ── Carte fidélité ──
+  boutiqueId    = signal('');
+  nomBoutique   = signal('');
+  carteResultat = signal<CarteClientResponse | null>(null);
+  afficherCarte = signal(false);
+
+  palierApplicable = signal<Palier | null>(null);
+  reduction        = signal(0);
+
+  readonly totalFinal = computed(() => {
+    const base = this.typeLivraison() === 'livraison'
       ? this.total() + this.frais()
       : this.total();
+    return Math.max(0, base - this.reduction());
   });
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  // ── Lifecycle ──
   ngOnInit() {
     if (this.panier().articles.length === 0) {
-      this.snackBar.open('Votre panier est vide', '', { duration: 2000 });
       this.router.navigate(['/client/mall']);
       return;
     }
-    // Leaflet sera chargé uniquement si l'utilisateur choisit la livraison
+
+    const bid = localStorage.getItem('boutiqueId') ?? '';
+    this.boutiqueId.set(bid);
+
+    if (bid) {
+      // Nom de la boutique
+      this.boutiqueService.getBoutiqueById(bid).subscribe({
+        next: (b) => this.nomBoutique.set(b.nom ?? ''),
+        error: () => {}
+      });
+
+      // Simulation réduction + carte
+      this.carteClientService.simulerReduction(this.clientId, bid, this.total()).subscribe({
+        next: (sim) => {
+          if (sim.reduction > 0 && sim.palier) {
+            this.palierApplicable.set(sim.palier);
+            this.reduction.set(sim.reduction);
+          }
+          this.carteClientService.getCarteClient(this.clientId, bid).subscribe({
+            next: (res) => this.carteResultat.set(res),
+            error: () => {}
+          });
+        },
+        error: () => {
+          this.carteClientService.getCarteClient(this.clientId, bid).subscribe({
+            next: (res) => this.carteResultat.set(res),
+            error: () => {}
+          });
+        }
+      });
+    }
   }
 
-  ngAfterViewInit() {
-    // La carte est initialisée lors du passage à l'étape 2 (voir initMap)
-  }
+  ngAfterViewInit() {}
 
   ngOnDestroy() {
     this.detruireMap();
   }
 
-  // ── Chargement dynamique de Leaflet (évite d'installer un package) ─────────
+  // ── Leaflet ──
   private chargerLeaflet(): Promise<void> {
     return new Promise((resolve) => {
       if (this.leafletLoaded || (window as any).L) {
@@ -122,65 +159,46 @@ export class CommandeValidationComponent implements OnInit, OnDestroy, AfterView
         resolve();
         return;
       }
-
-      // CSS Leaflet
       const link = document.createElement('link');
       link.rel  = 'stylesheet';
       link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
       document.head.appendChild(link);
 
-      // JS Leaflet
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = () => {
-        this.leafletLoaded = true;
-        resolve();
-      };
+      script.onload = () => { this.leafletLoaded = true; resolve(); };
       document.head.appendChild(script);
     });
   }
 
-  // ── Initialisation de la carte ────────────────────────────────────────────
   private async initMap() {
     await this.chargerLeaflet();
-
-    // Petit délai pour que le div soit bien rendu dans le DOM
     setTimeout(() => {
       const el = document.getElementById('livraison-map');
       if (!el || this.map) return;
 
-      this.map = L.map('livraison-map').setView(
-        [this.STORE_LAT, this.STORE_LNG], 13
-      );
+      this.map = L.map('livraison-map').setView([this.STORE_LAT, this.STORE_LNG], 13);
 
-      // Tuiles OpenStreetMap (100% gratuit)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
       }).addTo(this.map);
 
-      // Icône du marqueur (fix bug Leaflet + bundlers)
       const icon = L.icon({
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconUrl:   'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-        iconSize: [25, 41],
+        iconSize:   [25, 41],
         iconAnchor: [12, 41],
       });
 
-      // Marqueur draggable
-      this.marker = L.marker([this.STORE_LAT, this.STORE_LNG], {
-        draggable: true,
-        icon,
-      }).addTo(this.map);
+      this.marker = L.marker([this.STORE_LAT, this.STORE_LNG], { draggable: true, icon }).addTo(this.map);
 
-      // Mise à jour des coords quand l'utilisateur déplace le marqueur
       this.marker.on('dragend', (e: any) => {
         const pos = e.target.getLatLng();
         this.mettreAJourPosition(pos.lat, pos.lng);
         this.geocodeInverse(pos.lat, pos.lng);
       });
 
-      // Clic sur la carte = déplacer le marqueur
       this.map.on('click', (e: any) => {
         this.marker.setLatLng(e.latlng);
         this.mettreAJourPosition(e.latlng.lat, e.latlng.lng);
@@ -190,27 +208,19 @@ export class CommandeValidationComponent implements OnInit, OnDestroy, AfterView
   }
 
   private detruireMap() {
-    if (this.map) {
-      this.map.remove();
-      this.map = null;
-      this.marker = null;
-    }
+    if (this.map) { this.map.remove(); this.map = null; this.marker = null; }
   }
 
-  // ── Mise à jour lat/lng + calcul frais ────────────────────────────────────
   private mettreAJourPosition(lat: number, lng: number) {
     this.latitude.set(lat);
     this.longitude.set(lng);
-
     const dist = this.calculerDistance(lat, lng);
     this.distance.set(dist);
-
     if (dist < 4)      this.frais.set(4000);
     else if (dist < 8) this.frais.set(6000);
     else               this.frais.set(10000);
   }
 
-  // ── Géocodage inverse : coordonnées → adresse lisible ────────────────────
   private geocodeInverse(lat: number, lng: number) {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
     this.http.get<any>(url).subscribe({
@@ -219,16 +229,13 @@ export class CommandeValidationComponent implements OnInit, OnDestroy, AfterView
           this.adresse.set(res.display_name);
           this.adresseInput = res.display_name;
         }
-      },
-      error: () => { /* silencieux */ }
+      }
     });
   }
 
-  // ── Recherche d'adresse avec debounce (Nominatim) ─────────────────────────
   onAdresseInput() {
     clearTimeout(this.searchTimeout);
     this.suggestions.set([]);
-
     if (this.adresseInput.length < 3) return;
 
     this.rechercheEnCours.set(true);
@@ -238,72 +245,49 @@ export class CommandeValidationComponent implements OnInit, OnDestroy, AfterView
         + `&format=json&limit=5&countrycodes=mg`;
 
       this.http.get<NominatimResult[]>(url).subscribe({
-        next: (results) => {
-          this.suggestions.set(results);
-          this.rechercheEnCours.set(false);
-        },
-        error: () => {
-          this.rechercheEnCours.set(false);
-          this.snackBar.open('Erreur de recherche d\'adresse', '', { duration: 2000 });
-        }
+        next: (results) => { this.suggestions.set(results); this.rechercheEnCours.set(false); },
+        error: () => { this.rechercheEnCours.set(false); }
       });
     }, 500);
   }
 
-  // ── Sélection d'une suggestion ────────────────────────────────────────────
   selectionnerSuggestion(suggestion: NominatimResult) {
     const lat = parseFloat(suggestion.lat);
     const lng = parseFloat(suggestion.lon);
-
     this.adresseInput = suggestion.display_name;
     this.adresse.set(suggestion.display_name);
     this.suggestions.set([]);
-
     this.mettreAJourPosition(lat, lng);
-
-    // Déplacer le marqueur et recentrer la carte
     if (this.map && this.marker) {
       this.marker.setLatLng([lat, lng]);
       this.map.setView([lat, lng], 15);
     }
   }
 
-  // ── Navigation entre étapes ───────────────────────────────────────────────
+  // ── Navigation ──
   nextStep() {
     if (this.etapeActuelle() === 1 && !this.typeLivraison()) {
-      this.snackBar.open('Choisissez un mode de livraison', '', { duration: 2000 });
-      return;
+      this.snackBar.open('Choisissez un mode de livraison', '', { duration: 2000 }); return;
     }
-    
-    //  Téléphone obligatoire pour les deux modes ──
     if (this.etapeActuelle() === 2 && !this.telephone()) {
-      this.snackBar.open('Entrez votre numéro de téléphone', '', { duration: 2000 });
-      return;
+      this.snackBar.open('Entrez votre numéro de téléphone', '', { duration: 2000 }); return;
     }
-    
     if (this.etapeActuelle() === 2 && this.typeLivraison() === 'livraison' && !this.adresse()) {
-      this.snackBar.open('Choisissez une adresse sur la carte', '', { duration: 2000 });
-      return;
+      this.snackBar.open('Choisissez une adresse sur la carte', '', { duration: 2000 }); return;
     }
-    
     if (this.etapeActuelle() === 3 && !this.modePaiement()) {
-      this.snackBar.open('Choisissez un mode de paiement', '', { duration: 2000 });
-      return;
+      this.snackBar.open('Choisissez un mode de paiement', '', { duration: 2000 }); return;
     }
 
     this.etapeActuelle.update(e => e + 1);
 
-    // Initialiser la carte quand on arrive à l'étape livraison
     if (this.etapeActuelle() === 2 && this.typeLivraison() === 'livraison') {
       this.initMap();
     }
   }
 
   onTypeLivraisonChange() {
-    // Précharger Leaflet en arrière-plan dès la sélection "livraison"
-    if (this.typeLivraison() === 'livraison') {
-      this.chargerLeaflet();
-    }
+    if (this.typeLivraison() === 'livraison') this.chargerLeaflet();
     if (this.typeLivraison() === 'livraison' && this.etapeActuelle() === 2) {
       this.detruireMap();
       this.initMap();
@@ -311,13 +295,11 @@ export class CommandeValidationComponent implements OnInit, OnDestroy, AfterView
   }
 
   prevStep() {
-    if (this.etapeActuelle() === 2) {
-      this.detruireMap();
-    }
+    if (this.etapeActuelle() === 2) this.detruireMap();
     this.etapeActuelle.update(e => Math.max(1, e - 1));
   }
 
-  // ── Haversine ─────────────────────────────────────────────────────────────
+  // ── Haversine ──
   calculerDistance(lat: number, lng: number): number {
     const R = 6371;
     const dLat = this.deg2rad(lat - this.STORE_LAT);
@@ -333,13 +315,28 @@ export class CommandeValidationComponent implements OnInit, OnDestroy, AfterView
     return deg * (Math.PI / 180);
   }
 
-  // ── Validation finale ─────────────────────────────────────────────────────
+  calculerReduction(palier: Palier) {
+    const total = this.total();
+    if (palier.type === 'pourcentage') {
+      this.reduction.set(Math.round(total * palier.valeur / 100));
+    } else if (palier.type === 'montant') {
+      this.reduction.set(palier.valeur);
+    } else {
+      this.reduction.set(0);
+    }
+  }
+
+  // ── Validation commande ──
   validerCommande() {
     const payload: any = {
       idClient:      this.clientId,
+      idBoutique:    this.boutiqueId(),
       typeLivraison: this.typeLivraison(),
       modePaiement:  this.modePaiement(),
-      telephone:     this.telephone(), 
+      telephone:     this.telephone(),
+      reduction:     this.reduction(),
+      articles:      this.panier().articles,
+      total:         this.panier().total,
     };
 
     if (this.typeLivraison() === 'livraison') {
@@ -354,13 +351,81 @@ export class CommandeValidationComponent implements OnInit, OnDestroy, AfterView
     this.achatService.creerCommande(payload).subscribe({
       next: () => {
         this.panierService.vider(this.clientId).subscribe();
-        this.snackBar.open('✓ Commande validée avec succès !', '', { duration: 3000 });
-        this.router.navigate(['/client/mall']);  
+
+        if (this.boutiqueId()) {
+          this.carteClientService.getCarteClient(this.clientId, this.boutiqueId()).subscribe({
+            next: (res: CarteClientResponse) => {
+              this.carteResultat.set(res);
+              this.afficherCarte.set(true);
+              this.snackBar.open('✓ Commande validée !', '', { duration: 3000 });
+            },
+            error: () => {
+              this.snackBar.open('✓ Commande validée !', '', { duration: 3000 });
+              this.router.navigate(['/client/mall']);
+            }
+          });
+        } else {
+          this.snackBar.open('✓ Commande validée !', '', { duration: 3000 });
+          this.router.navigate(['/client/mall']);
+        }
       },
-      error: () => {
-        this.snackBar.open('Erreur lors de la validation', '', { duration: 2000 });
-      },
+      error: () => this.snackBar.open('Erreur lors de la validation', '', { duration: 2000 }),
     });
+  }
+
+  estPalierAtteint(): boolean {
+    const res = this.carteResultat();
+    if (!res) return false;
+    return (res.carteFidelite.paliers ?? [])
+      .some(p => p.achatNumero === res.carteClient.nombreAchat);
+  }
+
+  getPalierLabelAtteint(): string {
+    const res = this.carteResultat();
+    if (!res) return '';
+    const palier = (res.carteFidelite.paliers ?? [])
+      .find(p => p.achatNumero === res.carteClient.nombreAchat);
+    return palier ? this.getPalierLabel(palier) : '';
+  }
+
+  prochainPalierRestant(): number {
+    const res = this.carteResultat();
+    if (!res) return 0;
+    const nombreAchat = res.carteClient.nombreAchat;
+    const paliers = (res.carteFidelite.paliers ?? [])
+      .filter(p => p.achatNumero > nombreAchat)
+      .sort((a, b) => a.achatNumero - b.achatNumero);
+    if (paliers.length === 0) return 0;
+    return paliers[0].achatNumero - nombreAchat;
+  }
+
+  // ── Helpers carte fidélité ──
+  getPalierLabel(palier: Palier): string {
+    if (palier.type === 'pourcentage') return `-${palier.valeur}%`;
+    if (palier.type === 'montant')     return `-${palier.valeur.toLocaleString()} Ar`;
+    return 'GRATUIT';
+  }
+
+  getPalierPourCase(caseIndex: number): Palier | null {
+    const paliers = this.carteResultat()?.carteFidelite?.paliers ?? [];
+    return paliers.find((p: Palier) => p.achatNumero === caseIndex + 1) ?? null;
+  }
+
+  get casesArrayCarte(): number[] {
+    const n = this.carteResultat()?.carteFidelite?.design?.nombreCases ?? 0;
+    return Array(n).fill(0).map((_, i) => i);
+  }
+
+  get maxColumnsCarte(): number {
+    return Math.min(5, this.carteResultat()?.carteFidelite?.design?.nombreCases ?? 5);
+  }
+
+  get casesRempliesCarte(): number {
+    return this.carteResultat()?.carteClient?.nombreAchat ?? 0;
+  }
+
+  fermerCarte() {
+    this.router.navigate(['/client/mall']);
   }
 
   annuler() {

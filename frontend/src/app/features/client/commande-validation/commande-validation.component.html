@@ -1,271 +1,345 @@
 <div class="commande-container">
 
-  <div class="header">
-    <button mat-icon-button (click)="annuler()">
-      <mat-icon>arrow_back</mat-icon>
-    </button>
-    <h1>Validation de commande</h1>
+  <!-- ══ STEPPER HEADER ══ -->
+  <div class="stepper-header">
+    <div class="step" [class.active]="etapeActuelle() >= 1" [class.done]="etapeActuelle() > 1">
+      <div class="step-circle"><mat-icon>local_shipping</mat-icon></div>
+      <span>Livraison</span>
+    </div>
+    <div class="step-line" [class.done]="etapeActuelle() > 1"></div>
+    <div class="step" [class.active]="etapeActuelle() >= 2" [class.done]="etapeActuelle() > 2">
+      <div class="step-circle"><mat-icon>contact_phone</mat-icon></div>
+      <span>Contact</span>
+    </div>
+    <div class="step-line" [class.done]="etapeActuelle() > 2"></div>
+    <div class="step" [class.active]="etapeActuelle() >= 3" [class.done]="etapeActuelle() > 3">
+      <div class="step-circle"><mat-icon>payment</mat-icon></div>
+      <span>Paiement</span>
+    </div>
+    <div class="step-line" [class.done]="etapeActuelle() > 3"></div>
+    <div class="step" [class.active]="etapeActuelle() >= 4">
+      <div class="step-circle"><mat-icon>check_circle</mat-icon></div>
+      <span>Résumé</span>
+    </div>
   </div>
 
-  <div class="stepper-container">
-
-    <!-- ══ ÉTAPE 1 : Type de livraison ══ -->
-    <div class="step" *ngIf="etapeActuelle() === 1">
+  <!-- ══ ÉTAPE 1 : MODE LIVRAISON ══ -->
+  @if (etapeActuelle() === 1) {
+    <div class="step-content">
       <h2>Mode de livraison</h2>
 
-      <mat-radio-group [(ngModel)]="typeLivraison">
-        <mat-radio-button value="livraison" class="radio-option">
-          <div class="radio-content">
-            <mat-icon>local_shipping</mat-icon>
-            <div>
-              <strong>Livraison à domicile</strong>
-              <p>Recevez votre commande à l'adresse de votre choix</p>
-            </div>
-          </div>
-        </mat-radio-button>
+      <div class="choix-livraison">
+        <div class="choix-card"
+          [class.selected]="typeLivraison() === 'livraison'"
+          (click)="typeLivraison.set('livraison'); onTypeLivraisonChange()">
+          <mat-icon>delivery_dining</mat-icon>
+          <h3>Livraison à domicile</h3>
+          <p>Livré chez vous</p>
+        </div>
+        <div class="choix-card"
+          [class.selected]="typeLivraison() === 'recuperation'"
+          (click)="typeLivraison.set('recuperation'); onTypeLivraisonChange()">
+          <mat-icon>store</mat-icon>
+          <h3>Récupération en boutique</h3>
+          <p>Venez chercher votre commande</p>
+        </div>
+      </div>
 
-        <mat-radio-button value="recuperation" class="radio-option">
-          <div class="radio-content">
-            <mat-icon>store</mat-icon>
-            <div>
-              <strong>Récupération sur place</strong>
-              <p>Retirez votre commande au point de vente</p>
-            </div>
-          </div>
-        </mat-radio-button>
-      </mat-radio-group>
-
-      <button class="btn-primary" (click)="nextStep()">
-        Continuer
-      </button>
+      <div class="step-actions">
+        <button mat-stroked-button (click)="annuler()">Annuler</button>
+        <button mat-raised-button color="primary" (click)="nextStep()">
+          Suivant <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </div>
     </div>
+  }
 
-    <!-- ══ ÉTAPE 2 : Détails livraison/récupération ══ -->
-    <div class="step" *ngIf="etapeActuelle() === 2">
+  <!-- ══ ÉTAPE 2 : CONTACT + ADRESSE ══ -->
+  @if (etapeActuelle() === 2) {
+    <div class="step-content">
+      <h2>Vos informations</h2>
 
-      <!-- Si livraison -->
-      <div *ngIf="typeLivraison() === 'livraison'">
-        <h2>Adresse de livraison</h2>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Numéro de téléphone</mat-label>
+        <mat-icon matPrefix>phone</mat-icon>
+        <input matInput [value]="telephone()"
+          (input)="telephone.set($any($event.target).value)"
+          placeholder="Ex: 034 00 000 00" />
+      </mat-form-field>
 
-        <!-- Téléphone obligatoire ── -->
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Téléphone accessible</mat-label>
-          <input matInput [(ngModel)]="telephone" 
-            placeholder="034 00 000 00" required />
-          <mat-icon matPrefix>phone</mat-icon>
-        </mat-form-field>
+      @if (typeLivraison() === 'livraison') {
+        <div class="adresse-section">
+          <h3>Adresse de livraison</h3>
 
-        <!-- Champ de recherche avec suggestions -->
-        <div class="search-wrapper">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Rechercher une adresse</mat-label>
-            <input
-              matInput
-              [(ngModel)]="adresseInput"
-              (ngModelChange)="onAdresseInput()"
-              placeholder="Ex : Analakely, Antananarivo"
-              autocomplete="off"
-            />
             <mat-icon matPrefix>search</mat-icon>
-            <mat-icon matSuffix *ngIf="rechercheEnCours()">sync</mat-icon>
+            <input matInput [(ngModel)]="adresseInput"
+              (input)="onAdresseInput()"
+              placeholder="Tapez votre adresse..." />
           </mat-form-field>
 
-          <!-- Liste de suggestions Nominatim -->
-          <ul class="suggestions-list" *ngIf="suggestions().length > 0">
-            <li
-              *ngFor="let s of suggestions()"
-              (click)="selectionnerSuggestion(s)"
-            >
-              <mat-icon>location_on</mat-icon>
-              <span>{{ s.display_name }}</span>
-            </li>
-          </ul>
+          @if (suggestions().length > 0) {
+            <div class="suggestions-list">
+              @for (s of suggestions(); track s.display_name) {
+                <div class="suggestion-item" (click)="selectionnerSuggestion(s)">
+                  <mat-icon>place</mat-icon>
+                  <span>{{ s.display_name }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          <div id="livraison-map" class="leaflet-map"></div>
+
+          @if (adresse()) {
+            <div class="adresse-selectionnee">
+              <mat-icon>check_circle</mat-icon>
+              <span>{{ adresse() }}</span>
+            </div>
+            <div class="frais-info">
+              <mat-icon>info</mat-icon>
+              <span>Distance : {{ distance() | number:'1.1-1' }} km — Frais : {{ frais() | number }} Ar</span>
+            </div>
+          }
         </div>
+      }
 
-        <!-- Hint : clic ou glisser sur la carte -->
-        <p class="map-hint">
-          <mat-icon>touch_app</mat-icon>
-          Cliquez sur la carte ou déplacez le marqueur pour affiner votre position
-        </p>
-
-        <!-- Carte Leaflet -->
-        <div id="livraison-map" class="leaflet-map"></div>
-
-        <!-- Adresse sélectionnée + infos distance/frais -->
-        <div class="adresse-info" *ngIf="adresse()">
-          <mat-icon>check_circle</mat-icon>
-          <div>
-            <p class="adresse-text">{{ adresse() }}</p>
-            <p class="text-muted">
-              Distance : {{ distance() | number:'1.1-1' }} km &nbsp;·&nbsp;
-              Frais de livraison : <strong>{{ frais() | number:'1.0-0' }} Ar</strong>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Si récupération -->
-      <div *ngIf="typeLivraison() === 'recuperation'">
-        <h2>Numéro de téléphone</h2>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Téléphone</mat-label>
-          <input matInput [(ngModel)]="telephone"
-            placeholder="034 00 000 00" />
-          <mat-icon matPrefix>phone</mat-icon>
-        </mat-form-field>
-
-        <div class="info-box">
-          <mat-icon>info</mat-icon>
-          <p>Nous vous contacterons à ce numéro pour confirmer votre commande.</p>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="btn-secondary" (click)="prevStep()">Retour</button>
-        <button class="btn-primary" (click)="nextStep()">Continuer</button>
+      <div class="step-actions">
+        <button mat-stroked-button (click)="prevStep()">
+          <mat-icon>arrow_back</mat-icon> Retour
+        </button>
+        <button mat-raised-button color="primary" (click)="nextStep()">
+          Suivant <mat-icon>arrow_forward</mat-icon>
+        </button>
       </div>
     </div>
+  }
 
-    <!-- ══ ÉTAPE 3 : Mode de paiement ══ -->
-    <div class="step" *ngIf="etapeActuelle() === 3">
+  <!-- ══ ÉTAPE 3 : PAIEMENT ══ -->
+  @if (etapeActuelle() === 3) {
+    <div class="step-content">
       <h2>Mode de paiement</h2>
 
-      <mat-radio-group [(ngModel)]="modePaiement">
-        <mat-radio-button value="Espèces" class="radio-option">
-          <div class="radio-content">
-            <mat-icon>payments</mat-icon>
-            <strong>Espèces</strong>
-          </div>
-        </mat-radio-button>
-
-        <mat-radio-button value="Orange Money" class="radio-option">
-          <div class="radio-content">
-            <span class="emoji">🟠</span>
-            <strong>Orange Money</strong>
-          </div>
-        </mat-radio-button>
-
-        <mat-radio-button value="Airtel Money" class="radio-option">
-          <div class="radio-content">
-            <span class="emoji">🔴</span>
-            <strong>Airtel Money</strong>
-          </div>
-        </mat-radio-button>
-
-        <mat-radio-button value="MVola" class="radio-option">
-          <div class="radio-content">
-            <span class="emoji">🟡</span>
-            <strong>MVola</strong>
-          </div>
-        </mat-radio-button>
-
-        <mat-radio-button value="Carte" class="radio-option">
-          <div class="radio-content">
-            <mat-icon>credit_card</mat-icon>
-            <strong>Carte bancaire</strong>
-          </div>
-        </mat-radio-button>
-      </mat-radio-group>
-
-      <div class="actions">
-        <button class="btn-secondary" (click)="prevStep()">Retour</button>
-        <button class="btn-primary" (click)="nextStep()">Continuer</button>
-      </div>
-    </div>
-
-    <!-- ══ ÉTAPE 4 : Récapitulatif (style facture) ══ -->
-    <div class="step facture" *ngIf="etapeActuelle() === 4">
-
-      <!-- En-tête facture -->
-      <div class="facture-header">
-        <div class="facture-titre">
-          <span class="facture-label">BON DE COMMANDE</span>
-          <span class="facture-num">#{{ clientId.slice(-6).toUpperCase() }}</span>
+      <div class="choix-paiement">
+        <div class="choix-card"
+          [class.selected]="modePaiement() === 'cash'"
+          (click)="modePaiement.set('cash')">
+          <mat-icon>payments</mat-icon>
+          <h3>Cash</h3>
         </div>
-        <div class="facture-meta">
-          <div class="facture-meta-row">
-            <mat-icon>calendar_today</mat-icon>
-            <span>{{ today | date:'dd/MM/yyyy' }}</span>
-          </div>
-          <div class="facture-meta-row">
-            <mat-icon>{{ typeLivraison() === 'livraison' ? 'local_shipping' : 'store' }}</mat-icon>
-            <span>{{ typeLivraison() === 'livraison' ? 'Livraison à domicile' : 'Récupération sur place' }}</span>
-          </div>
-          <div class="facture-meta-row">
-            <mat-icon>payments</mat-icon>
-            <span>{{ modePaiement() }}</span>
-          </div>
+        <div class="choix-card"
+          [class.selected]="modePaiement() === 'mvola'"
+          (click)="modePaiement.set('mvola')">
+          <mat-icon>phone_android</mat-icon>
+          <h3>MVola</h3>
+        </div>
+        <div class="choix-card"
+          [class.selected]="modePaiement() === 'orange_money'"
+          (click)="modePaiement.set('orange_money')">
+          <mat-icon>account_balance_wallet</mat-icon>
+          <h3>Orange Money</h3>
         </div>
       </div>
 
-      <div class="facture-divider"></div>
-
-      <!-- Adresse ou téléphone -->
-       <div class="facture-destinataire">
-        <span class="facture-section-label">CONTACT</span>
-        <p>{{ telephone() }}</p>
-      </div>
-
-      <div class="facture-destinataire" *ngIf="typeLivraison() === 'livraison'">
-        <span class="facture-section-label">ADRESSE DE LIVRAISON</span>
-        <p>{{ adresse() }}</p>
-      </div>
-
-      <div class="facture-divider"></div>
-
-      <!-- Tableau des articles -->
-      <span class="facture-section-label">ARTICLES</span>
-      <table class="facture-table">
-        <thead>
-          <tr>
-            <th class="col-article">Article</th>
-            <th class="col-qty">Qté</th>
-            <th class="col-pu">Prix unit.</th>
-            <th class="col-total">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let article of panier().articles">
-            <td class="col-article">{{ article.nom }}</td>
-            <td class="col-qty">{{ article.quantite }}</td>
-            <td class="col-pu">{{ article.prix | number:'1.0-0' }} Ar</td>
-            <td class="col-total">{{ article.sousTotal | number:'1.0-0' }} Ar</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="facture-divider"></div>
-
-      <!-- Totaux -->
-      <div class="facture-totaux">
-        <div class="facture-total-row">
-          <span>Sous-total</span>
-          <span>{{ total() | number:'1.0-0' }} Ar</span>
-        </div>
-        <div class="facture-total-row" *ngIf="typeLivraison() === 'livraison'">
-          <span>Frais de livraison ({{ distance() | number:'1.1-1' }} km)</span>
-          <span>{{ frais() | number:'1.0-0' }} Ar</span>
-        </div>
-        <div class="facture-total-row grand-total">
-          <span>TOTAL À PAYER</span>
-          <span>{{ totalAvecFrais() | number:'1.0-0' }} Ar</span>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="actions">
-        <button class="btn-secondary" (click)="prevStep()">
-          <mat-icon>edit</mat-icon> Modifier
+      <div class="step-actions">
+        <button mat-stroked-button (click)="prevStep()">
+          <mat-icon>arrow_back</mat-icon> Retour
         </button>
-        <button class="btn-primary btn-validate" (click)="validerCommande()">
-          <mat-icon>check_circle</mat-icon>
-          Confirmer la commande
+        <button mat-raised-button color="primary" (click)="nextStep()">
+          Suivant <mat-icon>arrow_forward</mat-icon>
         </button>
       </div>
-
     </div>
+  }
 
-  </div>
+  <!-- ══ ÉTAPE 4 : RÉSUMÉ ══ -->
+  @if (etapeActuelle() === 4) {
+    <div class="step-content">
+      <h2>Résumé de la commande</h2>
+
+      <!-- Articles -->
+      <div class="resume-section">
+        <h3>Articles</h3>
+        @for (article of panier().articles; track article.idProduit) {
+          <div class="resume-ligne">
+            <span>{{ article.nom }} × {{ article.quantite }}</span>
+            <span>{{ article.sousTotal | number }} Ar</span>
+          </div>
+        }
+      </div>
+
+      <!-- Frais livraison -->
+      @if (typeLivraison() === 'livraison') {
+        <div class="resume-ligne">
+          <span>Frais de livraison</span>
+          <span>{{ frais() | number }} Ar</span>
+        </div>
+      }
+
+      <!-- ── Bandeau fidélité discret ── -->
+      @if (carteResultat()) {
+        <div class="fidelite-hint" [class.has-reduction]="palierApplicable() !== null">
+          <mat-icon>card_giftcard</mat-icon>
+          @if (palierApplicable()) {
+            <span>
+              Récompense fidélité appliquée :
+              <strong>{{ getPalierLabel(palierApplicable()!) }}</strong>
+              (−{{ reduction() | number }} Ar)
+            </span>
+          } @else if (prochainPalierRestant() > 0) {
+            <span>
+              Plus que <strong>{{ prochainPalierRestant() }} achat(s)</strong>
+              pour votre prochaine récompense !
+            </span>
+          } @else {
+            <span>Votre carte de fidélité est active</span>
+          }
+        </div>
+      }
+
+      <!-- Total -->
+      <div class="resume-total">
+        <span>Total</span>
+        <div class="total-montants">
+          @if (reduction() > 0) {
+            <span class="ancien-total">{{ totalAvecFrais() | number }} Ar</span>
+          }
+          <span class="total-final">{{ totalFinal() | number }} Ar</span>
+        </div>
+      </div>
+
+      <!-- Infos -->
+      <div class="resume-infos">
+        <div class="info-ligne">
+          <mat-icon>{{ typeLivraison() === 'livraison' ? 'delivery_dining' : 'store' }}</mat-icon>
+          <span>{{ typeLivraison() === 'livraison' ? 'Livraison à domicile' : 'Récupération en boutique' }}</span>
+        </div>
+        @if (typeLivraison() === 'livraison' && adresse()) {
+          <div class="info-ligne">
+            <mat-icon>place</mat-icon>
+            <span>{{ adresse() }}</span>
+          </div>
+        }
+        <div class="info-ligne">
+          <mat-icon>payment</mat-icon>
+          <span>{{ modePaiement() }}</span>
+        </div>
+        <div class="info-ligne">
+          <mat-icon>phone</mat-icon>
+          <span>{{ telephone() }}</span>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button mat-stroked-button (click)="prevStep()">
+          <mat-icon>arrow_back</mat-icon> Retour
+        </button>
+        <button mat-raised-button color="primary" (click)="validerCommande()">
+          <mat-icon>check_circle</mat-icon> Valider la commande
+        </button>
+      </div>
+    </div>
+  }
 
 </div>
+
+<!-- ══ OVERLAY CARTE FIDÉLITÉ (après validation) ══ -->
+@if (afficherCarte() && carteResultat()) {
+  <div class="carte-overlay">
+    <div class="carte-modal">
+
+      <div class="carte-modal-header">
+        @if (estPalierAtteint()) {
+          <div class="badge-recompense">🎁 Récompense débloquée !</div>
+          <h2>Félicitations !</h2>
+          <p>Vous avez bénéficié de : <strong>{{ getPalierLabelAtteint() }}</strong></p>
+        } @else {
+          <h2>✓ Commande validée !</h2>
+          @if (prochainPalierRestant() > 0) {
+            <p>Plus que <strong>{{ prochainPalierRestant() }} achat(s)</strong> pour votre prochaine récompense !</p>
+          } @else {
+            <p>Votre carte de fidélité a été mise à jour</p>
+          }
+        }
+      </div>
+
+      <!-- Carte visuelle -->
+      <div class="carte-physique"
+        [style.background]="'linear-gradient(135deg, '
+          + carteResultat()!.carteFidelite.design.couleur1 + ' 0%, '
+          + carteResultat()!.carteFidelite.design.couleur2 + ' 100%)'"
+        [style.--c1]="carteResultat()!.carteFidelite.design.couleur1"
+        [style.--c2]="carteResultat()!.carteFidelite.design.couleur2">
+
+        <div class="carte-header">
+          <div class="carte-logo"><mat-icon>card_giftcard</mat-icon></div>
+          <div class="carte-title">
+            <h3><span class="carte-dyve"> {{ nomBoutique() || 'CARTE FIDÉLITÉ' }} × Dyve</span></h3>
+            <p>{{ carteResultat()!.carteFidelite.design.slogan }}</p>
+          </div>
+        </div>
+
+        <div class="cases-grid"
+          [style.grid-template-columns]="'repeat(' + maxColumnsCarte + ', 1fr)'">
+          @for (i of casesArrayCarte; track i) {
+            <div class="case-tampon"
+              [class.remplie]="i < casesRempliesCarte"
+              [class.has-palier]="getPalierPourCase(i) !== null">
+              <div class="case-inner">
+                @if (i < casesRempliesCarte) {
+                  @if (getPalierPourCase(i); as palier) {
+                    <span class="palier-stamp">{{ getPalierLabel(palier) }}</span>
+                  } @else {
+                    <mat-icon>check</mat-icon>
+                  }
+                } @else {
+                  @if (getPalierPourCase(i); as palier) {
+                    <div class="palier-preview">
+                      <span class="palier-num-case">{{ i + 1 }}</span>
+                      <span class="palier-reward-label">{{ getPalierLabel(palier) }}</span>
+                    </div>
+                  } @else {
+                    <span>{{ i + 1 }}</span>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-bar">
+            <div class="progress-fill"
+              [style.width.%]="(casesRempliesCarte / carteResultat()!.carteFidelite.design.nombreCases) * 100">
+            </div>
+          </div>
+          <p class="progress-text">
+            {{ casesRempliesCarte }} / {{ carteResultat()!.carteFidelite.design.nombreCases }} achats
+          </p>
+        </div>
+
+        <div class="carte-reward">
+          @for (palier of carteResultat()!.carteFidelite.paliers; track $index) {
+            <div class="reward-badge">
+              <mat-icon>emoji_events</mat-icon>
+              <span>{{ getPalierLabel(palier) }}</span>
+              <span class="reward-at">au {{ palier.achatNumero }}e achat</span>
+            </div>
+          }
+        </div>
+
+        <div class="carte-footer">
+          <mat-icon>verified</mat-icon>
+          <span>Programme actif</span>
+        </div>
+
+      </div>
+
+      <button mat-raised-button color="primary" (click)="fermerCarte()" class="btn-fermer">
+        <mat-icon>check</mat-icon> Continuer
+      </button>
+
+    </div>
+  </div>
+}

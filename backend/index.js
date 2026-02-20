@@ -3,23 +3,20 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-const boxRoutes = require('./src/routes/boxRoutes');
-const produitRoutes = require('./src/routes/produitRoutes');
-const boutiqueRoutes= require('./src/routes/boutiqueRoutes');
-const contratRoutes= require('./src/routes/contratRoutes');
-const userRoutes= require('./src/routes/userRoutes');
-const panierRoutes= require('./src/routes/panierRoutes');
-const fraisLivraisonRoutes= require('./src/routes/fraisLivraisonRoutes');
+const boxRoutes            = require('./src/routes/boxRoutes');
+const produitRoutes        = require('./src/routes/produitRoutes');
+const boutiqueRoutes       = require('./src/routes/boutiqueRoutes');
+const contratRoutes        = require('./src/routes/contratRoutes');
+const userRoutes           = require('./src/routes/userRoutes');
+const panierRoutes         = require('./src/routes/panierRoutes');
+const fraisLivraisonRoutes = require('./src/routes/fraisLivraisonRoutes');
+const carteClientRoutes    = require('./src/routes/carteClientRoutes');
 
 const app = express();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// ───────────────────────────────────────
-// Connexion MongoDB (directement ici)
-// ───────────────────────────────────────
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
@@ -29,31 +26,27 @@ mongoose
     console.log('└──────────────────────────────────────┘');
   })
   .catch((err) => {
-    console.error('┌─────────────────────────────────────────────┐');
-    console.error('│  ÉCHEC CONNEXION MONGODB                    │');
-    console.error(`│  → ${err.message}`);
-    console.error('└─────────────────────────────────────────────┘');
-    process.exit(1);   // arrête le serveur si la DB est indispensable
+    console.error('ÉCHEC CONNEXION MONGODB :', err.message);
+    process.exit(1);
   });
 
 // Routes
-app.use('/api/boxes', boxRoutes);     
-app.use('/api/produits', produitRoutes);
-app.use('/api/boutiques', boutiqueRoutes);
-app.use('/api/contrats', contratRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/paniers', panierRoutes);
-app.use('/api/frais', fraisLivraisonRoutes);
-app.use('/api/achats', require('./src/routes/achatRoutes'));
+app.use('/api/boxes',          boxRoutes);     
+app.use('/api/produits',       produitRoutes);
+app.use('/api/boutiques',      boutiqueRoutes);
+app.use('/api/contrats',       contratRoutes);
+app.use('/api/users',          userRoutes);
+app.use('/api/paniers',        panierRoutes);
+app.use('/api/frais',          fraisLivraisonRoutes);
+app.use('/api/achats',         require('./src/routes/achatRoutes'));
 app.use('/api/carte-fidelite', require('./src/routes/carteFideliteRoutes'));
+app.use('/api/cartes-client',  carteClientRoutes);
 
-// Pour debug en dev
 if (process.env.NODE_ENV === 'development') {
-  mongoose.set('debug', true);        // affiche les requêtes MongoDB dans la console
+  mongoose.set('debug', true);
 }
 
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => {
   console.log(`🚀 API running on http://localhost:${PORT}`);
   console.log(`Environnement : ${process.env.NODE_ENV || 'development'}`);
