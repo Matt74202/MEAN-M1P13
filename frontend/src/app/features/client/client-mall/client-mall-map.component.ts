@@ -52,7 +52,7 @@ export class ClientMallMapComponent implements AfterViewInit, OnDestroy, OnChang
     await this.app.init({
       width:           rect.width  || 1600,
       height:          rect.height || 900,
-      backgroundColor: 0xe5e5e5,
+      backgroundColor: 0xf8f9f5,
       antialias:       true,
       resolution:      window.devicePixelRatio || 1,
       autoDensity:     true,
@@ -72,19 +72,24 @@ export class ClientMallMapComponent implements AfterViewInit, OnDestroy, OnChang
   ngOnChanges(changes: SimpleChanges) {
     if (!this.app) return;
 
+    if (changes['selectedTypeCommerce'] || changes['idsFavoris']) {
+      this.boxesContainers.forEach(c => this.mapContent.removeChild(c));
+      this.boxesContainers.clear();
+    }
+
     if (changes['users'] || changes['contrats'] || changes['boutiques']) {
       this.boxesContainers.forEach(c => this.mapContent.removeChild(c));
       this.boxesContainers.clear();
     }
 
     if (
-      changes['boxs']                 ||
-      changes['contrats']             ||
-      changes['boutiques']            ||
-      changes['users']                ||
-      changes['currentEtage']         ||
-      changes['selectedTypeCommerce'] || 
-      changes['idsFavoris'] 
+      changes['boxs']                  ||
+      changes['contrats']              ||
+      changes['boutiques']             ||
+      changes['users']                 ||
+      changes['currentEtage']          ||
+      changes['selectedTypeCommerce']  ||
+      changes['idsFavoris']
     ) {
       this.drawMap();
     }
@@ -108,7 +113,7 @@ export class ClientMallMapComponent implements AfterViewInit, OnDestroy, OnChang
           this.app.screen.width  / this.SCALE_FACTOR,
           this.app.screen.height / this.SCALE_FACTOR
         )
-        .fill(0xf5f5f5);
+        .fill(0xf8f9f5);
       this.mapContent.addChild(bg);
     }
 

@@ -386,21 +386,24 @@ protected filteredBoxes: Box[] = [];
 
   private loadBoxes() {
     this.isLoading = true;
-    console.log(`[MALL] Chargement des boxes pour l'étage : ${this.currentEtage}`);
 
-    this.boxService.getBoxes(this.currentEtage).subscribe({
-      next: (data) => {
-        console.log('[MALL] Boxes reçues de l\'API :', data);
-        console.log('[MALL] Nombre total de boxes chargées :', data?.length ?? 0);
-        this.boxs = data || [];
+    forkJoin({
+      boxes:     this.boxService.getBoxes(this.currentEtage).pipe(catchError(() => of([]))),
+      contrats:  this.contratService.getContrats({ statut: 'ACTIF' }).pipe(catchError(() => of([]))),
+      boutiques: this.boutiqueService.getBoutiques().pipe(catchError(() => of([]))),
+      users:     this.userService.getUsers().pipe(catchError(() => of([]))),
+    }).subscribe({
+      next: ({ boxes, contrats, boutiques, users }) => {
+        this.boxs      = boxes     || [];
+        this.contrats  = contrats  || [];
+        this.boutiques = boutiques || [];
+        this.users     = users     || [];
+        this.filteredBoxes = this.getFilteredBoxes();
+        this.updateStatusGroups();
         this.isLoading = false;
         this.mallMapComp?.forceRedraw();
       },
-      error: (err) => {
-        console.error('[MALL] Erreur chargement boxes :', err);
-        this.isLoading = false;
-        this.boxs = [];
-      }
+      error: () => { this.isLoading = false; }
     });
   }
 

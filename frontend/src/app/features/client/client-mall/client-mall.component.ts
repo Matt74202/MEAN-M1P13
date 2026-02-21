@@ -87,7 +87,7 @@ export class ClientMallComponent implements OnInit {
     this.isLoading = true;
 
     forkJoin({
-      boxes:     this.boxService.getBoxes(this.currentEtage).pipe(catchError(() => of([]))),
+      boxes:     this.boxService.getBoxes(this.currentEtage).pipe(catchError(() => of([]))),  // ← this.currentEtage
       contrats:  this.contratService.getContrats({ statut: 'ACTIF' }).pipe(catchError(() => of([]))),
       boutiques: this.boutiqueService.getBoutiques().pipe(catchError(() => of([]))),
       users:     this.userService.getUsers().pipe(catchError(() => of([]))),
@@ -98,7 +98,6 @@ export class ClientMallComponent implements OnInit {
         this.boutiques = boutiques || [];
         this.users     = users     || [];
         this.isLoading = false;
-
         this.generateFiltres();
         this.updateBoutiquesOccupees();
         this.mallMapComp?.forceRedraw();
@@ -199,7 +198,7 @@ export class ClientMallComponent implements OnInit {
   setEtage(etage: Etage) {
     if (this.currentEtage === etage) return;
     this.currentEtage = etage;
-    this.loadBoxes();
+    this.loadData(); 
   }
 
   // ── Clic sur une boutique (map ou carte) ──
