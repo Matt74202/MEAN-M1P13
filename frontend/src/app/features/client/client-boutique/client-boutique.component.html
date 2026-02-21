@@ -34,6 +34,22 @@
       />
     </div>
 
+    <div class="search-bar">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        placeholder="Rechercher un produit..."
+        [value]="recherche()"
+        (input)="onRecherche($event)"
+        class="search-input"
+      />
+      @if (recherche()) {
+        <button class="clear-btn" (click)="recherche.set('')">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
     <!-- Grille produits -->
     <div class="products-grid">
       @for (p of filteredProduits(); track p.id) {
@@ -77,29 +93,51 @@
           <!-- Actions -->
           <div class="product-actions">
 
-            <!-- Sélecteur de quantité -->
-            <div class="quantite-selector">
-              <button mat-icon-button (click)="decrementer(p.id)">
-                <mat-icon>remove</mat-icon>
-              </button>
-              <span class="quantite-value">{{ getQuantite(p.id) }}</span>
-              <button mat-icon-button (click)="incrementer(p.id)">
-                <mat-icon>add</mat-icon>
-              </button>
-            </div>
+            @if (isRuptureStock(p)) {
 
-            <!-- Bouton ajouter -->
-            <button mat-flat-button class="btn-ajouter"
-              (click)="ajouterAuPanier(p)">
-              <mat-icon>add_shopping_cart</mat-icon>
-              Ajouter
-              <span *ngIf="quantiteEnPanier(p.id) > 0" class="deja-en-panier">
-                ({{ quantiteEnPanier(p.id) }} déjà)
-              </span>
-            </button>
+              <!-- Rupture de stock -->
+              <div class="rupture-badge">
+                <mat-icon>remove_shopping_cart</mat-icon>
+                Rupture de stock
+              </div>
+
+            } @else {
+
+              <!-- Alerte stock faible -->
+              @if (isStockFaible(p)) {
+                <div class="stock-faible-hint">
+                  <mat-icon>warning</mat-icon>
+                  Stock faible 
+                </div>
+              }
+
+              <!-- Sélecteur de quantité -->
+              <div class="quantite-selector">
+                <button mat-icon-button (click)="decrementer(p.id)">
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <span class="quantite-value">{{ getQuantite(p.id) }}</span>
+                <button mat-icon-button (click)="incrementer(p)">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+
+              <!-- Bouton ajouter -->
+              <button mat-flat-button class="btn-ajouter" (click)="ajouterAuPanier(p)">
+                <mat-icon>add_shopping_cart</mat-icon>
+                Ajouter
+                <span *ngIf="quantiteEnPanier(p.id) > 0" class="deja-en-panier">
+                  ({{ quantiteEnPanier(p.id) }} déjà)
+                </span>
+              </button>
+
+            }
 
           </div>
+          <!-- /product-actions -->
+
         </div>
+        <!-- /product-card -->
 
       } @empty {
         <div class="empty-state">
@@ -108,7 +146,10 @@
         </div>
       }
     </div>
+    <!-- /products-grid -->
+
   </div>
+  <!-- /content-area catalogue -->
 
   <!-- ══ VUE PANIER ══ -->
   <div class="content-area panier-view" *ngIf="vue() === 'panier'">
@@ -178,6 +219,7 @@
       </div>
 
     </div>
+    <!-- /panier-articles -->
 
     <!-- Panier vide -->
     <div class="empty-state" *ngIf="panier().articles.length === 0">
@@ -189,5 +231,7 @@
     </div>
 
   </div>
+  <!-- /content-area panier -->
 
 </div>
+<!-- /boutique-container -->

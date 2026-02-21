@@ -11,6 +11,7 @@ const userRoutes           = require('./src/routes/userRoutes');
 const panierRoutes         = require('./src/routes/panierRoutes');
 const fraisLivraisonRoutes = require('./src/routes/fraisLivraisonRoutes');
 const carteClientRoutes    = require('./src/routes/carteClientRoutes');
+const stockRoutes          = require('./src/routes/stockRoutes');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/achats',         require('./src/routes/achatRoutes'));
 app.use('/api/carte-fidelite', require('./src/routes/carteFideliteRoutes'));
 app.use('/api/cartes-client',  carteClientRoutes);
 app.use('/api/promotions', require('./src/routes/promotionRoutes'));
+app.use('/api/stock', stockRoutes);
 
 if (process.env.NODE_ENV === 'development') {
   mongoose.set('debug', true);

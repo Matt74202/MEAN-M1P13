@@ -1,0 +1,272 @@
+.stock-container {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+  min-height: 100vh;
+  font-family: 'Garet', sans-serif;
+}
+
+// ── Header ──────────────────────────────────────
+.stock-header {
+  margin-bottom: 28px;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    font-family: 'Perandory Condensed', sans-serif;
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+
+  .alerte-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fdf6e3;
+    color: #7a5c1e;
+    border: 1px solid #e8d49a;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-family: 'Garet', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+
+    mat-icon {
+      font-size: 15px;
+      width: 15px;
+      height: 15px;
+    }
+
+    &.active {
+      background: #f0d98a;
+      border-color: #c9a832;
+      color: #4a3500;
+    }
+
+    &:hover {
+      background: #f7eccc;
+    }
+  }
+}
+
+// ── Grille ──────────────────────────────────────
+.stock-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// ── Carte produit ────────────────────────────────
+.stock-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 2px 12px rgba(125, 147, 108, 0.12);
+    border-color: var(--accent);
+  }
+
+  &.alerte {
+    border-color: #e8d49a;
+    background: #fffdf5;
+  }
+
+  // Image + infos
+  .card-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+  }
+
+  .stock-img {
+    width: 58px;
+    height: 58px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .stock-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    .stock-nom {
+      font-family: 'Garet', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .stock-cat {
+      font-family: 'Garet', sans-serif;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      text-transform: capitalize;
+    }
+  }
+
+  // Bloc quantité
+  .stock-qty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 90px;
+    position: relative;
+
+    .qty-number {
+      font-family: 'Perandory Condensed', sans-serif;
+      font-size: 2rem;
+      font-weight: 400;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .qty-label {
+      font-family: 'Garet', sans-serif;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.03em;
+    }
+
+    .warn-icon {
+      position: absolute;
+      top: -4px;
+      right: -2px;
+      font-size: 15px;
+      width: 15px;
+      height: 15px;
+      color: #c9912a;
+    }
+
+    &.low .qty-number  { color: #c9912a; }
+    &.zero .qty-number { color: #b94040; }
+  }
+
+  // Boutons
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+
+    button {
+      font-family: 'Garet', sans-serif;
+      font-size: 0.82rem;
+      border-radius: 8px;
+      letter-spacing: 0.02em;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    // Bouton Entrée — couleur accent vert
+    button[color="primary"] {
+      color: var(--accent);
+      border-color: var(--accent);
+
+      &:hover {
+        background: rgba(125, 147, 108, 0.08);
+      }
+    }
+  }
+}
+
+// ── Empty state ──────────────────────────────────
+.empty-state {
+  text-align: center;
+  padding: 64px 24px;
+  color: var(--text-secondary);
+  font-family: 'Garet', sans-serif;
+
+  mat-icon {
+    font-size: 52px;
+    width: 52px;
+    height: 52px;
+    display: block;
+    margin: 0 auto 16px;
+    color: var(--border);
+  }
+
+  p {
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
+// ── Barre de recherche ───────────────────────────────
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  width: 970px;
+  transition: border-color 0.2s;
+  margin-top: 10px;
+
+  &:focus-within {
+    border-color: var(--accent);
+  }
+
+  .search-icon {
+    color: var(--text-secondary);
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: 'Garet', sans-serif;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    flex: 1;
+
+    &::placeholder {
+      color: var(--text-secondary);
+    }
+  }
+
+  .clear-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover { color: var(--text-primary); }
+  }
+}

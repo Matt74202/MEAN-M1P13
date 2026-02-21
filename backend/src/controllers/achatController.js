@@ -1,6 +1,7 @@
 const Achat  = require('../models/Achat');
 const Panier = require('../models/Panier');
 const { incrementerAchat } = require('./carteClientController');
+const { sortieStockInterne } = require('./stockController');
 
 function calculerFrais(distanceKm) {
   if (distanceKm < 4) return 4000;
@@ -10,12 +11,9 @@ function calculerFrais(distanceKm) {
 
 exports.creerCommande = async (req, res) => {
   try {
-    console.log('body reçu:', req.body); 
-    
-    const { 
-      idClient, idBoutique, typeLivraison, 
-      modePaiement, telephone, livraison,
-      reduction
+    const {
+      idClient, idBoutique, typeLivraison,
+      modePaiement, telephone, livraison, reduction
     } = req.body;
 
     if (!telephone)  return res.status(400).json({ message: 'Numéro de téléphone requis' });
@@ -52,19 +50,29 @@ exports.creerCommande = async (req, res) => {
       total = Math.max(0, total - reduction);
     }
 
+    // 1. Vérifier et décrémenter le stock de chaque produit
+    await Promise.all(
+      panier.articles.map(article =>
+        sortieStockInterne(
+          idBoutique,
+          article.idProduit,
+          article.quantite,
+          null  // idReference sera mis à jour après création de l'achat
+        )
+      )
+    );
+
+    // 2. Créer l'achat
     const achat = await Achat.create({
-      idClient,
-      idBoutique,  
-      details,
-      modePaiement,
-      typeLivraison,
-      telephone,
+      idClient, idBoutique, details, modePaiement,
+      typeLivraison, telephone,
       livraison: livraisonData,
       reduction: reduction || 0,
       total,
       statut: 'EN_ATTENTE'
     });
 
+    // 3. Vider le panier
     panier.articles = [];
     panier.total    = 0;
     await panier.save();
@@ -72,9 +80,11 @@ exports.creerCommande = async (req, res) => {
     await incrementerAchat(idClient, idBoutique);
 
     res.json({ success: true, achat });
+
   } catch (err) {
     console.error('Erreur creerCommande:', err.message);
-    res.status(500).json({ message: err.message });
+    // Si sortieStockInterne lève une erreur (stock insuffisant), elle remonte ici
+    res.status(400).json({ message: err.message });
   }
 };
 
@@ -87,3 +97,4 @@ exports.getCommandesClient = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+

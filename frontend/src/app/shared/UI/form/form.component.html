@@ -10,8 +10,8 @@
     @for (field of fields(); track field.name) {
       <div class="form-field">
 
-        <!-- Input texte / email / tel / number -->
-        @if (field.type === 'text' || field.type === 'email' || field.type === 'tel' || field.type === 'number') {
+        <!-- Input texte / email / tel -->
+        @if (field.type === 'text' || field.type === 'email' || field.type === 'tel') {
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>{{ field.label }}</mat-label>
             <input
@@ -23,6 +23,30 @@
             />
             @if (formGroup().get(field.name)?.hasError('required') && formGroup().get(field.name)?.touched) {
               <mat-error>{{ field.label }} est requis</mat-error>
+            }
+          </mat-form-field>
+        }
+
+        <!-- Input number — avec conversion explicite en Number -->
+        @if (field.type === 'number') {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ field.label }}</mat-label>
+            <input
+              matInput
+              type="number"
+              [formControlName]="field.name"
+              [placeholder]="field.placeholder || ''"
+              [required]="field.required || false"
+              (change)="onNumberChange(field.name, $event)"
+            />
+            @if (formGroup().get(field.name)?.hasError('required') && formGroup().get(field.name)?.touched) {
+              <mat-error>{{ field.label }} est requis</mat-error>
+            }
+            @if (formGroup().get(field.name)?.hasError('min') && formGroup().get(field.name)?.touched) {
+              <mat-error>La valeur doit être supérieure à 0</mat-error>
+            }
+            @if (formGroup().get(field.name)?.hasError('max') && formGroup().get(field.name)?.touched) {
+              <mat-error>Valeur trop grande</mat-error>
             }
           </mat-form-field>
         }

@@ -12,7 +12,7 @@ import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'textarea' | 'number' | 'select' | 'select-or-text' | 'email' | 'tel' | 'file' | 'date'; // ← ajouté
+  type: 'text' | 'textarea' | 'number' | 'select' | 'select-or-text' | 'email' | 'tel' | 'file' | 'date';
   placeholder?: string;
   required?: boolean;
   options?: { value: any; label: string }[];
@@ -52,6 +52,16 @@ export class FormComponent {
   cancel = output<void>();
 
   private fileNames = signal<Map<string, string>>(new Map());
+
+  // ── Conversion string → number pour les inputs type="number" ──
+  onNumberChange(fieldName: string, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const val = input.valueAsNumber;  // retourne NaN si vide
+    this.formGroup().get(fieldName)?.setValue(
+      isNaN(val) ? null : val,
+      { emitEvent: true }
+    );
+  }
 
   getCategorySuggestions(options?: { value: any; label: string }[]): string {
     if (!options || options.length === 0) return '';

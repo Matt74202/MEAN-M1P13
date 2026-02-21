@@ -59,11 +59,25 @@ export class ClientBoutiqueComponent implements OnInit {
     return Array.from(unique).map(cat => ({ value: cat, label: cat }));
   });
 
+  recherche = signal('');
+
   filteredProduits = computed(() => {
+    let liste = this.produits();
+
     const cat = this.selectedCategory();
-    if (!cat) return this.produits();
-    return this.produits().filter(p => p.details.categorie === cat);
+    if (cat) liste = liste.filter(p => p.details.categorie === cat);
+
+    const terme = this.recherche().toLowerCase().trim();
+    if (terme) liste = liste.filter(p =>
+      p.details.nom.toLowerCase().includes(terme)
+    );
+
+    return liste;
   });
+
+  onRecherche(event: Event) {
+    this.recherche.set((event.target as HTMLInputElement).value);
+  }
 
   // ── Panier ──
   readonly panier      = this.panierService.panier;
@@ -138,8 +152,17 @@ export class ClientBoutiqueComponent implements OnInit {
     return this.quantites()[idProduit] ?? 1;
   }
 
-  incrementer(idProduit: string) {
-    this.quantites.update(q => ({ ...q, [idProduit]: (q[idProduit] ?? 1) + 1 }));
+  incrementer(produit: Produit) {
+    const stockDispo = produit.stock ?? 0;
+    const dejaEnPanier = this.quantiteEnPanier(produit.id);
+    const qteSelectionnee = this.getQuantite(produit.id);
+    const totalVoulu = dejaEnPanier + qteSelectionnee + 1;
+
+    if (totalVoulu > stockDispo) {
+      this.snackBar.open(`Stock maximum atteint (${stockDispo} dispo)`, '', { duration: 2000 });
+      return;
+    }
+    this.quantites.update(q => ({ ...q, [produit.id]: qteSelectionnee + 1 }));
   }
 
   decrementer(idProduit: string) {
@@ -150,9 +173,21 @@ export class ClientBoutiqueComponent implements OnInit {
   }
 
   ajouterAuPanier(produit: Produit) {
-    const qte      = this.getQuantite(produit.id);
-    const prixReel = this.getPrixPromo(produit); 
+    const qte = this.getQuantite(produit.id);
+    const stockDispo = produit.stock ?? 0;
+    const dejaEnPanier = this.quantiteEnPanier(produit.id);
 
+    if (stockDispo === 0) {
+      this.snackBar.open('Ce produit est en rupture de stock', '', { duration: 2000 });
+      return;
+    }
+
+    if (dejaEnPanier + qte > stockDispo) {
+      this.snackBar.open(`Stock insuffisant — seulement ${stockDispo - dejaEnPanier} disponible(s)`, '', { duration: 2500 });
+      return;
+    }
+
+    const prixReel = this.getPrixPromo(produit);
     this.panierService.ajouter(this.clientId, produit.id, qte, prixReel).subscribe({
       next: () => {
         this.snackBar.open(`✓ ${produit.details.nom} ajouté au panier`, '', { duration: 2000 });
@@ -170,12 +205,30 @@ export class ClientBoutiqueComponent implements OnInit {
   modifierQuantite(idProduit: string, delta: number) {
     const article = this.panier().articles.find(a => a.idProduit === idProduit);
     if (!article) return;
+
     const newQte = article.quantite + delta;
+
     if (newQte <= 0) {
       this.supprimerArticle(idProduit);
-    } else {
-      this.panierService.modifierQuantite(this.clientId, idProduit, newQte).subscribe();
+      return;
     }
+
+    const produit = this.produits().find(p => p.id === idProduit);
+    if (produit && newQte > (produit.stock ?? 0)) {
+      this.snackBar.open(`Stock maximum atteint`, '', { duration: 2000 });
+      return;
+    }
+
+    this.panierService.modifierQuantite(this.clientId, idProduit, newQte).subscribe();
+  }
+
+  isRuptureStock(produit: Produit): boolean {
+    return (produit.stock ?? 0) === 0;
+  }
+
+  isStockFaible(produit: Produit): boolean {
+    const stock = produit.stock ?? 0;
+    return stock > 0 && stock <= 3;
   }
 
   supprimerArticle(idProduit: string) {
