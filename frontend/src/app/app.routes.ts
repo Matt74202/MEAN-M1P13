@@ -6,6 +6,7 @@ import { FraisLivraisonComponent } from './features/mall/frais-livraison/frais-l
 import { CommandeValidationComponent } from './features/client/commande-validation/commande-validation.component';
 import { CarteFideliteConfigComponent } from './features/boutique/carte-fidelite/carte-fidelite-config.component';
 import { GestionStockComponent } from './features/boutique/gestion-stock/gestion-stock.component';
+import { FavorisComponent } from './features/client/favoris/favoris.component';
 
 
 export const routes: Routes = [
@@ -40,6 +41,10 @@ export const routes: Routes = [
   {
     path: 'boutique/gestion-stock',
     component: GestionStockComponent
+  },
+  {
+    path: 'client/favoris',
+    component: FavorisComponent
   },
 
 ];

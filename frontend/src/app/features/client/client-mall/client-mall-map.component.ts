@@ -24,6 +24,7 @@ export class ClientMallMapComponent implements AfterViewInit, OnDestroy, OnChang
   @Input() contrats: Contrat[] = [];
   @Input() currentEtage: Etage = 'RC';
   @Input() selectedTypeCommerce: string | null = null;
+  @Input() idsFavoris: Set<string> = new Set();
 
   @Output() boutiqueClick = new EventEmitter<Box>();
 
@@ -41,6 +42,7 @@ export class ClientMallMapComponent implements AfterViewInit, OnDestroy, OnChang
   private readonly SCALE_FACTOR = 0.9;
 
   constructor(private boutiqueService: BoutiqueService) {}
+  
 
   async ngAfterViewInit() {
     const el   = this.mapContainerRef.nativeElement;
@@ -81,7 +83,8 @@ export class ClientMallMapComponent implements AfterViewInit, OnDestroy, OnChang
       changes['boutiques']            ||
       changes['users']                ||
       changes['currentEtage']         ||
-      changes['selectedTypeCommerce']
+      changes['selectedTypeCommerce'] || 
+      changes['idsFavoris'] 
     ) {
       this.drawMap();
     }
@@ -182,85 +185,102 @@ export class ClientMallMapComponent implements AfterViewInit, OnDestroy, OnChang
   }
 
   private createBoxContainer(box: Box): PIXI.Container {
-    const w = box.width  ?? 140;
-    const h = box.height ?? 100;
+  const w = box.width  ?? 140;
+  const h = box.height ?? 100;
 
-    const contrat  = this.getContrat(box._id);
-    const boutique = contrat ? this.getBoutique(contrat) : undefined;
+  const contrat  = this.getContrat(box._id);
+  const boutique = contrat ? this.getBoutique(contrat) : undefined;
 
-    const isFiltered = this.selectedTypeCommerce
-      ? boutique?.typeCommerce !== this.selectedTypeCommerce
-      : false;
+  const isFiltered = this.selectedTypeCommerce
+    ? boutique?.typeCommerce !== this.selectedTypeCommerce
+    : false;
 
-    const container = new PIXI.Container();
-    container.pivot.set(w / 2, h / 2);
+  const container = new PIXI.Container();
+  container.pivot.set(w / 2, h / 2);
 
-    // ── Couleurs identiques à l'admin ──
-    const typeColor = boutique
-      ? this.boutiqueService.getColorForType(boutique.typeCommerce)
-      : undefined;
+  const typeColor = boutique
+    ? this.boutiqueService.getColorForType(boutique.typeCommerce)
+    : undefined;
 
-    const background = new PIXI.Graphics();
-    this.drawBackground(background, w, h, box.statut === 'LIBRE', typeColor);
-    container.addChild(background);
-    container.alpha = isFiltered ? 0.25 : 1;
+  const background = new PIXI.Graphics();
+  this.drawBackground(background, w, h, box.statut === 'LIBRE', typeColor);
+  container.addChild(background);
+  container.alpha = isFiltered ? 0.25 : 1;
 
-    // ── Textes avec rotation inversée (identique à l'admin) ──
-    const textContainer = new PIXI.Container();
-    textContainer.rotation = -(box.rotation ?? 0);
+  // ── Textes ──
+  const textContainer = new PIXI.Container();
+  textContainer.rotation = -(box.rotation ?? 0);
 
-    const label = new PIXI.Text(box.nom, {
-      fontSize: 14, fill: 0x222222,
-      fontWeight: 'bold', align: 'center'
+  const label = new PIXI.Text(box.nom, {
+    fontSize: 14, fill: 0x222222,
+    fontWeight: 'bold', align: 'center'
+  });
+  label.anchor.set(0.5);
+  label.y = boutique ? -8 : 0;
+  textContainer.addChild(label);
+
+  if (boutique) {
+    const bLabel = new PIXI.Text(boutique.nom, {
+      fontSize: 12, fill: 0x333333, align: 'center',
+      wordWrap: true, wordWrapWidth: w * 0.85, breakWords: true
     });
-    label.anchor.set(0.5);
-    label.y = boutique ? -8 : 0;
-    textContainer.addChild(label);
+    bLabel.anchor.set(0.5);
+    bLabel.y = 10;
+    textContainer.addChild(bLabel);
 
-    if (boutique) {
-      const bLabel = new PIXI.Text(boutique.nom, {
-        fontSize: 12, fill: 0x333333, align: 'center',
-        wordWrap: true, wordWrapWidth: w * 0.85, breakWords: true
-      });
-      bLabel.anchor.set(0.5);
-      bLabel.y = 10;
-      textContainer.addChild(bLabel);
-
-      const tLabel = new PIXI.Text(boutique.typeCommerce, {
-        fontSize: 10, fill: 0x666666,
-        fontStyle: 'italic', align: 'center'
-      });
-      tLabel.anchor.set(0.5);
-      tLabel.y = 26;
-      textContainer.addChild(tLabel);
-    }
-
-    container.addChild(textContainer);
-
-    // ── Zone cliquable uniquement si boutique active ──
-    if (boutique && !isFiltered) {
-      const hitArea = new PIXI.Graphics();
-      hitArea.rect(-w/2, -h/2, w, h).fill(0x000000, 0);
-      hitArea.eventMode = 'static';
-      hitArea.cursor    = 'pointer';
-
-      hitArea.on('pointerover', () => {
-        background.tint = 0xdddddd;
-        this.app?.renderer.render(this.app.stage);
-      });
-      hitArea.on('pointerout', () => {
-        background.tint = 0xffffff;
-        this.app?.renderer.render(this.app.stage);
-      });
-      hitArea.on('pointerdown', () => {
-        this.boutiqueClick.emit(box);
-      });
-
-      container.addChild(hitArea);
-    }
-
-    return container;
+    const tLabel = new PIXI.Text(boutique.typeCommerce, {
+      fontSize: 10, fill: 0x666666,
+      fontStyle: 'italic', align: 'center'
+    });
+    tLabel.anchor.set(0.5);
+    tLabel.y = 26;
+    textContainer.addChild(tLabel);
   }
+
+  container.addChild(textContainer);
+
+  // ── Cœur favori ──────────────────────────────
+  if (boutique) {
+    const boutiqueId = this.toStringId(boutique._id);
+    const estFavori  = this.idsFavoris.has(boutiqueId);
+
+    const heartText = new PIXI.Text(estFavori ? '❤️' : '🤍', {
+      fontSize: 14,
+    });
+    heartText.anchor.set(0.5);
+    // Positionner en haut à droite de la box
+    heartText.x =  w / 2 - 14;
+    heartText.y = -h / 2 + 12;
+    heartText.rotation = -(box.rotation ?? 0);
+
+    container.addChild(heartText);
+  }
+  // ─────────────────────────────────────────────
+
+  // ── Zone cliquable ──
+  if (boutique && !isFiltered) {
+    const hitArea = new PIXI.Graphics();
+    hitArea.rect(-w/2, -h/2, w, h).fill(0x000000, 0);
+    hitArea.eventMode = 'static';
+    hitArea.cursor    = 'pointer';
+
+    hitArea.on('pointerover', () => {
+      background.tint = 0xdddddd;
+      this.app?.renderer.render(this.app.stage);
+    });
+    hitArea.on('pointerout', () => {
+      background.tint = 0xffffff;
+      this.app?.renderer.render(this.app.stage);
+    });
+    hitArea.on('pointerdown', () => {
+      this.boutiqueClick.emit(box);
+    });
+
+    container.addChild(hitArea);
+  }
+
+  return container;
+}
 
   // ── Même logique que updateBoxBackground de l'admin ──
   private drawBackground(
@@ -322,4 +342,5 @@ export class ClientMallMapComponent implements AfterViewInit, OnDestroy, OnChang
       this.app = undefined;
     }
   }
+
 }

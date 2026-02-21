@@ -12,6 +12,7 @@ import { ProduitService } from '@app/services/produit.service';
 import { PanierService } from '@app/services/panier.service';
 import { PromotionService, Promotion } from '@app/services/promotion.service';
 import { Produit } from '@app/model/produit-models';
+import { FavoriService } from '@app/services/favori.service';
 
 @Component({
   selector: 'app-client-boutique',
@@ -33,6 +34,7 @@ export class ClientBoutiqueComponent implements OnInit {
   private produitService   = inject(ProduitService);
   private panierService    = inject(PanierService);
   private promotionService = inject(PromotionService);
+  private favoriService = inject(FavoriService);
   private snackBar         = inject(MatSnackBar);
   private route            = inject(ActivatedRoute);
   private router           = inject(Router);
@@ -61,6 +63,12 @@ export class ClientBoutiqueComponent implements OnInit {
 
   recherche = signal('');
 
+  filtreFavoris = signal(false);
+
+  toggleFiltreFavoris() {
+    this.filtreFavoris.update(v => !v);
+  }
+
   filteredProduits = computed(() => {
     let liste = this.produits();
 
@@ -71,6 +79,10 @@ export class ClientBoutiqueComponent implements OnInit {
     if (terme) liste = liste.filter(p =>
       p.details.nom.toLowerCase().includes(terme)
     );
+
+    if (this.filtreFavoris()) {
+      liste = liste.filter(p => this.favoriService.isFavori(p.id));
+    }
 
     return liste;
   });
@@ -97,7 +109,8 @@ export class ClientBoutiqueComponent implements OnInit {
       this.loadProduits();
       this.loadPromotionsActives();
     });
-
+    
+    this.favoriService.chargerFavoris(this.clientId, 'produit');
     if (state?.nomBoutique) {
       this.nomBoutique.set(state.nomBoutique);
       localStorage.setItem('nomBoutique', state.nomBoutique);
@@ -229,6 +242,25 @@ export class ClientBoutiqueComponent implements OnInit {
   isStockFaible(produit: Produit): boolean {
     const stock = produit.stock ?? 0;
     return stock > 0 && stock <= 3;
+  }
+
+  toggleFavoriProduit(produit: Produit) {
+    this.favoriService.toggleLocal(produit.id);
+    this.favoriService.toggle(this.clientId, 'produit', produit.id).subscribe({
+      next: (res: { favori: boolean }) => {  
+        const msg = res.favori ? '❤️ Ajouté aux favoris' : 'Retiré des favoris';
+        this.snackBar.open(msg, '', { duration: 2000 });
+      },
+      error: () => this.favoriService.toggleLocal(produit.id)
+    });
+  }
+
+  isFavori(idProduit: string): boolean {
+    return this.favoriService.isFavori(idProduit);
+  }
+
+  allerFavoris() {
+    this.router.navigate(['/client/favoris']);
   }
 
   supprimerArticle(idProduit: string) {

@@ -20,6 +20,9 @@ import { UserService } from '@app/services/user.service';
 
 import { Box, Boutique, Contrat, Etage } from '@app/model/mall-models';
 
+import { FavoriService } from '@app/services/favori.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 interface BoxWithDetails extends Box {
   boutique?: Boutique;
   contrat?: Contrat;
@@ -37,6 +40,7 @@ interface BoxWithDetails extends Box {
     MatTooltipModule,
     ClientMallMapComponent,
     FilterChipsComponent,
+    MatSnackBarModule,
   ],
   templateUrl: './client-mall.component.html',
   styleUrl: './client-mall.component.scss',
@@ -48,11 +52,15 @@ export class ClientMallComponent implements OnInit {
   private boutiqueService = inject(BoutiqueService);
   private userService    = inject(UserService);
   private router         = inject(Router);
+  private favoriService = inject(FavoriService);
+  private snackBar      = inject(MatSnackBar);
 
   // ── État ──
   viewMode: 'map' | 'cards' = 'map';
   currentEtage: Etage = 'RC';
   isLoading = false;
+
+  private readonly clientId = '6994753c7e66b10156cb0cf2';
 
   // ── Données ──
   boxs:      Box[]      = [];
@@ -71,6 +79,7 @@ export class ClientMallComponent implements OnInit {
 
   ngOnInit() {
     this.loadData();
+    this.favoriService.chargerFavoris(this.clientId, 'boutique');
   }
 
   // ── Chargement ──
@@ -244,8 +253,28 @@ export class ClientMallComponent implements OnInit {
 }
 
   getColorForType(typeCommerce?: string): string {
-    if (!typeCommerce) return '#9e9e9e';
-    const code = this.boutiqueService.getColorForType(typeCommerce);
-    return '#' + code.toString(16).padStart(6, '0');
+      if (!typeCommerce) return '#9e9e9e';
+      const code = this.boutiqueService.getColorForType(typeCommerce);
+      return '#' + code.toString(16).padStart(6, '0');
+    }
+
+    isFavoriBoutique(boutiqueId: string): boolean {
+    return this.favoriService.isFavori(boutiqueId);
+  }
+
+  toggleFavoriBoutique(event: Event, boutiqueId: string) {
+    event.stopPropagation(); // empêche le clic de naviguer vers la boutique
+    this.favoriService.toggleLocal(boutiqueId);
+    this.favoriService.toggle(this.clientId, 'boutique', boutiqueId).subscribe({
+      next: (res: { favori: boolean }) => {
+        const msg = res.favori ? '❤️ Boutique ajoutée aux favoris' : 'Boutique retirée des favoris';
+        this.snackBar.open(msg, '', { duration: 2000 });
+      },
+      error: () => this.favoriService.toggleLocal(boutiqueId)
+    });
+  }
+
+  get idsFavoris(): Set<string> {
+    return this.favoriService.idsFavoris();
   }
 }

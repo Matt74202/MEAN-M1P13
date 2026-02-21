@@ -1,0 +1,83 @@
+.favoris-container {
+  padding: 24px;
+  font-family: 'Garet', sans-serif;
+  background: var(--bg-main);
+  min-height: 100vh;
+}
+
+.favoris-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+
+  h1 {
+    font-family: 'Perandory Condensed', sans-serif;
+    font-size: 3rem;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: 2px;
+  }
+}
+
+.favoris-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.favori-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+  }
+
+  .favori-info {
+    padding: 10px 12px;
+    flex: 1;
+
+    .favori-nom {
+      display: block;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    .favori-prix {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      margin-top: 4px;
+    }
+  }
+
+  button {
+    align-self: flex-end;
+    margin: 0 8px 8px;
+  }
+
+  .coeur-actif { color: #e05555; }
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 64px;
+  color: var(--text-secondary);
+
+  mat-icon {
+    font-size: 52px;
+    width: 52px;
+    height: 52px;
+    display: block;
+    margin: 0 auto 16px;
+  }
+}

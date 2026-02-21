@@ -253,3 +253,53 @@
   .boutiques-container { padding: 1.2rem; }
   .boutiques-grid { grid-template-columns: 1fr; }
 }
+
+// ── Favori ──
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  .card-header-info {
+    flex: 1;
+  }
+}
+
+.favori-btn-mall {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s, background 0.15s;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #ccc;
+    transition: color 0.2s, transform 0.2s;
+
+    &.favori-actif {
+      color: #e05555;
+      animation: heartPop 0.25s ease;
+    }
+  }
+
+  &:hover {
+    background: rgba(224, 85, 85, 0.08);
+    transform: scale(1.1);
+
+    mat-icon { color: #e05555; }
+  }
+}
+
+@keyframes heartPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}

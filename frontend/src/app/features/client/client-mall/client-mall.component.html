@@ -62,6 +62,7 @@
       [contrats]="contrats"
       [currentEtage]="currentEtage"
       [selectedTypeCommerce]="selectedTypeCommerce"
+      [idsFavoris]="idsFavoris"
       (boutiqueClick)="onBoutiqueSelected($event)"
     />
   </div>
@@ -75,21 +76,36 @@
 
     <div class="boutiques-grid">
       @for (box of boutiquesFiltered; track box._id) {
+
         <div class="boutique-card" (click)="onBoutiqueSelected(box)">
 
-          <!-- Couleur type commerce -->
+          <!-- Barre couleur -->
           <div class="card-color-bar"
             [style.background-color]="getColorForType(box.boutique?.typeCommerce)">
           </div>
 
+          <!-- Corps de la carte -->
           <div class="card-body">
+
+            <!-- Header : icône + nom + favori -->
             <div class="card-header">
               <mat-icon class="store-icon">storefront</mat-icon>
-              <div>
+              <div class="card-header-info">
                 <h3 class="boutique-nom">{{ box.boutique?.nom }}</h3>
                 <span class="box-ref">{{ box.nom }}</span>
               </div>
+
+              <!-- Bouton favori -->
+              @if (box.boutique?._id) {
+                <button class="favori-btn-mall"
+                  (click)="toggleFavoriBoutique($event, box.boutique!._id!.toString())">
+                  <mat-icon [class.favori-actif]="isFavoriBoutique(box.boutique!._id!.toString())">
+                    {{ isFavoriBoutique(box.boutique!._id!.toString()) ? 'favorite' : 'favorite_border' }}
+                  </mat-icon>
+                </button>
+              }
             </div>
+            <!-- /card-header -->
 
             <span class="type-badge"
               [style.background-color]="getColorForType(box.boutique?.typeCommerce)">
@@ -98,11 +114,11 @@
 
             <div class="contrat-info" *ngIf="box.contrat">
               <mat-icon>event</mat-icon>
-              <span>
-                Jusqu'au {{ box.contrat.dateFin | date:'dd/MM/yyyy' }}
-              </span>
+              <span>Jusqu'au {{ box.contrat.dateFin | date:'dd/MM/yyyy' }}</span>
             </div>
+
           </div>
+          <!-- /card-body -->
 
           <div class="card-footer">
             <span class="voir-produits">
@@ -112,6 +128,8 @@
           </div>
 
         </div>
+        <!-- /boutique-card -->
+
       } @empty {
         <div class="empty-state">
           <mat-icon>store_mall_directory</mat-icon>
@@ -119,6 +137,10 @@
         </div>
       }
     </div>
+    <!-- /boutiques-grid -->
+
   </div>
+  <!-- /boutiques-container -->
 
 </div>
+<!-- /client-mall-wrapper -->

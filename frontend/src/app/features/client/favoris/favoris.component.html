@@ -1,0 +1,29 @@
+  <div class="favoris-container">
+      <header class="favoris-header">
+        <button mat-icon-button (click)="retour()">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <h1>Mes favoris</h1>
+      </header>
+
+      <div class="favoris-grid">
+        @for (produit of produitsFavoris(); track produit.id) {
+          <div class="favori-card">
+            <img [src]="produit.imageUrl || 'https://placehold.co/200x160?text=?'"
+                 [alt]="produit.details.nom" />
+            <div class="favori-info">
+              <span class="favori-nom">{{ produit.details.nom }}</span>
+              <span class="favori-prix">{{ produit.details.prix | number:'1.0-0' }} Ar</span>
+            </div>
+            <button mat-icon-button (click)="retirerFavori(produit.id)">
+              <mat-icon class="coeur-actif">favorite</mat-icon>
+            </button>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <mat-icon>favorite_border</mat-icon>
+            <p>Aucun produit en favori</p>
+          </div>
+        }
+      </div>
+    </div>

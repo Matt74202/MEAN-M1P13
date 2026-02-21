@@ -8,30 +8,49 @@
 
     <h1 class="boutique-title">{{ nomBoutique() }}</h1>
 
-    <button mat-icon-button class="panier-btn"
-      (click)="vue.set(vue() === 'panier' ? 'catalogue' : 'panier')"
-      matTooltip="Mon panier">
-      <mat-icon
-        [matBadge]="nbArticles() > 0 ? nbArticles() : null"
-        matBadgeColor="warn"
-        matBadgeSize="small"
-        aria-hidden="false">
-        shopping_cart
-      </mat-icon>
-    </button>
+    <div class="header-actions">
+      <!-- Icône favoris -->
+      <button mat-icon-button (click)="allerFavoris()" matTooltip="Mes favoris">
+        <mat-icon>favorite</mat-icon>
+      </button>
+
+      <!-- Icône panier -->
+      <button mat-icon-button class="panier-btn"
+        (click)="vue.set(vue() === 'panier' ? 'catalogue' : 'panier')"
+        matTooltip="Mon panier">
+        <mat-icon
+          [matBadge]="nbArticles() > 0 ? nbArticles() : null"
+          matBadgeColor="warn"
+          matBadgeSize="small"
+          aria-hidden="false">
+          shopping_cart
+        </mat-icon>
+      </button>
+    </div>
   </div>
 
   <!-- ══ VUE CATALOGUE ══ -->
   <div class="content-area" *ngIf="vue() === 'catalogue'">
 
+
     <!-- Filtres -->
     <div class="filter-section" *ngIf="categoryItems().length > 0">
+
+      <!-- Chip Favoris sur la même ligne que les autres chips -->
+      <button class="chip-favori"
+        [class.actif]="filtreFavoris()"
+        (click)="toggleFiltreFavoris()">
+        <mat-icon>{{ filtreFavoris() ? 'favorite' : 'favorite_border' }}</mat-icon>
+        Favoris
+      </button>
+
       <app-filter-chips
         [items]="categoryItems()"
         [selected]="selectedCategory()"
         [allLabel]="'Tous les produits'"
         (select)="onCategoryChange($event)"
       />
+
     </div>
 
     <div class="search-bar">
@@ -63,6 +82,13 @@
                 −{{ getPromotion(p.id)!.details.pourcentage }}%
               </div>
             }
+
+            <button class="favori-btn" (click)="toggleFavoriProduit(p); $event.stopPropagation()">
+              <mat-icon [class.favori-actif]="isFavori(p.id)">
+                {{ isFavori(p.id) ? 'favorite' : 'favorite_border' }}
+              </mat-icon>
+            </button>
+
             <img *ngIf="p.imageUrl" [src]="p.imageUrl" [alt]="p.details.nom" class="product-image"/>
             <div *ngIf="!p.imageUrl" class="no-image">
               <mat-icon>image_not_supported</mat-icon>
