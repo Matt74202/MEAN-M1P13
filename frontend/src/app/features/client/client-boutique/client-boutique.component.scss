@@ -518,3 +518,37 @@
     background: #fdf0f0;
   }
 }
+
+// ── Notes des produits ──
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 6px;
+
+  .stars-mini {
+    display: flex;
+    align-items: center;
+  }
+
+  .star-mini {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: #ddd;
+    transition: color 0.15s;
+
+    &.filled { color: #f5a623; }
+  }
+
+  .rating-value {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .rating-count {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+}

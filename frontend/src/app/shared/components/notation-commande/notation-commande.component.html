@@ -1,0 +1,82 @@
+<div class="notation-container">
+
+  <!-- Header -->
+  <div class="notation-header">
+    <h2>{{ etape() === 'boutique' ? 'Noter la boutique' : 'Noter les produits' }}</h2>
+    <p class="notation-subtitle">
+      {{ etape() === 'boutique' ? data.nomBoutique : 'Vos achats chez ' + data.nomBoutique }}
+    </p>
+  </div>
+
+  <!-- Étape 1 : Boutique -->
+  @if (etape() === 'boutique') {
+    <div class="notation-section">
+      <p class="section-label">Votre expérience avec <strong>{{ data.nomBoutique }}</strong></p>
+
+      <div class="stars-row">
+        @for (star of getStars(noteBoutique()); track $index) {
+          <button class="star-btn" (click)="setNoteBoutique($index + 1)">
+            <mat-icon [class.filled]="star === 'full'">
+              {{ star === 'full' ? 'star' : 'star_border' }}
+            </mat-icon>
+          </button>
+        }
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Commentaire (optionnel)</mat-label>
+        <textarea matInput rows="3"
+          [value]="commentaireBoutique()"
+          (input)="commentaireBoutique.set($any($event.target).value)"
+          placeholder="Partagez votre expérience...">
+        </textarea>
+      </mat-form-field>
+    </div>
+
+    <div class="notation-actions">
+      <button mat-button (click)="skipper()">Passer</button>
+      <button mat-flat-button color="primary" (click)="suivant()">
+        Continuer → Produits
+      </button>
+    </div>
+  }
+
+  <!-- Étape 2 : Produits -->
+  @if (etape() === 'produits') {
+    <div class="produits-list">
+      @for (produit of produits(); track $index; let i = $index) {
+        <div class="produit-item">
+          <p class="produit-nom">{{ produit.nom }}</p>
+
+          <div class="stars-row">
+            @for (star of getStars(produit.note); track $index) {
+              <button class="star-btn" (click)="setNoteProduit(i, $index + 1)">
+                <mat-icon [class.filled]="star === 'full'">
+                  {{ star === 'full' ? 'star' : 'star_border' }}
+                </mat-icon>
+              </button>
+            }
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Commentaire (optionnel)</mat-label>
+            <input matInput
+              [value]="produit.commentaire"
+              (input)="setCommentaireProduit(i, $any($event.target).value)"
+              placeholder="Votre avis sur ce produit..." />
+          </mat-form-field>
+        </div>
+      }
+    </div>
+
+    <div class="notation-actions">
+      <button mat-button (click)="skipper()">Passer</button>
+      <button mat-flat-button color="primary"
+        [disabled]="isSubmitting()"
+        (click)="valider()">
+        {{ isSubmitting() ? 'Envoi...' : '✓ Envoyer mes avis' }}
+      </button>
+    </div>
+  }
+
+</div>

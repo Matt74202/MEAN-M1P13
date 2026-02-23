@@ -1,0 +1,98 @@
+.notation-container {
+  padding: 24px;
+  min-width: 420px;
+  max-width: 520px;
+  font-family: 'Garet', sans-serif;
+}
+
+.notation-header {
+  margin-bottom: 20px;
+  h2 { margin: 0; font-family: 'Perandory Condensed', sans-serif; font-size: 1.5rem; color: var(--text-primary); }
+  .notation-subtitle { margin: 4px 0 0; color: var(--text-secondary); font-size: 0.9rem; }
+}
+
+.section-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.stars-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+
+  .star-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: #ddd;
+      transition: color 0.15s, transform 0.15s;
+
+      &.filled { color: #f5a623; }
+    }
+
+    &:hover mat-icon { transform: scale(1.2); color: #f5a623; }
+  }
+}
+
+.produits-list {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-right: 4px;
+}
+
+.produit-item {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+
+  &:last-child { border-bottom: none; }
+
+  .produit-nom {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 10px;
+  }
+}
+
+.full-width { width: 100%; }
+
+.notation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+
+  // Bouton "Passer"
+  button[mat-button] {
+    color: var(--text-secondary);
+    font-family: 'Garet', sans-serif;
+
+    &:hover { color: var(--text-primary); background: var(--bg-main); }
+  }
+
+  // Bouton principal
+  button[mat-flat-button] {
+    background: var(--accent);   // ← vert du thème
+    color: white;
+    font-family: 'Garet', sans-serif;
+    border-radius: 8px;
+
+    &:hover { background: #5a6e4a; }
+    &:disabled { background: #ccc; color: #fff; }
+  }
+}
+
+// Étoiles — garder le jaune doré
+.star-btn mat-icon.filled { color: #f5a623; }

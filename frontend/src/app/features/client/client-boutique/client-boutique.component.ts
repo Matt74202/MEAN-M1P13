@@ -13,6 +13,7 @@ import { PanierService } from '@app/services/panier.service';
 import { PromotionService, Promotion } from '@app/services/promotion.service';
 import { Produit } from '@app/model/produit-models';
 import { FavoriService } from '@app/services/favori.service';
+import { NoteService, StatNote } from '@app/services/note.service';
 
 @Component({
   selector: 'app-client-boutique',
@@ -38,6 +39,7 @@ export class ClientBoutiqueComponent implements OnInit {
   private snackBar         = inject(MatSnackBar);
   private route            = inject(ActivatedRoute);
   private router           = inject(Router);
+  private noteService = inject(NoteService);
 
   // ── IDs ──
   readonly clientId = '6994753c7e66b10156cb0cf2';
@@ -53,6 +55,7 @@ export class ClientBoutiqueComponent implements OnInit {
   // ── Produits ──
   private readonly produits = signal<Produit[]>([]);
   selectedCategory = signal<string | null>(null);
+  statsProduitsMap = signal<Record<string, StatNote>>({});
 
   categoryItems = computed(() => {
     const unique = new Set(
@@ -107,6 +110,7 @@ export class ClientBoutiqueComponent implements OnInit {
       this.boutiqueId = params['id'];
       localStorage.setItem('boutiqueId', this.boutiqueId);
       this.loadProduits();
+      this.loadStatsProduitsMap();
       this.loadPromotionsActives();
     });
     
@@ -261,6 +265,17 @@ export class ClientBoutiqueComponent implements OnInit {
 
   allerFavoris() {
     this.router.navigate(['/client/favoris']);
+  }
+
+  loadStatsProduitsMap() {
+    if (!this.boutiqueId) return;
+    this.noteService.getStatsProduitsBoutique(this.boutiqueId).subscribe({
+      next: res => this.statsProduitsMap.set(res.stats)
+    });
+  }
+
+  getStatsProduit(idProduit: string): StatNote | null {
+    return this.statsProduitsMap()[idProduit] ?? null;
   }
 
   supprimerArticle(idProduit: string) {

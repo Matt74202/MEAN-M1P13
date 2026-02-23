@@ -37,6 +37,47 @@
     </div>
   </div>
 
+  <!-- ══ COMMANDES ACTIVES ══ -->
+  <div class="commandes-bar" *ngIf="commandesEnAttente().length > 0">
+    <button class="commandes-toggle" (click)="toggleCommandes()">
+      <mat-icon>local_shipping</mat-icon>
+      <span>Commandes en attente</span>
+      <span class="commandes-badge">{{ commandesEnAttente().length }}</span>
+      <mat-icon class="chevron" [class.open]="showCommandes()">expand_more</mat-icon>
+    </button>
+
+    @if (showCommandes()) {
+      <div class="commandes-list">
+        @for (achat of commandesEnAttente(); track achat._id) {
+          <div class="commande-item">
+
+            <div class="commande-info">
+              <span class="commande-date">
+                <mat-icon>event</mat-icon>
+                {{ achat.dateAchat | date:'dd/MM/yyyy à HH:mm' }}
+              </span>
+              <span class="commande-produits">
+                {{ achat.details.length }} article(s) —
+                {{ achat.total | number:'1.0-0' }} Ar
+              </span>
+              <div class="commande-detail-produits">
+                @for (d of achat.details; track d.idProduit) {
+                  <span class="detail-chip">{{ d.nom }} × {{ d.quantite }}</span>
+                }
+              </div>
+            </div>
+
+            <button mat-flat-button class="btn-recue" (click)="commandeRecue(achat)">
+              <mat-icon>check_circle</mat-icon>
+              Commande reçue
+            </button>
+
+          </div>
+        }
+      </div>
+    }
+  </div>
+
   <!-- ══ FILTRES ══ -->
   <div class="filter-bar" *ngIf="typeCommerceOptions.length > 0">
     <app-filter-chips
@@ -115,6 +156,22 @@
           </div>
           <!-- /card-body -->
 
+          <!-- Note moyenne boutique -->
+          @if (getStatsBoutique(box.boutique?._id)) {
+            <div class="boutique-rating">
+              <div class="stars-mini">
+                @for (star of [1,2,3,4,5]; track star) {
+                  <mat-icon class="star-mini"
+                    [class.filled]="star <= getStatsBoutique(box.boutique?._id)!.moyenne!">
+                    {{ star <= getStatsBoutique(box.boutique?._id)!.moyenne! ? 'star' : 'star_border' }}
+                  </mat-icon>
+                }
+              </div>
+              <span class="rating-value">{{ getStatsBoutique(box.boutique?._id)!.moyenne }}</span>
+              <span class="rating-count">({{ getStatsBoutique(box.boutique?._id)!.total }} avis)</span>
+            </div>
+          }
+          
           <div class="card-footer">
             <span class="voir-produits">
               Voir les produits
@@ -124,6 +181,7 @@
 
         </div>
         <!-- /boutique-card -->
+
 
       } @empty {
         <div class="empty-state">

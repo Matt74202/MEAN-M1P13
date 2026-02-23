@@ -303,3 +303,143 @@
   50%  { transform: scale(1.35); }
   100% { transform: scale(1); }
 }
+
+// ── Commandes en attente ──
+.commandes-bar {
+  background: white;
+  border-bottom: 1px solid var(--border);
+}
+
+.commandes-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 2.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: background 0.15s;
+
+  mat-icon:first-child { color: var(--accent); }
+
+  &:hover { background: var(--bg-main); }
+
+  .commandes-badge {
+    background: #e05555;
+    color: white;
+    border-radius: 12px;
+    padding: 1px 8px;
+    font-size: 0.78rem;
+  }
+
+  .chevron {
+    margin-left: auto;
+    transition: transform 0.2s;
+    &.open { transform: rotate(180deg); }
+  }
+}
+
+.commandes-list {
+  border-top: 1px solid var(--border);
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.commande-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 2.5rem;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child { border-bottom: none; }
+
+  .commande-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .commande-date {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+
+    mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  }
+
+  .commande-produits {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.92rem;
+  }
+
+  .commande-detail-produits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+  }
+
+  .detail-chip {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .btn-recue {
+    background: var(--accent);
+    color: white;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: 'Garet', sans-serif;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+    &:hover { background: var(--text-primary); }
+  }
+}
+
+.boutique-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 30px;
+
+  .stars-mini {
+    display: flex;
+    align-items: center;
+  }
+
+  .star-mini {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: #ddd;
+
+    &.filled { color: #f5a623; }
+  }
+
+  .rating-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .rating-count {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+  }
+}

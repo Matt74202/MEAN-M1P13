@@ -98,3 +98,32 @@ exports.getCommandesClient = async (req, res) => {
   }
 };
 
+exports.getCommandesEnAttente = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+
+    const achats = await Achat.find({
+      idClient: clientId,
+      statut:   'EN_ATTENTE'
+    }).sort({ createdAt: -1 });
+
+    res.json({ success: true, achats });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.marquerCommandeRecue = async (req, res) => {
+  try {
+    const achat = await Achat.findByIdAndUpdate(
+      req.params.id,
+      { statut: 'CONFIRMEE' },
+      { new: true }
+    );
+    if (!achat) return res.status(404).json({ message: 'Commande non trouvée' });
+    res.json({ success: true, achat });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+

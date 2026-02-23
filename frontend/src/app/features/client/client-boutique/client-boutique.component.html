@@ -99,6 +99,22 @@
           <div class="product-info">
             <h3 class="product-title">{{ p.details.nom }}</h3>
 
+            <!-- Note moyenne produit -->
+            @if (getStatsProduit(p.id)) {
+              <div class="product-rating">
+                <div class="stars-mini">
+                  @for (star of [1,2,3,4,5]; track star) {
+                    <mat-icon class="star-mini"
+                      [class.filled]="star <= getStatsProduit(p.id)!.moyenne!">
+                      {{ star <= getStatsProduit(p.id)!.moyenne! ? 'star' : 'star_border' }}
+                    </mat-icon>
+                  }
+                </div>
+                <span class="rating-value">{{ getStatsProduit(p.id)!.moyenne }}</span>
+                <span class="rating-count">({{ getStatsProduit(p.id)!.total }})</span>
+              </div>
+            }
+
             <!-- Prix avec ou sans promo -->
             <div class="price-block">
               @if (getPromotion(p.id)) {

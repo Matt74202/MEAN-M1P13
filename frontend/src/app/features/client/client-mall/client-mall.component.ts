@@ -23,6 +23,11 @@ import { Box, Boutique, Contrat, Etage } from '@app/model/mall-models';
 import { FavoriService } from '@app/services/favori.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
+import { AchatService } from '@app/services/achat.service';
+import { MatDialog } from '@angular/material/dialog';
+import { NotationCommandeComponent } from '@shared/components/notation-commande/notation-commande.component';
+import { NoteService, StatNote } from '@app/services/note.service';
+
 interface BoxWithDetails extends Box {
   boutique?: Boutique;
   contrat?: Contrat;
@@ -54,6 +59,9 @@ export class ClientMallComponent implements OnInit {
   private router         = inject(Router);
   private favoriService = inject(FavoriService);
   private snackBar      = inject(MatSnackBar);
+  private achatService = inject(AchatService);
+  private dialog       = inject(MatDialog);
+  private noteService = inject(NoteService);
 
   // ── État ──
   viewMode: 'map' | 'cards' = 'map';
@@ -67,6 +75,9 @@ export class ClientMallComponent implements OnInit {
   contrats:  Contrat[]  = [];
   boutiques: Boutique[] = [];
   users:     any[]      = [];
+  commandesEnAttente  = signal<any[]>([]);
+  showCommandes       = signal(false);
+  statsBoutiquesMap = signal<Record<string, StatNote>>({});
 
   // ── Filtre ──
   selectedTypeCommerce: string | null = null;
@@ -80,6 +91,8 @@ export class ClientMallComponent implements OnInit {
   ngOnInit() {
     this.loadData();
     this.favoriService.chargerFavoris(this.clientId, 'boutique');
+    this.loadCommandesEnAttente();
+    this.loadStatsBoutiques();
   }
 
   // ── Chargement ──
@@ -276,4 +289,88 @@ export class ClientMallComponent implements OnInit {
   get idsFavoris(): Set<string> {
     return this.favoriService.idsFavoris();
   }
+
+  loadCommandesEnAttente() {
+    this.achatService.getCommandesEnAttente(this.clientId).subscribe({
+      next: res => this.commandesEnAttente.set(res.achats)
+    });
+  }
+
+  toggleCommandes() { this.showCommandes.update(v => !v); }
+
+  commandeRecue(achat: any) {
+    this.achatService.marquerCommandeRecue(achat._id).subscribe({
+      next: () => {
+        this.commandesEnAttente.update(list => list.filter(a => a._id !== achat._id));
+
+        const idBoutiqueStr = achat.idBoutique?._id?.toString()
+          ?? achat.idBoutique?.toString()
+          ?? '';
+
+        console.log('idBoutiqueStr résolu:', idBoutiqueStr);
+
+        const boutiqueLocale = this.boutiques.find(b =>
+          b._id?.toString() === idBoutiqueStr
+        );
+
+        console.log('boutiqueLocale trouvée:', boutiqueLocale);
+
+        if (boutiqueLocale?.nom) {
+          this.ouvrirDialogNotation(achat, boutiqueLocale.nom);
+        } else {
+          this.boutiqueService.getBoutiqueById(idBoutiqueStr).subscribe({
+            next: b  => this.ouvrirDialogNotation(achat, b.nom),
+            error: () => this.ouvrirDialogNotation(achat, 'Boutique inconnue')
+          });
+        }
+      }
+    });
+  }
+
+private ouvrirDialogNotation(achat: any, nomBoutique: string) {
+  console.log('>>> nomBoutique reçu dans ouvrirDialogNotation:', nomBoutique); 
+  this.dialog.open(NotationCommandeComponent, {
+    width: '560px',
+    maxWidth: '95vw',
+    data: {
+      clientId:    this.clientId,
+      idBoutique:  achat.idBoutique,
+      nomBoutique,
+      produits:    achat.details.map((d: any) => ({
+        idProduit: d.idProduit,
+        nom:       d.nom
+      }))
+    }
+  });
+}
+
+  getTotalCommande(achat: any): number {
+    return achat.details.reduce((sum: number, d: any) =>
+      sum + d.prixUnitaire * d.quantite, 0
+    );
+  }
+
+  loadStatsBoutiques() {
+    this.boutiqueService.getBoutiques().subscribe({
+      next: boutiques => {
+        boutiques.forEach(b => {
+          const id = b._id?.toString();
+          if (!id) return;
+          this.noteService.getStatsBoutique(id).subscribe({
+            next: stats => {
+              if (stats.total > 0) {
+                this.statsBoutiquesMap.update(map => ({ ...map, [id]: stats }));
+              }
+            }
+          });
+        });
+      }
+    });
+  }
+
+  getStatsBoutique(boutiqueId?: any): StatNote | null {
+    if (!boutiqueId) return null;
+    return this.statsBoutiquesMap()[boutiqueId.toString()] ?? null;
+  }
+  
 }

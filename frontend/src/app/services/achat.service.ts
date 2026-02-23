@@ -29,5 +29,15 @@ export class AchatService {
     return this.http.get<any[]>(`${this.apiUrl}/client/${clientId}`);
   }
 
+  getCommandesEnAttente(clientId: string): Observable<{ achats: any[] }> {
+    return this.http.get<{ achats: any[] }>(
+      `${this.apiUrl}/${clientId}/en-attente`
+    );
+  }
+
+  marquerCommandeRecue(achatId: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${achatId}/recue`, {});
+  }
+
   
 }

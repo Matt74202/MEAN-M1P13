@@ -45,6 +45,7 @@ app.use('/api/cartes-client',  carteClientRoutes);
 app.use('/api/promotions', require('./src/routes/promotionRoutes'));
 app.use('/api/stock', stockRoutes);
 app.use('/api/favoris', require('./src/routes/favoriRoutes'));
+app.use('/api/notes', require('./src/routes/noteRoutes'));
 
 if (process.env.NODE_ENV === 'development') {
   mongoose.set('debug', true);
