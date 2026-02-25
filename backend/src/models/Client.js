@@ -1,7 +1,17 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const boutiqueSchema = new mongoose.Schema({
+const clientSchema = new mongoose.Schema({
+  nom: {
+    type: String,
+    required: [true, 'Le nom est requis'],
+    trim: true
+  },
+  prenom: {
+    type: String,
+    required: [true, 'Le prénom est requis'],
+    trim: true
+  },
   mail: {
     type: String,
     required: [true, 'L\'email est requis'],
@@ -13,27 +23,13 @@ const boutiqueSchema = new mongoose.Schema({
   mdp: {
     type: String,
     required: [true, 'Le mot de passe est requis'],
-    select: false  // jamais retourné par défaut
+    select: false
   },
-  nom: {
-    type: String,
-    required: [true, 'Le nom est requis'],
-    trim: true
-  },
-  description: {
+  contact: {
     type: String,
     default: ''
   },
-  typeCommerce: {
-    type: String,
-    required: [true, 'Le type de commerce est requis']
-  },
-  contact: {
-    numero: String,
-    email: String,
-    reseau: String
-  },
-  logo: {
+  adresse: {
     type: String,
     default: ''
   }
@@ -41,17 +37,16 @@ const boutiqueSchema = new mongoose.Schema({
   timestamps: true
 });
 
-boutiqueSchema.index({ typeCommerce: 1 });
-boutiqueSchema.index({ nom: 1 });
+clientSchema.index({ mail: 1 });
 
-boutiqueSchema.pre('save', async function() {
+clientSchema.pre('save', async function() {
   if (!this.isModified('mdp')) return;
   const salt = await bcrypt.genSalt(10);
   this.mdp = await bcrypt.hash(this.mdp, salt);
 });
 
-boutiqueSchema.methods.comparePassword = async function(candidatePassword) {
+clientSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.mdp);
 };
 
-module.exports = mongoose.model('Boutique', boutiqueSchema);
+module.exports = mongoose.model('Client', clientSchema);

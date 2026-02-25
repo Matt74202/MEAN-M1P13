@@ -32,6 +32,7 @@ mongoose
   });
 
 // Routes
+app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/boxes',          boxRoutes);     
 app.use('/api/produits',       produitRoutes);
 app.use('/api/boutiques',      boutiqueRoutes);
@@ -47,6 +48,7 @@ app.use('/api/stock', stockRoutes);
 app.use('/api/favoris', require('./src/routes/favoriRoutes'));
 app.use('/api/notes', require('./src/routes/noteRoutes'));
 app.use('/api/dashboard', require('./src/routes/dashboardRoutes'));
+
 
 if (process.env.NODE_ENV === 'development') {
   mongoose.set('debug', true);

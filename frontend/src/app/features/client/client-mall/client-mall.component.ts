@@ -27,6 +27,7 @@ import { AchatService } from '@app/services/achat.service';
 import { MatDialog } from '@angular/material/dialog';
 import { NotationCommandeComponent } from '@shared/components/notation-commande/notation-commande.component';
 import { NoteService, StatNote } from '@app/services/note.service';
+import { AuthService } from '@app/services/auth.service';
 
 interface BoxWithDetails extends Box {
   boutique?: Boutique;
@@ -52,6 +53,7 @@ interface BoxWithDetails extends Box {
 })
 export class ClientMallComponent implements OnInit {
 
+  private authService = inject(AuthService);
   private boxService     = inject(BoxService);
   private contratService = inject(ContratService);
   private boutiqueService = inject(BoutiqueService);
@@ -68,7 +70,7 @@ export class ClientMallComponent implements OnInit {
   currentEtage: Etage = 'RC';
   isLoading = false;
 
-  private readonly clientId = '6994753c7e66b10156cb0cf2';
+  private readonly clientId = this.authService.getProfileId() ?? '';
 
   // ── Données ──
   boxs:      Box[]      = [];

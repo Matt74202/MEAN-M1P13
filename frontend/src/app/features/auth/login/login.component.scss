@@ -1,0 +1,153 @@
+// Variables
+$bg-main: #f8f9f5;
+$text-primary: #3a4a2f;
+$text-secondary: #6b7d5e;
+$accent: #7d936c;
+$accent-dark: #5a7050;
+$border: #ccd5b5;
+$card-bg: #ffffff;
+$error-bg: #fdf0f0;
+$error-border: #e8a0a0;
+$error-text: #8b3a3a;
+
+:host {
+  display: block;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $bg-main;
+  padding: 1rem;
+  font-family: 'Garet', sans-serif;
+}
+
+.login-card {
+  background-color: $card-bg;
+  padding: 2.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(58, 74, 47, 0.08);
+  width: 100%;
+  max-width: 28rem;
+  border: 1px solid $border;
+}
+
+.login-title {
+  font-family: 'New Icon Script', sans-serif;
+  font-size: 2rem;
+  font-weight: 400;
+  text-align: center;
+  margin-bottom: 2rem;
+  color: $text-primary;
+  letter-spacing: 0.05em;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  display: block;
+  color: $text-secondary;
+  font-weight: 400;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid $border;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-family: 'Garet', sans-serif;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+  outline: none;
+  background-color: $bg-main;
+  color: $text-primary;
+
+  &::placeholder {
+    color: $border;
+  }
+
+  &:focus {
+    border-color: $accent;
+    box-shadow: 0 0 0 3px rgba(125, 147, 108, 0.15);
+    background-color: $card-bg;
+  }
+}
+
+.btn-submit {
+  width: 100%;
+  background-color: $accent;
+  color: $card-bg;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 400;
+  font-size: 1rem;
+  font-family: 'Garet', sans-serif;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+
+  &:hover:not(:disabled) {
+    background-color: $accent-dark;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.error-message {
+  margin-top: 0.5rem;
+  padding: 0.875rem 1rem;
+  background-color: $error-bg;
+  border: 1px solid $error-border;
+  color: $error-text;
+  border-radius: 0.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.login-footer {
+  margin-top: 2rem;
+  text-align: center;
+  color: $text-secondary;
+  font-size: 0.875rem;
+
+  p {
+    margin-bottom: 0.5rem;
+  }
+
+  a {
+    color: $accent;
+    font-weight: 400;
+    text-decoration: none;
+    transition: color 0.2s;
+    font-family: 'Garet', sans-serif;
+
+    &:hover {
+      color: $accent-dark;
+      text-decoration: underline;
+    }
+  }
+}

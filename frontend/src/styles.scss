@@ -1,6 +1,3 @@
-
-// Custom Theming for Angular Material
-// For more information: https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
 html {
@@ -13,7 +10,9 @@ html {
     typography: Roboto,
     density: 0,
   ));
-}/* Garet */
+}
+
+/* Garet */
 @font-face {
   font-family: 'Garet';
   src: url('assets/fonts/Garet-Book.ttf') format('truetype');
@@ -38,21 +37,16 @@ html {
 }
 
 body {
-  font-family: 'Garet', sans-serif; /* Par défaut pour tout le texte */
+  font-family: 'Garet', sans-serif;
 }
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
-// boutique-home.component.scss (et global si possible)
 :root {
-  --bg-main:       #f8f9f5;       // très clair, presque blanc cassé
-  --text-primary:  #3a4a2f;       // vert foncé très discret
-  --text-secondary:#6b7d5e;       // vert moyen-gris
-  --accent:        #7d936c;       // vert doux (utilisé avec parcimonie)
-  --border:        #ccd5b5;       // vert très pâle pour bordures
+  --bg-main:       #f8f9f5;
+  --text-primary:  #3a4a2f;
+  --text-secondary:#6b7d5e;
+  --accent:        #7d936c;
+  --border:        #ccd5b5;
   --card-bg:       #ffffff;
 }
-
-
-
-

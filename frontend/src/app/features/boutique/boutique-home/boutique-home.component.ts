@@ -17,6 +17,7 @@ import { Produit } from '@app/model/produit-models';
 import { ProduitService } from '@app/services/produit.service';
 import { BoutiqueService } from '@app/services/boutique.service';
 import { PromotionService, Promotion } from '@app/services/promotion.service';
+import { AuthService } from '@app/services/auth.service';
 
 @Component({
   selector: 'app-boutique-home',
@@ -38,6 +39,7 @@ import { PromotionService, Promotion } from '@app/services/promotion.service';
 })
 export class BoutiqueHomeComponent implements OnInit {
 
+  private authService = inject(AuthService);
   private dialog           = inject(MatDialog);
   private snackBar         = inject(MatSnackBar);
   private produitService   = inject(ProduitService);
@@ -45,7 +47,7 @@ export class BoutiqueHomeComponent implements OnInit {
   private promotionService = inject(PromotionService);
   private fb               = inject(FormBuilder);
 
-  private readonly boutiqueId = '698f190319727b22bdcb0ce2';
+  private readonly boutiqueId = this.authService.getProfileId() ?? '';
 
   protected readonly produits = signal<Produit[]>([]);
   nomBoutique      = signal('Ma Boutique');
