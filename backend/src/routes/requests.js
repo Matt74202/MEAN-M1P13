@@ -132,11 +132,9 @@ router.post('/:id/approve', auth, async (req, res) => {
 
     // Récupérer le mot de passe hashé de l'utilisateur
     const userWithPassword = await User.findById(request.userId._id).select('+mdp');
-    
     if (!userWithPassword) {
       return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
     }
-
     console.log('[APPROVE] Mot de passe récupéré:', !!userWithPassword.mdp);
 
     // Vérifier si la boutique existe déjà
@@ -153,16 +151,11 @@ router.post('/:id/approve', auth, async (req, res) => {
       
       const mapTypeCommerce = (type) => {
         const mapping = {
-          'électronique': 'tech',
-          'tech': 'tech',
-          'vêtements': 'mode',
-          'mode': 'mode',
-          'alimentaire': 'alimentation',
-          'alimentation': 'alimentation',
-          'cosmétique': 'beauté',
-          'beauté': 'beauté',
-          'service': 'services',
-          'services': 'services'
+          'électronique': 'tech', 'tech': 'tech',
+          'vêtements': 'mode', 'mode': 'mode',
+          'alimentaire': 'alimentation', 'alimentation': 'alimentation',
+          'cosmétique': 'beauté', 'beauté': 'beauté',
+          'service': 'services', 'services': 'services'
         };
         return mapping[type?.toLowerCase()] || 'autre';
       };
@@ -186,28 +179,35 @@ router.post('/:id/approve', auth, async (req, res) => {
 
       const result = await Boutique.collection.insertOne(boutiqueData);
       boutique = await Boutique.findById(result.insertedId);
-      
       console.log('[APPROVE] Boutique créée avec succès:', boutique._id);
     }
 
-    // Mise à jour du box
-    const box = await Box.findById(request.boxId);
+    // ✅ Vérification fraîche du box depuis la DB
+    const box = await Box.findById(request.boxId._id);
     if (!box) {
       return res.status(404).json({ success: false, message: 'Box non trouvé' });
     }
-    
-    box.statut = 'occupe';
-    box.locataire = boutique._id;
-    await box.save();
-    console.log('[APPROVE] Box mis à jour:', box._id);
+    if (box.statut !== 'libre') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Ce box est déjà occupé, impossible de valider cette demande' 
+      });
+    }
 
-    // ← AJOUT : Création du contrat
-    const dureeMois = request.dureeMoisSouhaitee || 12; // fallback si jamais absent (mais devrait pas arriver)
+    // ✅ Mise à jour du box via findByIdAndUpdate (bypass hooks)
+    await Box.findByIdAndUpdate(
+      request.boxId._id,
+      { statut: 'occupe', locataire: boutique._id },
+      { new: true }
+    );
+    console.log('[APPROVE] Box mis à jour:', request.boxId._id);
 
+    // Création du contrat
+    const dureeMois = request.dureeMoisSouhaitee || 12;
     const dateDebut = new Date();
     const dateFin = new Date(dateDebut);
     dateFin.setMonth(dateFin.getMonth() + dureeMois);
-    dateFin.setHours(23, 59, 59, 999); // fin de journée
+    dateFin.setHours(23, 59, 59, 999);
 
     const nouveauContrat = new Contrat({
       userId: request.userId._id,
@@ -216,27 +216,20 @@ router.post('/:id/approve', auth, async (req, res) => {
       dateFin,
       dureeMois,
       loyerMensuel: box.loyer || 0,
-      caution: (box.loyer || 0) * 2,           // exemple : 2 mois
-      statut: 'actif',
-      // clauses: [],                          // à remplir si tu as une logique
-      // paiements: [],                        // idem
-      // documents: [],
-      // signatureClient: null
+      caution: (box.loyer || 0) * 2,
+      statut: 'signe'
     });
-
     await nouveauContrat.save();
     console.log('[APPROVE] Contrat créé :', nouveauContrat._id);
 
-    // Mettre à jour le rôle de l'utilisateur
-    await User.findByIdAndUpdate(request.userId._id, { 
-      role: 'boutique'
-    });
+    // Mise à jour du rôle utilisateur
+    await User.findByIdAndUpdate(request.userId._id, { role: 'boutique' });
     console.log('[APPROVE] User mis à jour: role = boutique');
 
     // Marquer la demande comme approuvée
     request.statut = 'approved';
     request.dateReponse = new Date();
-    // optionnel : request.contratId = nouveauContrat._id;
+    request.contratId = nouveauContrat._id;
     await request.save();
     console.log('[APPROVE] Demande marquée comme approved');
 
@@ -250,7 +243,7 @@ router.post('/:id/approve', auth, async (req, res) => {
         typeCommerce: boutique.typeCommerce,
         boxes: boutique.boxes
       },
-      contratId: nouveauContrat._id           // ← retour utile pour le frontend admin si besoin
+      contratId: nouveauContrat._id
     });
   } catch (err) {
     console.error('[POST /approve] Erreur complète:', err);
