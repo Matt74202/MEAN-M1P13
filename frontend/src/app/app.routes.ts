@@ -7,6 +7,7 @@ import { CommandeValidationComponent } from './features/client/commande-validati
 import { CarteFideliteConfigComponent } from './features/boutique/carte-fidelite/carte-fidelite-config.component';
 import { GestionStockComponent } from './features/boutique/gestion-stock/gestion-stock.component';
 import { FavorisComponent } from './features/client/favoris/favoris.component';
+import { DashboardBoutiqueComponent } from './features/boutique/dashboard/dashboard-boutique.component';
 
 
 export const routes: Routes = [
@@ -45,6 +46,10 @@ export const routes: Routes = [
   {
     path: 'client/favoris',
     component: FavorisComponent
+  },
+  {
+  path: 'boutique/dashboard',
+    component: DashboardBoutiqueComponent
   },
 
 ];
