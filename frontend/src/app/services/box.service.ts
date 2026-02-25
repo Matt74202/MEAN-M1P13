@@ -2,13 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Box } from '@app/model/mall-models';
+import { environment } from '@environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BoxService {
 
-  private apiUrl = 'http://localhost:5000/api/boxes';  
+  private apiUrl = environment.apiUrl+ '/boxes';  
 
   constructor(private http: HttpClient) {}
 

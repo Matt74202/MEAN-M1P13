@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { CarteFidelite, Palier } from './carte-fidelite.service';
+import { environment } from '@environments/environment';
 
 export interface CarteClient {
   _id?: string;
@@ -26,7 +27,7 @@ export interface SimulationReduction {
 
 @Injectable({ providedIn: 'root' })
 export class CarteClientService {
-  private apiUrl = 'http://localhost:5000/api/cartes-client';
+   private apiUrl = environment.apiUrl+ '/cartes-client';
 
   constructor(private http: HttpClient) {}
 

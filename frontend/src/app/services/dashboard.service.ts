@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '@environments/environment';
 
 export interface DashboardData {
   periode: number;
@@ -19,12 +20,12 @@ export interface DashboardData {
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private http = inject(HttpClient);
-  private base = 'http://localhost:5000/api/dashboard';
+  private apiUrl = environment.apiUrl+ '/dashboard';
 
   getBoutique(boutiqueId: string, periode = 7): Observable<DashboardData> {
     const params = new HttpParams().set('periode', periode.toString());
     return this.http.get<DashboardData>(
-      `${this.base}/boutique/${boutiqueId}`, { params }
+      `${this.apiUrl}/boutique/${boutiqueId}`, { params }
     );
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '@environments/environment';
 
 export interface StatNote {
   moyenne: number | null;
@@ -10,7 +11,7 @@ export interface StatNote {
 @Injectable({ providedIn: 'root' })
 export class NoteService {
   private http = inject(HttpClient);
-  private base = `http://localhost:5000/api/notes`;
+  private base = environment.apiUrl+ '/notes';
 
   noterBoutique(payload: {
     idClient: string; idBoutique: string;

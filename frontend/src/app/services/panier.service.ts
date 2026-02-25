@@ -1,6 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { environment } from '@environments/environment';
 
 export interface ArticlePanier {
   idProduit: string;
@@ -24,7 +25,7 @@ const STORAGE_KEY = 'panier_local';
 @Injectable({ providedIn: 'root' })
 export class PanierService {
 
-   private apiUrl = 'http://localhost:5000/api/paniers';
+  private apiUrl = environment.apiUrl+ '/paniers';
 
   // ── Signal local (source de vérité pour l'UI) ──
   private _panier = signal<Panier>({

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '@environments/environment';
 
 export interface LoginResponse {
   success: boolean;
@@ -20,7 +21,7 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5000/api'; 
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient, private router: Router) {}
 

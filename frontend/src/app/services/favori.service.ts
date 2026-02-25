@@ -1,11 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '@environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class FavoriService {
   private http = inject(HttpClient);
-  private base = `http://localhost:5000/api/favoris`;
+  private base = environment.apiUrl+ '/favoris';
 
   // Set local des IDs en favori pour réactivité immédiate
   private _idsFavoris = signal<Set<string>>(new Set());

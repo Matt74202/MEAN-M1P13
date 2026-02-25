@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '@environments/environment';
 
 export interface Promotion {
   _id: string;
@@ -17,7 +18,7 @@ export interface Promotion {
 @Injectable({ providedIn: 'root' })
 export class PromotionService {
   private http = inject(HttpClient);
-  private api  = 'http://localhost:5000/api/promotions';
+  private api = environment.apiUrl+ '/promotions';
 
   creerPromotion(data: { idBoutique: string; details: Omit<Promotion['details'], never> }): Observable<Promotion> {
     return this.http.post<Promotion>(this.api, data);

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '@environments/environment';
 
 export const RAISONS_SORTIE = [
   { value: 'achat_physique',     label: 'Vente en boutique physique' },
@@ -38,7 +39,7 @@ export interface StockProduit {
 @Injectable({ providedIn: 'root' })
 export class StockService {
   private http = inject(HttpClient);
-  private base = `http://localhost:5000/api/stock`;
+  private base = environment.apiUrl+ '/stock';
 
   entreeStock(payload: {
     idBoutique: string;

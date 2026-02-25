@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '@environments/environment';
 
 export interface Palier {
   achatNumero: number;
@@ -25,7 +26,7 @@ export interface CarteFidelite {
 
 @Injectable({ providedIn: 'root' })
 export class CarteFideliteService {
-  private apiUrl = 'http://localhost:5000/api/carte-fidelite';
+   private apiUrl = environment.apiUrl+ '/carte-fidelite';
 
   constructor(private http: HttpClient) {}
 
