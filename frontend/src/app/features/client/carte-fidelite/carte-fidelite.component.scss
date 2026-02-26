@@ -1,0 +1,405 @@
+// ── Variables ──────────────────────────────────────────────────────────────────
+$border:     #e8eddc;
+$text:       #3a4a2f;
+$text-muted: #7d7369;
+$accent:     #7d936c;
+$bg-main:    #f7f8f5;
+$card-bg:    #ffffff;
+$gold:       #f5a623;
+
+// ── Layout ─────────────────────────────────────────────────────────────────────
+.cartes-container {
+  min-height: 100vh;
+  background: $card-bg;
+  font-family: 'Garet', system-ui, sans-serif;
+  padding: 2rem 3rem 4rem;
+  box-sizing: border-box; 
+
+  @media (max-width: 1024px) { padding: 1.75rem 2rem 3rem; }
+  @media (max-width: 768px)  { padding: 1.25rem 1rem 3rem; }
+}
+
+// ── Header ─────────────────────────────────────────────────────────────────────
+.cartes-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  h1 {
+    font-family: 'Perandory Condensed', 'Garet', sans-serif;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    color: $text;
+    margin: 0;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+}
+
+.cartes-count {
+  font-size: 0.85rem;
+  color: $text-muted;
+  font-weight: 500;
+}
+
+// ── Loading ─────────────────────────────────────────────────────────────────────
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem;
+  gap: 1.25rem;
+  color: $text-muted;
+
+  p { font-size: 0.9rem; margin: 0; }
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba($accent, 0.2);
+  border-top-color: $accent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ── Grille ─────────────────────────────────────────────────────────────────────
+.cartes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 1.8rem 2rem;
+  align-items: start;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+// ── Wrapper carte ──────────────────────────────────────────────────────────────
+.carte-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;      
+}
+
+// ── Badge récompense débloquée ─────────────────────────────────────────────────
+.badge-recompense {
+  display: inline-block;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: white;
+  padding: 0.35rem 1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+// ══ CARTE PHYSIQUE (repris de commande-validation) ═════════════════════════════
+.carte-physique {
+  flex: 1;              
+  width: 100%;
+  border-radius: 20px;
+  padding: 1.5rem;
+  color: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-sizing: border-box;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+  }
+}
+
+.carte-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.carte-logo {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon { font-size: 1.4rem; }
+}
+
+.carte-title {
+  h3 {
+    margin: 0 0 0.2rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.85;
+  }
+}
+
+.carte-dyve {
+  font-family: 'New Icon Script', cursive;
+  font-size: 1.15rem;
+  font-weight: 400;
+}
+
+// ── Cases ──────────────────────────────────────────────────────────────────────
+.cases-grid {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  width: 100%;
+  box-sizing: border-box; 
+  overflow: hidden;       
+}
+
+.case-tampon {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.remplie {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid white;
+    color: var(--c1);
+  }
+
+  &.has-palier {
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+.case-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: 700;
+
+  mat-icon { font-size: 1.4rem; width: 1.4rem; height: 1.4rem; }
+  span { font-size: 0.85rem; opacity: 0.7; }
+}
+
+.palier-stamp {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--c1);
+}
+
+.palier-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .palier-num-case    { font-size: 0.65rem; opacity: 0.7; }
+  .palier-reward-label { font-size: 0.6rem; font-weight: 700; text-align: center; }
+}
+
+// ── Barre de progression ───────────────────────────────────────────────────────
+.progress-section { margin: 1rem 0; }
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 20px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-text {
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+// ── Badges récompenses ─────────────────────────────────────────────────────────
+.carte-reward {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  margin: 1rem 0;
+}
+
+.reward-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--c1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.85rem;
+
+  mat-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+  .reward-at { font-size: 0.7rem; font-weight: 400; opacity: 0.7; }
+}
+
+// ── Footer carte ───────────────────────────────────────────────────────────────
+.carte-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+
+  mat-icon { font-size: 0.9rem; width: 0.9rem; height: 0.9rem; }
+}
+
+// ── Hint prochain palier ───────────────────────────────────────────────────────
+.fidelite-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f3f8f0;
+  border-left: 3px solid #6a9c5a;
+  color: #3a5c2e;
+  font-size: 0.88rem;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #6a9c5a;
+    flex-shrink: 0;
+  }
+
+  strong { font-weight: 700; }
+}
+
+// ── Bouton boutique ────────────────────────────────────────────────────────────
+.btn-boutique {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.55rem 1.1rem;
+  background: none;
+  border: 1px solid $border;
+  border-radius: 8px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.85rem;
+  color: $text-muted;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  align-self: flex-start;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover {
+    color: $text;
+    border-color: $accent;
+    background: rgba($accent, 0.05);
+  }
+}
+
+// ══ EMPTY STATE ═══════════════════════════════════════════════════════════════
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5rem 2rem;
+  gap: 1rem;
+  text-align: center;
+
+  h2 {
+    font-family: 'Perandory Condensed', 'Garet', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: $text;
+    margin: 0;
+  }
+
+  p {
+    font-size: 0.88rem;
+    color: $text-muted;
+    max-width: 360px;
+    margin: 0;
+    line-height: 1.6;
+  }
+}
+
+.empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: $border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    color: $text-muted;
+    opacity: 0.5;
+  }
+}
+
+.btn-explorer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.7rem 1.5rem;
+  background: $accent;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.15s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover { background: darken($accent, 8%); }
+}

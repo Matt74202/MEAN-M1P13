@@ -25,4 +25,5 @@ export const routes: Routes = [
   { path: 'boutique/carte-fidelite', component: CarteFideliteConfigComponent },
   { path: 'boutique/gestion-stock', component: GestionStockComponent },
   { path: 'mall/frais', component: FraisLivraisonComponent },
+  { path: 'client/fidelite', loadComponent: () => import('@app/features/client/carte-fidelite/carte-fidelite.component').then(m => m.MesCartesFideliteComponent) },
 ];

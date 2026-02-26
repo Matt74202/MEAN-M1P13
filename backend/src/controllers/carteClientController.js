@@ -1,5 +1,6 @@
 const CarteClient   = require('../models/CarteClient');
 const CarteFidelite = require('../models/CarteFidelite');
+const Boutique      = require('../models/Boutique'); // adapte le chemin si besoin
 
 // Créer ou récupérer la carte client
 exports.getOrCreateCarteClient = async (idClient, idBoutique) => {
@@ -12,9 +13,9 @@ exports.getOrCreateCarteClient = async (idClient, idBoutique) => {
     carteClient = await CarteClient.create({
       idClient,
       idBoutique,
-      idCarte:    carteFidelite._id,
-      nombreAchat: 0, // ← commence à 0 avant le premier achat
-      dateDebut:   new Date(),
+      idCarte:          carteFidelite._id,
+      nombreAchat:      0,
+      dateDebut:        new Date(),
       dateDernierAchat: new Date(),
     });
   }
@@ -30,7 +31,6 @@ exports.incrementerAchat = async (idClient, idBoutique) => {
   const { carteClient, carteFidelite } = result;
   const nombreCases = carteFidelite.design.nombreCases;
 
-  // Cycle : après nombreCases achats, on repart à 1
   const nouvelleValeur = (carteClient.nombreAchat % nombreCases) + 1;
   carteClient.nombreAchat      = nouvelleValeur;
   carteClient.dateDernierAchat = new Date();
@@ -39,16 +39,47 @@ exports.incrementerAchat = async (idClient, idBoutique) => {
   return { carteClient, carteFidelite };
 };
 
-// GET : Récupérer la carte d'un client pour une boutique
+// GET /client/:clientId — Toutes les cartes d'un client
+exports.getAllCartesClient = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+
+    // Toutes les CarteClient du client
+    const cartesClient = await CarteClient.find({ idClient: clientId });
+
+    if (cartesClient.length === 0) {
+      return res.json([]);
+    }
+
+    // Pour chaque carte : récupérer la CarteFidelite + le nom de la boutique
+    const results = await Promise.all(
+      cartesClient.map(async (carteClient) => {
+        const carteFidelite = await CarteFidelite.findById(carteClient.idCarte);
+        if (!carteFidelite) return null;
+
+        const boutique = await Boutique.findById(carteClient.idBoutique).select('nom');
+        const nomBoutique = boutique?.nom ?? 'Boutique';
+
+        return { carteClient, carteFidelite, nomBoutique };
+      })
+    );
+
+    // Filtrer les nulls (carte fidelite supprimée entre-temps)
+    res.json(results.filter(Boolean));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// GET /:clientId/:boutiqueId — Carte d'un client pour une boutique
 exports.getCarteClient = async (req, res) => {
   try {
     const { clientId, boutiqueId } = req.params;
 
-    // ── Créer automatiquement si n'existe pas ──
     const result = await exports.getOrCreateCarteClient(clientId, boutiqueId);
-    
+
     if (!result) {
-      return res.status(404).json({ message: 'Pas de programme fidélité actif' }); 
+      return res.status(404).json({ message: 'Pas de programme fidélité actif' });
     }
 
     res.json(result);
@@ -57,7 +88,7 @@ exports.getCarteClient = async (req, res) => {
   }
 };
 
-// GET : Simuler la réduction AVANT l'achat
+// GET /simuler-reduction
 exports.simulerReduction = async (req, res) => {
   try {
     const { clientId, boutiqueId, total } = req.query;
@@ -68,11 +99,7 @@ exports.simulerReduction = async (req, res) => {
     }
 
     const { carteClient, carteFidelite } = result;
-    
-    // Nombre d'achats APRÈS cet achat (on simule +1)
     const prochainNombre = carteClient.nombreAchat + 1;
-    
-    // Chercher un palier pour ce nombre
     const palier = (carteFidelite.paliers ?? []).find(p => p.achatNumero === prochainNombre);
 
     let reduction = 0;

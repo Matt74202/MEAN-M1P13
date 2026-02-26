@@ -19,6 +19,10 @@ export interface CarteClientResponse {
   carteFidelite: CarteFidelite;
 }
 
+export interface CarteClientAvecBoutique extends CarteClientResponse {
+  nomBoutique: string;
+}
+
 export interface SimulationReduction {
   reduction: number;
   palier: Palier | null;
@@ -30,6 +34,10 @@ export class CarteClientService {
    private apiUrl = environment.apiUrl+ '/cartes-client';
 
   constructor(private http: HttpClient) {}
+
+  getAllCartes(clientId: string): Observable<CarteClientAvecBoutique[]> {
+    return this.http.get<CarteClientAvecBoutique[]>(`${this.apiUrl}/client/${clientId}`);
+  }
 
   getCarteClient(clientId: string, boutiqueId: string): Observable<CarteClientResponse> {
     return this.http.get<CarteClientResponse>(`${this.apiUrl}/${clientId}/${boutiqueId}`);

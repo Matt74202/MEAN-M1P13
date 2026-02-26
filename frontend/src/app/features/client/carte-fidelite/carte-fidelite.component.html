@@ -1,0 +1,164 @@
+<app-client-navbar />
+
+<div class="cartes-container">
+
+  <header class="cartes-header">
+    <h1>Mes cartes de fidélité</h1>
+    @if (!isLoading() && cartes().length > 0) {
+      <span class="cartes-count">{{ cartes().length }} carte{{ cartes().length > 1 ? 's' : '' }}</span>
+    }
+  </header>
+
+  <!-- ══ LOADING ══ -->
+  @if (isLoading()) {
+    <div class="loading-state" role="status" aria-live="polite">
+      <div class="loading-spinner"></div>
+      <p>Chargement de vos cartes...</p>
+    </div>
+  }
+
+  <!-- ══ GRILLE ══ -->
+  @if (!isLoading()) {
+    <div class="cartes-grid">
+
+      @for (carte of cartes(); track carte.carteClient._id) {
+
+        <div class="carte-wrapper">
+
+          <!-- ── PALIER DÉBLOQUÉ ── -->
+          @if (getPalierActif(carte); as palierActif) {
+            <div class="badge-recompense">
+              🎁 Récompense débloquée : {{ getPalierLabel(palierActif) }}
+            </div>
+          }
+
+          <!-- ══ CARTE PHYSIQUE ══ -->
+          <div class="carte-physique"
+            [style.background]="'linear-gradient(135deg, '
+              + carte.carteFidelite.design.couleur1 + ' 0%, '
+              + carte.carteFidelite.design.couleur2 + ' 100%)'"
+            [style.--c1]="carte.carteFidelite.design.couleur1"
+            [style.--c2]="carte.carteFidelite.design.couleur2">
+
+            <!-- En-tête -->
+            <div class="carte-header">
+              <div class="carte-logo">
+                <mat-icon>card_giftcard</mat-icon>
+              </div>
+              <div class="carte-title">
+                <h3>
+                  <span class="carte-dyve">
+                    {{ carte.nomBoutique }} × Dyve
+                  </span>
+                </h3>
+                @if (carte.carteFidelite.design.slogan) {
+                  <p>{{ carte.carteFidelite.design.slogan }}</p>
+                }
+              </div>
+            </div>
+
+            <!-- Cases -->
+            <div class="cases-grid"
+              [style.grid-template-columns]="'repeat(' + getMaxColumns(carte) + ', 1fr)'"
+              role="group"
+              [attr.aria-label]="getCasesRemplies(carte) + ' achats sur ' + carte.carteFidelite.design.nombreCases">
+
+              @for (i of getCasesArray(carte); track i) {
+                <div class="case-tampon"
+                  [class.remplie]="i < getCasesRemplies(carte)"
+                  [class.has-palier]="getPalierPourCase(carte, i) !== null"
+                  [attr.aria-label]="'Achat ' + (i + 1) + (i < getCasesRemplies(carte) ? ' - validé' : ' - en attente')">
+                  <div class="case-inner">
+                    @if (i < getCasesRemplies(carte)) {
+                      @if (getPalierPourCase(carte, i); as palier) {
+                        <span class="palier-stamp">{{ getPalierLabel(palier) }}</span>
+                      } @else {
+                        <mat-icon>check</mat-icon>
+                      }
+                    } @else {
+                      @if (getPalierPourCase(carte, i); as palier) {
+                        <div class="palier-preview">
+                          <span class="palier-num-case">{{ i + 1 }}</span>
+                          <span class="palier-reward-label">{{ getPalierLabel(palier) }}</span>
+                        </div>
+                      } @else {
+                        <span>{{ i + 1 }}</span>
+                      }
+                    }
+                  </div>
+                </div>
+              }
+
+            </div>
+
+            <!-- Barre de progression -->
+            <div class="progress-section">
+              <div class="progress-bar">
+                <div class="progress-fill"
+                  [style.width.%]="(getCasesRemplies(carte) / carte.carteFidelite.design.nombreCases) * 100">
+                </div>
+              </div>
+              <p class="progress-text">
+                {{ getCasesRemplies(carte) }} / {{ carte.carteFidelite.design.nombreCases }} achats
+              </p>
+            </div>
+
+            <!-- Badges récompenses -->
+            <div class="carte-reward">
+              @for (palier of carte.carteFidelite.paliers; track $index) {
+                <div class="reward-badge">
+                  <mat-icon>emoji_events</mat-icon>
+                  <span>{{ getPalierLabel(palier) }}</span>
+                  <span class="reward-at">au {{ palier.achatNumero }}e achat</span>
+                </div>
+              }
+            </div>
+
+            <!-- Footer -->
+            <div class="carte-footer">
+              <mat-icon>verified</mat-icon>
+              <span>Programme actif — Membre depuis {{ carte.carteClient.dateDebut | date:'MMM yyyy' }}</span>
+            </div>
+
+          </div>
+          <!-- /carte-physique -->
+
+          <!-- ── HINT PROCHAIN PALIER ── -->
+          @if (!getPalierActif(carte) && prochainPalierRestant(carte) > 0) {
+            <div class="fidelite-hint">
+              <mat-icon>star_outline</mat-icon>
+              <span>
+                Plus que <strong>{{ prochainPalierRestant(carte) }} achat{{ prochainPalierRestant(carte) > 1 ? 's' : '' }}</strong>
+                pour votre prochaine récompense !
+              </span>
+            </div>
+          }
+
+          <!-- ── BOUTON BOUTIQUE ── -->
+          <button class="btn-boutique"
+            (click)="allerBoutique(carte.carteClient.idBoutique, carte.nomBoutique)">
+            <mat-icon>storefront</mat-icon>
+            Visiter {{ carte.nomBoutique }}
+          </button>
+
+        </div>
+        <!-- /carte-wrapper -->
+
+      } @empty {
+        <div class="empty-state" role="status">
+          <div class="empty-icon" aria-hidden="true">
+            <mat-icon>loyalty</mat-icon>
+          </div>
+          <h2>Aucune carte de fidélité</h2>
+          <p>Vos cartes apparaîtront ici après votre premier achat dans une boutique</p>
+          <button class="btn-explorer" (click)="allerBoutique('', '')">
+            <mat-icon>store_mall_directory</mat-icon>
+            Explorer le mall
+          </button>
+        </div>
+      }
+
+    </div>
+  }
+
+</div>
