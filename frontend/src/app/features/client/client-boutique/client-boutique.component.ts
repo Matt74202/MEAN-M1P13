@@ -2,18 +2,18 @@ import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatBadgeModule } from '@angular/material/badge';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { FilterChipsComponent } from '@app/shared/UI/filter/filter-chips.component';
+import { ClientNavbarComponent } from '@app/shared/components/client-navbar/client-navbar.component';
 import { ProduitService } from '@app/services/produit.service';
 import { PanierService } from '@app/services/panier.service';
 import { PromotionService, Promotion } from '@app/services/promotion.service';
-import { Produit } from '@app/model/produit-models';
 import { FavoriService } from '@app/services/favori.service';
 import { NoteService, StatNote } from '@app/services/note.service';
+import { AuthService } from '@app/services/auth.service';
+import { Produit } from '@app/model/produit-models';
 
 @Component({
   selector: 'app-client-boutique',
@@ -22,10 +22,9 @@ import { NoteService, StatNote } from '@app/services/note.service';
     CommonModule,
     MatButtonModule,
     MatIconModule,
-    MatBadgeModule,
     MatSnackBarModule,
-    MatTooltipModule,
     FilterChipsComponent,
+    ClientNavbarComponent,
   ],
   templateUrl: './client-boutique.component.html',
   styleUrl:    './client-boutique.component.scss',
@@ -35,27 +34,26 @@ export class ClientBoutiqueComponent implements OnInit {
   private produitService   = inject(ProduitService);
   private panierService    = inject(PanierService);
   private promotionService = inject(PromotionService);
-  private favoriService = inject(FavoriService);
+  private favoriService    = inject(FavoriService);
+  private noteService      = inject(NoteService);
+  private authService      = inject(AuthService);
   private snackBar         = inject(MatSnackBar);
   private route            = inject(ActivatedRoute);
   private router           = inject(Router);
-  private noteService = inject(NoteService);
 
-  // ── IDs ──
-  readonly clientId = '6994753c7e66b10156cb0cf2';
+  readonly clientId = this.authService.getProfileId() ?? '';
   boutiqueId  = '';
   nomBoutique = signal<string>('');
 
-  // ── Promotions actives : map idProduit → Promotion ──
   promotionsActives = signal<Map<string, Promotion>>(new Map());
 
-  // ── Vues ──
   vue = signal<'catalogue' | 'panier'>('catalogue');
 
-  // ── Produits ──
   private readonly produits = signal<Produit[]>([]);
   selectedCategory = signal<string | null>(null);
   statsProduitsMap = signal<Record<string, StatNote>>({});
+  recherche        = signal('');
+  filtreFavoris    = signal(false);
 
   categoryItems = computed(() => {
     const unique = new Set(
@@ -63,14 +61,6 @@ export class ClientBoutiqueComponent implements OnInit {
     );
     return Array.from(unique).map(cat => ({ value: cat, label: cat }));
   });
-
-  recherche = signal('');
-
-  filtreFavoris = signal(false);
-
-  toggleFiltreFavoris() {
-    this.filtreFavoris.update(v => !v);
-  }
 
   filteredProduits = computed(() => {
     let liste = this.produits();
@@ -94,15 +84,15 @@ export class ClientBoutiqueComponent implements OnInit {
     this.recherche.set((event.target as HTMLInputElement).value);
   }
 
+  toggleFiltreFavoris() { this.filtreFavoris.update(v => !v); }
+
   // ── Panier ──
   readonly panier      = this.panierService.panier;
   readonly nbArticles  = this.panierService.nbArticles;
   readonly totalPanier = this.panierService.total;
 
-  // ── Quantités sélectionnées par produit ──
   quantites = signal<Record<string, number>>({});
 
-  // ────────────────────────────────────────────────
   ngOnInit() {
     const state = window.history.state;
 
@@ -113,8 +103,9 @@ export class ClientBoutiqueComponent implements OnInit {
       this.loadStatsProduitsMap();
       this.loadPromotionsActives();
     });
-    
+
     this.favoriService.chargerFavoris(this.clientId, 'produit');
+
     if (state?.nomBoutique) {
       this.nomBoutique.set(state.nomBoutique);
       localStorage.setItem('nomBoutique', state.nomBoutique);
@@ -133,7 +124,6 @@ export class ClientBoutiqueComponent implements OnInit {
         this.produits.set(res.produits || []);
         if (!this.nomBoutique()) this.nomBoutique.set('Boutique');
       },
-      error: err => console.error('[BOUTIQUE] erreur API:', err)
     });
   }
 
@@ -145,11 +135,10 @@ export class ClientBoutiqueComponent implements OnInit {
         promos.forEach(p => map.set(p.details.idProduit, p));
         this.promotionsActives.set(map);
       },
-      error: () => {}
+      error: () => {},
     });
   }
 
-  // ── Helpers promotion ──
   getPromotion(idProduit: string): Promotion | undefined {
     return this.promotionsActives().get(idProduit);
   }
@@ -160,20 +149,17 @@ export class ClientBoutiqueComponent implements OnInit {
     return Math.round(produit.details.prix * (1 - promo.details.pourcentage / 100));
   }
 
-  // ── Catalogue ──
-  onCategoryChange(value: string | null) {
-    this.selectedCategory.set(value);
-  }
+  onCategoryChange(value: string | null) { this.selectedCategory.set(value); }
 
   getQuantite(idProduit: string): number {
     return this.quantites()[idProduit] ?? 1;
   }
 
   incrementer(produit: Produit) {
-    const stockDispo = produit.stock ?? 0;
-    const dejaEnPanier = this.quantiteEnPanier(produit.id);
+    const stockDispo      = produit.stock ?? 0;
+    const dejaEnPanier    = this.quantiteEnPanier(produit.id);
     const qteSelectionnee = this.getQuantite(produit.id);
-    const totalVoulu = dejaEnPanier + qteSelectionnee + 1;
+    const totalVoulu      = dejaEnPanier + qteSelectionnee + 1;
 
     if (totalVoulu > stockDispo) {
       this.snackBar.open(`Stock maximum atteint (${stockDispo} dispo)`, '', { duration: 2000 });
@@ -185,22 +171,24 @@ export class ClientBoutiqueComponent implements OnInit {
   decrementer(idProduit: string) {
     this.quantites.update(q => ({
       ...q,
-      [idProduit]: Math.max(1, (q[idProduit] ?? 1) - 1)
+      [idProduit]: Math.max(1, (q[idProduit] ?? 1) - 1),
     }));
   }
 
   ajouterAuPanier(produit: Produit) {
-    const qte = this.getQuantite(produit.id);
-    const stockDispo = produit.stock ?? 0;
+    const qte          = this.getQuantite(produit.id);
+    const stockDispo   = produit.stock ?? 0;
     const dejaEnPanier = this.quantiteEnPanier(produit.id);
 
     if (stockDispo === 0) {
       this.snackBar.open('Ce produit est en rupture de stock', '', { duration: 2000 });
       return;
     }
-
     if (dejaEnPanier + qte > stockDispo) {
-      this.snackBar.open(`Stock insuffisant — seulement ${stockDispo - dejaEnPanier} disponible(s)`, '', { duration: 2500 });
+      this.snackBar.open(
+        `Stock insuffisant — seulement ${stockDispo - dejaEnPanier} disponible(s)`,
+        '', { duration: 2500 }
+      );
       return;
     }
 
@@ -210,7 +198,7 @@ export class ClientBoutiqueComponent implements OnInit {
         this.snackBar.open(`✓ ${produit.details.nom} ajouté au panier`, '', { duration: 2000 });
         this.quantites.update(q => ({ ...q, [produit.id]: 1 }));
       },
-      error: () => this.snackBar.open('Erreur lors de l\'ajout', '', { duration: 2000 })
+      error: () => this.snackBar.open("Erreur lors de l'ajout", '', { duration: 2000 }),
     });
   }
 
@@ -218,59 +206,48 @@ export class ClientBoutiqueComponent implements OnInit {
     return this.panier().articles.find(a => a.idProduit === idProduit)?.quantite ?? 0;
   }
 
-  // ── Panier ──
   modifierQuantite(idProduit: string, delta: number) {
     const article = this.panier().articles.find(a => a.idProduit === idProduit);
     if (!article) return;
 
     const newQte = article.quantite + delta;
 
-    if (newQte <= 0) {
-      this.supprimerArticle(idProduit);
-      return;
-    }
+    if (newQte <= 0) { this.supprimerArticle(idProduit); return; }
 
     const produit = this.produits().find(p => p.id === idProduit);
     if (produit && newQte > (produit.stock ?? 0)) {
-      this.snackBar.open(`Stock maximum atteint`, '', { duration: 2000 });
+      this.snackBar.open('Stock maximum atteint', '', { duration: 2000 });
       return;
     }
 
     this.panierService.modifierQuantite(this.clientId, idProduit, newQte).subscribe();
   }
 
-  isRuptureStock(produit: Produit): boolean {
-    return (produit.stock ?? 0) === 0;
-  }
-
+  isRuptureStock(produit: Produit): boolean { return (produit.stock ?? 0) === 0; }
   isStockFaible(produit: Produit): boolean {
-    const stock = produit.stock ?? 0;
-    return stock > 0 && stock <= 3;
+    const s = produit.stock ?? 0;
+    return s > 0 && s <= 3;
   }
 
   toggleFavoriProduit(produit: Produit) {
     this.favoriService.toggleLocal(produit.id);
     this.favoriService.toggle(this.clientId, 'produit', produit.id).subscribe({
-      next: (res: { favori: boolean }) => {  
+      next: (res: { favori: boolean }) => {
         const msg = res.favori ? '❤️ Ajouté aux favoris' : 'Retiré des favoris';
         this.snackBar.open(msg, '', { duration: 2000 });
       },
-      error: () => this.favoriService.toggleLocal(produit.id)
+      error: () => this.favoriService.toggleLocal(produit.id),
     });
   }
 
-  isFavori(idProduit: string): boolean {
-    return this.favoriService.isFavori(idProduit);
-  }
+  isFavori(idProduit: string): boolean { return this.favoriService.isFavori(idProduit); }
 
-  allerFavoris() {
-    this.router.navigate(['/client/favoris']);
-  }
+  allerFavoris()  { this.router.navigate(['/client/favoris']); }
 
   loadStatsProduitsMap() {
     if (!this.boutiqueId) return;
     this.noteService.getStatsProduitsBoutique(this.boutiqueId).subscribe({
-      next: res => this.statsProduitsMap.set(res.stats)
+      next: res => this.statsProduitsMap.set(res.stats),
     });
   }
 
@@ -282,15 +259,6 @@ export class ClientBoutiqueComponent implements OnInit {
     this.panierService.supprimer(this.clientId, idProduit).subscribe();
   }
 
-  viderPanier() {
-    this.panierService.vider(this.clientId).subscribe();
-  }
-
-  passerCommande() {
-    this.router.navigate(['/client/commande-validation']);
-  }
-
-  retourMall() {
-    this.router.navigate(['/client/mall']);
-  }
+  viderPanier()    { this.panierService.vider(this.clientId).subscribe(); }
+  passerCommande() { this.router.navigate(['/client/commande-validation']); }
 }

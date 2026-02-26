@@ -1,3 +1,5 @@
+<app-client-navbar />
+
 <div class="client-mall-wrapper">
 
   <!-- ══ HEADER ══ -->
@@ -26,174 +28,182 @@
       <mat-button-toggle-group
         [value]="viewMode"
         (change)="viewMode = $event.value"
-        class="view-toggle">
+        class="view-toggle"
+        aria-label="Mode d'affichage">
         <mat-button-toggle value="map">
-          <mat-icon>map</mat-icon> Carte
+          <mat-icon>map</mat-icon>
+          <span class="toggle-label">Carte</span>
         </mat-button-toggle>
         <mat-button-toggle value="cards">
-          <mat-icon>storefront</mat-icon> Boutiques
+          <mat-icon>storefront</mat-icon>
+          <span class="toggle-label">Boutiques</span>
         </mat-button-toggle>
       </mat-button-toggle-group>
     </div>
   </div>
 
-  <!-- ══ COMMANDES ACTIVES ══ -->
-  <div class="commandes-bar" *ngIf="commandesEnAttente().length > 0">
-    <button class="commandes-toggle" (click)="toggleCommandes()">
-      <mat-icon>local_shipping</mat-icon>
-      <span>Commandes en attente</span>
-      <span class="commandes-badge">{{ commandesEnAttente().length }}</span>
-      <mat-icon class="chevron" [class.open]="showCommandes()">expand_more</mat-icon>
-    </button>
+  <!-- ══ COMMANDES EN ATTENTE ══ -->
+  @if (commandesEnAttente().length > 0) {
+    <div class="commandes-bar">
+      <button class="commandes-toggle" (click)="toggleCommandes()"
+        [attr.aria-expanded]="showCommandes()">
+        <mat-icon>local_shipping</mat-icon>
+        <span>Commandes en attente</span>
+        <span class="commandes-badge">{{ commandesEnAttente().length }}</span>
+        <mat-icon class="chevron" [class.open]="showCommandes()">expand_more</mat-icon>
+      </button>
 
-    @if (showCommandes()) {
-      <div class="commandes-list">
-        @for (achat of commandesEnAttente(); track achat._id) {
-          <div class="commande-item">
-
-            <div class="commande-info">
-              <span class="commande-date">
-                <mat-icon>event</mat-icon>
-                {{ achat.dateAchat | date:'dd/MM/yyyy à HH:mm' }}
-              </span>
-              <span class="commande-produits">
-                {{ achat.details.length }} article(s) —
-                {{ achat.total | number:'1.0-0' }} Ar
-              </span>
-              <div class="commande-detail-produits">
-                @for (d of achat.details; track d.idProduit) {
-                  <span class="detail-chip">{{ d.nom }} × {{ d.quantite }}</span>
-                }
-              </div>
-            </div>
-
-            <button mat-flat-button class="btn-recue" (click)="commandeRecue(achat)">
-              <mat-icon>check_circle</mat-icon>
-              Commande reçue
-            </button>
-
-          </div>
-        }
-      </div>
-    }
-  </div>
-
-  <!-- ══ FILTRES ══ -->
-  <div class="filter-bar" *ngIf="typeCommerceOptions.length > 0">
-    <app-filter-chips
-      [items]="typeCommerceOptions"
-      [selected]="selectedTypeCommerce"
-      [allLabel]="'Tous les types'"
-      (select)="onFiltreChange($event)"
-    />
-  </div>
-
-  <!-- ══ LOADING ══ -->
-  <div class="loading-state" *ngIf="isLoading">
-    <mat-icon class="spin">sync</mat-icon>
-    <p>Chargement du mall...</p>
-  </div>
-
-  <!-- ══ VUE CARTE ══ -->
-  <div class="map-container" *ngIf="viewMode === 'map' && !isLoading">
-    <app-client-mall-map
-      [boxs]="boxs"
-      [boutiques]="boutiques"
-      [users]="users"
-      [contrats]="contrats"
-      [currentEtage]="currentEtage"
-      [selectedTypeCommerce]="selectedTypeCommerce"
-      [idsFavoris]="idsFavoris"
-      (boutiqueClick)="onBoutiqueSelected($event)"
-    />
-  </div>
-
-  <!-- ══ VUE LISTE BOUTIQUES ══ -->
-  <div class="boutiques-container" *ngIf="viewMode === 'cards' && !isLoading">
-
-    <p class="boutiques-count">
-      {{ boutiquesFiltered.length }} boutique(s) ouverte(s)
-    </p>
-
-    <div class="boutiques-grid">
-      @for (box of boutiquesFiltered; track box._id) {
-
-        <div class="boutique-card" (click)="onBoutiqueSelected(box)">
-
-          <!-- Barre couleur -->
-          <div class="card-color-bar"
-            [style.background-color]="getColorForType(box.boutique?.typeCommerce)">
-          </div>
-
-          <!-- Corps de la carte -->
-          <div class="card-body">
-
-            <!-- Header : icône + nom + favori -->
-            <div class="card-header">
-              <mat-icon class="store-icon">storefront</mat-icon>
-              <div class="card-header-info">
-                <h3 class="boutique-nom">{{ box.boutique?.nom }}</h3>
-                <span class="box-ref">{{ box.nom }}</span>
+      @if (showCommandes()) {
+        <div class="commandes-list" role="list">
+          @for (achat of commandesEnAttente(); track achat._id) {
+            <div class="commande-item" role="listitem">
+              <div class="commande-info">
+                <span class="commande-date">
+                  <mat-icon aria-hidden="true">event</mat-icon>
+                  {{ achat.dateAchat | date:'dd/MM/yyyy à HH:mm' }}
+                </span>
+                <span class="commande-produits">
+                  {{ achat.details.length }} article(s) —
+                  {{ achat.total | number:'1.0-0' }} Ar
+                </span>
+                <div class="commande-detail-produits">
+                  @for (d of achat.details; track d.idProduit) {
+                    <span class="detail-chip">{{ d.nom }} × {{ d.quantite }}</span>
+                  }
+                </div>
               </div>
 
-              <!-- Bouton favori -->
-              @if (box.boutique?._id) {
-                <button class="favori-btn-mall"
-                  (click)="toggleFavoriBoutique($event, box.boutique!._id!.toString())">
-                  <mat-icon [class.favori-actif]="isFavoriBoutique(box.boutique!._id!.toString())">
-                    {{ isFavoriBoutique(box.boutique!._id!.toString()) ? 'favorite' : 'favorite_border' }}
-                  </mat-icon>
-                </button>
-              }
-            </div>
-            <!-- /card-header -->
-
-            <span class="type-badge"
-              [style.background-color]="getColorForType(box.boutique?.typeCommerce)">
-              {{ box.boutique?.typeCommerce }}
-            </span>
-
-          </div>
-          <!-- /card-body -->
-
-          <!-- Note moyenne boutique -->
-          @if (getStatsBoutique(box.boutique?._id)) {
-            <div class="boutique-rating">
-              <div class="stars-mini">
-                @for (star of [1,2,3,4,5]; track star) {
-                  <mat-icon class="star-mini"
-                    [class.filled]="star <= getStatsBoutique(box.boutique?._id)!.moyenne!">
-                    {{ star <= getStatsBoutique(box.boutique?._id)!.moyenne! ? 'star' : 'star_border' }}
-                  </mat-icon>
-                }
-              </div>
-              <span class="rating-value">{{ getStatsBoutique(box.boutique?._id)!.moyenne }}</span>
-              <span class="rating-count">({{ getStatsBoutique(box.boutique?._id)!.total }} avis)</span>
+              <button mat-flat-button class="btn-recue" (click)="commandeRecue(achat)"
+                [attr.aria-label]="'Marquer la commande du ' + (achat.dateAchat | date:'dd/MM') + ' comme reçue'">
+                <mat-icon>check_circle</mat-icon>
+                <span class="btn-recue-label">Commande reçue</span>
+              </button>
             </div>
           }
-          
-          <div class="card-footer">
-            <span class="voir-produits">
-              Voir les produits
-              <mat-icon>arrow_forward</mat-icon>
-            </span>
-          </div>
-
-        </div>
-        <!-- /boutique-card -->
-
-
-      } @empty {
-        <div class="empty-state">
-          <mat-icon>store_mall_directory</mat-icon>
-          <p>Aucune boutique ouverte pour le moment</p>
         </div>
       }
     </div>
-    <!-- /boutiques-grid -->
+  }
 
-  </div>
-  <!-- /boutiques-container -->
+  <!-- ══ FILTRES ══ -->
+  @if (typeCommerceOptions.length > 0) {
+    <div class="filter-bar">
+      <app-filter-chips
+        [items]="typeCommerceOptions"
+        [selected]="selectedTypeCommerce"
+        allLabel="Tous les types"
+        (select)="onFiltreChange($event)"
+      />
+    </div>
+  }
+
+  <!-- ══ LOADING ══ -->
+  @if (isLoading) {
+    <div class="loading-state" role="status" aria-live="polite">
+      <mat-icon class="spin" aria-hidden="true">sync</mat-icon>
+      <p>Chargement du mall...</p>
+    </div>
+  }
+
+  <!-- ══ VUE CARTE ══ -->
+  @if (viewMode === 'map' && !isLoading) {
+    <div class="map-container">
+      <app-client-mall-map
+        [boxs]="boxs"
+        [boutiques]="boutiques"
+        [users]="users"
+        [contrats]="contrats"
+        [currentEtage]="currentEtage"
+        [selectedTypeCommerce]="selectedTypeCommerce"
+        [idsFavoris]="idsFavoris"
+        (boutiqueClick)="onBoutiqueSelected($event)"
+      />
+    </div>
+  }
+
+  <!-- ══ VUE LISTE BOUTIQUES ══ -->
+  @if (viewMode === 'cards' && !isLoading) {
+    <div class="boutiques-container">
+
+      <p class="boutiques-count">
+        {{ boutiquesFiltered.length }} boutique{{ boutiquesFiltered.length > 1 ? 's' : '' }} ouverte{{ boutiquesFiltered.length > 1 ? 's' : '' }}
+      </p>
+
+      <div class="boutiques-grid" role="list">
+        @for (box of boutiquesFiltered; track box._id) {
+
+          <div class="boutique-card" (click)="onBoutiqueSelected(box)" role="listitem"
+            [attr.aria-label]="'Voir la boutique ' + box.boutique?.nom">
+
+            <!-- Barre couleur -->
+            <div class="card-color-bar"
+              [style.background-color]="getColorForType(box.boutique?.typeCommerce)"
+              aria-hidden="true">
+            </div>
+
+            <!-- Corps -->
+            <div class="card-body">
+
+              <div class="card-header">
+                <mat-icon class="store-icon" aria-hidden="true">storefront</mat-icon>
+                <div class="card-header-info">
+                  <h3 class="boutique-nom">{{ box.boutique?.nom }}</h3>
+                  <span class="box-ref">{{ box.nom }}</span>
+                </div>
+
+                @if (box.boutique?._id) {
+                  <button
+                    class="favori-btn-mall"
+                    (click)="toggleFavoriBoutique($event, box.boutique!._id!.toString())"
+                    [attr.aria-label]="(isFavoriBoutique(box.boutique!._id!.toString()) ? 'Retirer des favoris : ' : 'Ajouter aux favoris : ') + box.boutique?.nom"
+                    [attr.aria-pressed]="isFavoriBoutique(box.boutique!._id!.toString())">
+                    <mat-icon [class.favori-actif]="isFavoriBoutique(box.boutique!._id!.toString())">
+                      {{ isFavoriBoutique(box.boutique!._id!.toString()) ? 'favorite' : 'favorite_border' }}
+                    </mat-icon>
+                  </button>
+                }
+              </div>
+
+              <span class="type-badge"
+                [style.background-color]="getColorForType(box.boutique?.typeCommerce)">
+                {{ box.boutique?.typeCommerce }}
+              </span>
+
+              <!-- Note moyenne -->
+              @if (getStatsBoutique(box.boutique?._id); as stats) {
+                <div class="boutique-rating" [attr.aria-label]="'Note : ' + stats.moyenne + ' sur 5'">
+                  <div class="stars-mini" aria-hidden="true">
+                    @for (star of [1,2,3,4,5]; track star) {
+                      <mat-icon class="star-mini" [class.filled]="star <= stats.moyenne!">
+                        {{ star <= stats.moyenne! ? 'star' : 'star_border' }}
+                      </mat-icon>
+                    }
+                  </div>
+                  <span class="rating-value">{{ stats.moyenne }}</span>
+                  <span class="rating-count">({{ stats.total }} avis)</span>
+                </div>
+              }
+
+            </div>
+
+            <div class="card-footer">
+              <span class="voir-produits">
+                Voir les produits
+                <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+              </span>
+            </div>
+
+          </div>
+
+        } @empty {
+          <div class="empty-state" role="status">
+            <mat-icon aria-hidden="true">store_mall_directory</mat-icon>
+            <p>Aucune boutique ouverte pour le moment</p>
+          </div>
+        }
+      </div>
+
+    </div>
+  }
 
 </div>
-<!-- /client-mall-wrapper -->

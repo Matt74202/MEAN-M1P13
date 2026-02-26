@@ -1,270 +1,461 @@
+// ── Variables ──────────────────────────────────────────────────────────────────
+$border:      #e0e0e0;
+$text:        #222;
+$text-muted:  #888;
+$accent:      #7d936c;
+$bg-main:     #f7f8f5;
+$card-bg:     #ffffff;
+
+// ── Wrapper ────────────────────────────────────────────────────────────────────
 .client-mall-wrapper {
   min-height: 100vh;
-  background: var(--bg-main);
+  background: $bg-main;
   font-family: 'Garet', system-ui, sans-serif;
   display: flex;
   flex-direction: column;
 }
 
-// ── Header ──
+// ── Header ─────────────────────────────────────────────────────────────────────
 .mall-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2rem 2.5rem 1.5rem;
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 1.5rem 2rem;
+  background: $card-bg;
+  border-bottom: 1px solid $border;
+  gap: 1rem;
   flex-wrap: wrap;
-  gap: 1.5rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.875rem;
+  }
 }
 
 .mall-title {
-  margin: 0 0 0.3rem;
+  margin: 0 0 0.2rem;
   font-family: 'Perandory Condensed', system-ui, sans-serif;
-  font-size: 2rem;
+  font-size: clamp(1.4rem, 4vw, 2rem);
   font-weight: 400;
   color: #445c3f;
 }
 
 .mall-subtitle {
   margin: 0;
-  color: #888;
-  font-size: 0.95rem;
+  color: $text-muted;
+  font-size: 0.88rem;
 }
 
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
 }
 
+// ── Sélecteur d'étage ──────────────────────────────────────────────────────────
 .etage-selector {
   display: flex;
-  gap: 0.8rem;
+  gap: 0.5rem;
 
   button {
-    border-radius: 6px;
+    border-radius: 8px;
     font-weight: 500;
     transition: all 0.2s;
 
     &.active {
-      background: #1976d2;
+      background: #445c3f;
       color: white;
-      border-color: #1976d2;
+      border-color: #445c3f;
     }
+  }
+
+  @media (max-width: 768px) {
+    button { flex: 1; }
   }
 }
 
+// ── Toggle vue ─────────────────────────────────────────────────────────────────
 .view-toggle {
   ::ng-deep .mat-button-toggle-checked {
-    background: #1976d2;
+    background: #445c3f;
     color: white;
   }
 
   ::ng-deep .mat-button-toggle {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0 1rem;
+  }
+
+  .toggle-label {
+    @media (max-width: 480px) { display: none; } // icône seule sur très petit
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+
+    ::ng-deep .mat-button-toggle-group {
+      width: 100%;
+    }
+
+    ::ng-deep .mat-button-toggle {
+      flex: 1;
+      justify-content: center;
+    }
   }
 }
 
-// ── Filtres ──
-.filter-bar {
-  padding: 1rem 2.5rem;
-  background: white;
-  border-bottom: 1px solid #f0f0f0;
+// ── Commandes en attente ────────────────────────────────────────────────────────
+.commandes-bar {
+  background: $card-bg;
+  border-bottom: 1px solid $border;
 }
 
-// ── Loading ──
+.commandes-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: $text;
+  transition: background 0.15s;
+  text-align: left;
+
+  mat-icon:first-child { color: $accent; }
+
+  &:hover { background: $bg-main; }
+
+  .commandes-badge {
+    background: #e05555;
+    color: white;
+    border-radius: 12px;
+    padding: 1px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .chevron {
+    margin-left: auto;
+    transition: transform 0.2s;
+    &.open { transform: rotate(180deg); }
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px 1rem;
+  }
+}
+
+.commandes-list {
+  border-top: 1px solid $border;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.commande-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 2rem;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child { border-bottom: none; }
+
+  .commande-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .commande-date {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: $text-muted;
+
+    mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  }
+
+  .commande-produits {
+    font-weight: 600;
+    color: $text;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .commande-detail-produits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+  }
+
+  .detail-chip {
+    background: $bg-main;
+    border: 1px solid $border;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    color: $text-muted;
+  }
+
+  .btn-recue {
+    background: $accent;
+    color: white;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: 'Garet', sans-serif;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+    &:hover { background: #3a4a2f; }
+  }
+
+  // Sur mobile : bouton compact, label masqué
+  @media (max-width: 520px) {
+    padding: 12px 1rem;
+    gap: 10px;
+
+    .btn-recue-label { display: none; }
+  }
+}
+
+// ── Filtres ────────────────────────────────────────────────────────────────────
+.filter-bar {
+  padding: 0.875rem 2rem;
+  background: $card-bg;
+  border-bottom: 1px solid #f0f0f0;
+
+  @media (max-width: 768px) {
+    padding: 0.75rem 1rem;
+  }
+}
+
+// ── Loading ────────────────────────────────────────────────────────────────────
 .loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  flex: 1;
   padding: 5rem;
-  color: #aaa;
+  color: #bbb;
   gap: 1rem;
 
-  mat-icon {
-    font-size: 3rem;
-    width: 3rem;
-    height: 3rem;
-  }
-
-  .spin { animation: spin 1s linear infinite; }
+  mat-icon { font-size: 3rem; width: 3rem; height: 3rem; }
+  p { font-size: 0.9rem; margin: 0; }
 }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+.spin { animation: spin 1s linear infinite; }
 
-// ── Carte ──
+// ── Carte / Map ────────────────────────────────────────────────────────────────
 .map-container {
   flex: 1;
-  min-height: 600px;
-  max-height: calc(100vh - 220px);
+  min-height: 500px;
+  max-height: calc(100vh - 200px); // s'ajuste selon ce qui est affiché au-dessus
+
+  @media (max-width: 768px) {
+    min-height: 400px;
+    max-height: calc(100vh - 180px);
+  }
 }
 
-// ── Vue boutiques ──
+// ── Vue boutiques ──────────────────────────────────────────────────────────────
 .boutiques-container {
-  padding: 2rem 2.5rem;
+  padding: 1.5rem 2rem 3rem;
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
+
+  @media (max-width: 768px) {
+    padding: 1rem 1rem 2rem;
+  }
 }
 
 .boutiques-count {
-  color: #888;
-  font-size: 0.95rem;
-  margin: 0 0 1.5rem;
+  color: $text-muted;
+  font-size: 0.88rem;
+  margin: 0 0 1.25rem;
 }
 
 .boutiques-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
-// ── Carte boutique ──
+// ── Carte boutique ─────────────────────────────────────────────────────────────
 .boutique-card {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  background: $card-bg;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   overflow: hidden;
-  transition: all 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
   display: flex;
   flex-direction: column;
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.11);
 
-    .voir-produits { color: #1976d2; }
+    .voir-produits { color: #445c3f; }
     .voir-produits mat-icon { transform: translateX(4px); }
+  }
+
+  // Focus clavier
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 2px;
   }
 }
 
 .card-color-bar {
   height: 5px;
   width: 100%;
+  flex-shrink: 0;
 }
 
 .card-body {
-  padding: 1.3rem 1.5rem;
+  padding: 1.2rem 1.4rem;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 0.75rem;
 }
 
 .card-header {
   display: flex;
   align-items: flex-start;
-  gap: 0.9rem;
+  gap: 10px;
 
   .store-icon {
-    color: #555;
-    margin-top: 0.1rem;
-    font-size: 1.6rem;
-    width: 1.6rem;
-    height: 1.6rem;
+    color: #666;
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .card-header-info {
+    flex: 1;
+    min-width: 0;
   }
 }
 
 .boutique-nom {
-  margin: 0 0 0.2rem;
-  font-size: 1.1rem;
+  margin: 0 0 0.15rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  color: #222;
+  color: $text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .box-ref {
-  font-size: 0.82rem;
-  color: #aaa;
+  font-size: 0.78rem;
+  color: #bbb;
 }
 
 .type-badge {
   display: inline-block;
-  padding: 0.3rem 0.9rem;
+  padding: 0.25rem 0.8rem;
   border-radius: 20px;
   color: white;
-  font-size: 0.83rem;
+  font-size: 0.8rem;
   font-weight: 600;
   align-self: flex-start;
 }
 
-.contrat-info {
+// ── Note boutique ──────────────────────────────────────────────────────────────
+.boutique-rating {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #888;
-  font-size: 0.88rem;
+  gap: 5px;
+  margin-top: auto;
 
-  mat-icon {
-    font-size: 1rem;
-    width: 1rem;
-    height: 1rem;
+  .stars-mini {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+  }
+
+  .star-mini {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: #e0e0e0;
+
+    &.filled { color: #f5a623; }
+  }
+
+  .rating-value {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: $text;
+  }
+
+  .rating-count {
+    font-size: 0.75rem;
+    color: $text-muted;
   }
 }
 
+// ── Footer carte ───────────────────────────────────────────────────────────────
 .card-footer {
-  padding: 0.9rem 1.5rem;
+  padding: 0.75rem 1.4rem;
   border-top: 1px solid #f0f0f0;
 }
 
 .voir-produits {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  color: #888;
-  font-size: 0.9rem;
+  gap: 0.35rem;
+  color: $text-muted;
+  font-size: 0.875rem;
   font-weight: 500;
   transition: color 0.2s;
 
   mat-icon {
-    font-size: 1.1rem;
-    width: 1.1rem;
-    height: 1.1rem;
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
     transition: transform 0.2s;
   }
 }
 
-.empty-state {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 4rem;
-  color: #bbb;
-  gap: 1rem;
-
-  mat-icon { font-size: 4rem; width: 4rem; height: 4rem; }
-  p { font-size: 1.1rem; }
-}
-
-@media (max-width: 768px) {
-  .mall-header { padding: 1.2rem; flex-direction: column; }
-  .header-controls { flex-direction: column; width: 100%; }
-  .etage-selector { width: 100%; button { flex: 1; } }
-  .boutiques-container { padding: 1.2rem; }
-  .boutiques-grid { grid-template-columns: 1fr; }
-}
-
-// ── Favori ──
-.card-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-
-  .card-header-info {
-    flex: 1;
-  }
-}
-
+// ── Favori ─────────────────────────────────────────────────────────────────────
 .favori-btn-mall {
   background: none;
   border: none;
@@ -284,16 +475,12 @@
     color: #ccc;
     transition: color 0.2s, transform 0.2s;
 
-    &.favori-actif {
-      color: #e05555;
-      animation: heartPop 0.25s ease;
-    }
+    &.favori-actif { color: #e05555; animation: heartPop 0.25s ease; }
   }
 
   &:hover {
     background: rgba(224, 85, 85, 0.08);
     transform: scale(1.1);
-
     mat-icon { color: #e05555; }
   }
 }
@@ -304,142 +491,16 @@
   100% { transform: scale(1); }
 }
 
-// ── Commandes en attente ──
-.commandes-bar {
-  background: white;
-  border-bottom: 1px solid var(--border);
-}
-
-.commandes-toggle {
+// ── Empty state ────────────────────────────────────────────────────────────────
+.empty-state {
+  grid-column: 1 / -1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 14px 2.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: 'Garet', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  transition: background 0.15s;
+  padding: 4rem 2rem;
+  color: #bbb;
+  gap: 1rem;
 
-  mat-icon:first-child { color: var(--accent); }
-
-  &:hover { background: var(--bg-main); }
-
-  .commandes-badge {
-    background: #e05555;
-    color: white;
-    border-radius: 12px;
-    padding: 1px 8px;
-    font-size: 0.78rem;
-  }
-
-  .chevron {
-    margin-left: auto;
-    transition: transform 0.2s;
-    &.open { transform: rotate(180deg); }
-  }
-}
-
-.commandes-list {
-  border-top: 1px solid var(--border);
-  max-height: 340px;
-  overflow-y: auto;
-}
-
-.commande-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 2.5rem;
-  border-bottom: 1px solid #f5f5f5;
-
-  &:last-child { border-bottom: none; }
-
-  .commande-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .commande-date {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.82rem;
-    color: var(--text-secondary);
-
-    mat-icon { font-size: 14px; width: 14px; height: 14px; }
-  }
-
-  .commande-produits {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.92rem;
-  }
-
-  .commande-detail-produits {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 2px;
-  }
-
-  .detail-chip {
-    background: var(--bg-main);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 2px 8px;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-  }
-
-  .btn-recue {
-    background: var(--accent);
-    color: white;
-    border-radius: 8px;
-    white-space: nowrap;
-    flex-shrink: 0;
-    font-family: 'Garet', sans-serif;
-
-    mat-icon { font-size: 16px; width: 16px; height: 16px; }
-
-    &:hover { background: var(--text-primary); }
-  }
-}
-
-.boutique-rating {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 30px;
-
-  .stars-mini {
-    display: flex;
-    align-items: center;
-  }
-
-  .star-mini {
-    font-size: 14px;
-    width: 14px;
-    height: 14px;
-    color: #ddd;
-
-    &.filled { color: #f5a623; }
-  }
-
-  .rating-value {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .rating-count {
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-  }
+  mat-icon { font-size: 3.5rem; width: 3.5rem; height: 3.5rem; }
+  p { font-size: 1rem; margin: 0; }
 }

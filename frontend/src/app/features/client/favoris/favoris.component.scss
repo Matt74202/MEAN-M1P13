@@ -1,83 +1,178 @@
+// ── Variables ──────────────────────────────────────────────────────────────────
+$border:     #e8eddc;
+$text:       #3a4a2f;
+$text-muted: #6b7d5e;
+$accent:     #7d936c;
+$bg-main:    #f7f8f5;
+$card-bg:    #ffffff;
+
+// ── Layout ─────────────────────────────────────────────────────────────────────
 .favoris-container {
-  padding: 24px;
+  padding: 2rem 2rem 4rem;
+  max-width: 1280px;
+  margin: 0 auto;
   font-family: 'Garet', sans-serif;
-  background: var(--bg-main);
+  background: $bg-main;
   min-height: 100vh;
+
+  @media (max-width: 768px) { padding: 1.25rem 1rem 3rem; }
+  @media (max-width: 480px) { padding: 1rem 0.75rem 3rem; }
 }
 
+// ── Header ─────────────────────────────────────────────────────────────────────
 .favoris-header {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
 
   h1 {
-    font-family: 'Perandory Condensed', sans-serif;
-    font-size: 3rem;
-    color: var(--text-primary);
+    font-family: 'Perandory Condensed', 'Garet', sans-serif;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    color: $text;
     margin: 0;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
+    line-height: 1;
   }
 }
 
-.favoris-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+.favoris-count {
+  font-size: 0.85rem;
+  color: $text-muted;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
+// ── Grille ─────────────────────────────────────────────────────────────────────
+.favoris-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.25rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.875rem;
+  }
+
+  @media (max-width: 340px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── Carte produit ───────────────────────────────────────────────────────────────
 .favori-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 14px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  transition: box-shadow 0.2s, transform 0.2s;
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba(58, 74, 47, 0.1);
+    transform: translateY(-2px);
+  }
+}
+
+.favori-img-wrapper {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #f0f2ed;
 
   img {
     width: 100%;
-    height: 140px;
+    height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
+
+    .favori-card:hover & { transform: scale(1.04); }
   }
-
-  .favori-info {
-    padding: 10px 12px;
-    flex: 1;
-
-    .favori-nom {
-      display: block;
-      font-weight: 600;
-      color: var(--text-primary);
-      font-size: 0.9rem;
-    }
-
-    .favori-prix {
-      display: block;
-      color: var(--text-secondary);
-      font-size: 0.82rem;
-      margin-top: 4px;
-    }
-  }
-
-  button {
-    align-self: flex-end;
-    margin: 0 8px 8px;
-  }
-
-  .coeur-actif { color: #e05555; }
 }
 
+// ── Corps de carte ─────────────────────────────────────────────────────────────
+.favori-body {
+  padding: 0.875rem 1rem 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.favori-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.favori-nom {
+  font-weight: 600;
+  color: $text;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.favori-cat {
+  font-size: 0.72rem;
+  color: $text-muted;
+  text-transform: capitalize;
+}
+
+.favori-prix {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: $accent;
+  margin-top: 2px;
+}
+
+// ── Bouton retirer ─────────────────────────────────────────────────────────────
+.favori-remove-btn {
+  flex-shrink: 0;
+  transition: transform 0.15s;
+
+  &:hover { transform: scale(1.15); }
+}
+
+.coeur-actif {
+  color: #e05555;
+  transition: color 0.2s;
+
+  .favori-remove-btn:hover & { color: #b71c1c; }
+}
+
+// ── Empty state ────────────────────────────────────────────────────────────────
 .empty-state {
   grid-column: 1 / -1;
-  text-align: center;
-  padding: 64px;
-  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5rem 2rem;
+  color: $text-muted;
+  gap: 0.75rem;
 
   mat-icon {
     font-size: 52px;
     width: 52px;
     height: 52px;
-    display: block;
-    margin: 0 auto 16px;
+    opacity: 0.25;
   }
+
+  p {
+    font-size: 1rem;
+    margin: 0;
+    color: $text;
+    font-weight: 500;
+  }
+}
+
+.empty-hint {
+  font-size: 0.82rem;
+  color: $text-muted;
+  text-align: center;
 }

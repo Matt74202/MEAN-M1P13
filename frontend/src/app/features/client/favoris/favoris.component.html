@@ -1,29 +1,53 @@
-  <div class="favoris-container">
-      <header class="favoris-header">
-        <button mat-icon-button (click)="retour()">
-          <mat-icon>arrow_back</mat-icon>
-        </button>
-        <h1>Mes favoris</h1>
-      </header>
+<app-client-navbar />
 
-      <div class="favoris-grid">
-        @for (produit of produitsFavoris(); track produit.id) {
-          <div class="favori-card">
-            <img [src]="produit.imageUrl || 'https://placehold.co/200x160?text=?'"
-                 [alt]="produit.details.nom" />
-            <div class="favori-info">
-              <span class="favori-nom">{{ produit.details.nom }}</span>
-              <span class="favori-prix">{{ produit.details.prix | number:'1.0-0' }} Ar</span>
-            </div>
-            <button mat-icon-button (click)="retirerFavori(produit.id)">
-              <mat-icon class="coeur-actif">favorite</mat-icon>
-            </button>
+<div class="favoris-container">
+
+  <header class="favoris-header">
+    <h1>Mes favoris</h1>
+    @if (produitsFavoris().length > 0) {
+      <span class="favoris-count">{{ produitsFavoris().length }} produit{{ produitsFavoris().length > 1 ? 's' : '' }}</span>
+    }
+  </header>
+
+  <div class="favoris-grid" role="list">
+    @for (produit of produitsFavoris(); track produit.id) {
+
+      <div class="favori-card" role="listitem">
+        <div class="favori-img-wrapper">
+          <img
+            [src]="produit.imageUrl || 'https://placehold.co/400x280?text=?'"
+            [alt]="produit.details.nom"
+            loading="lazy"
+          />
+        </div>
+
+        <div class="favori-body">
+          <div class="favori-info">
+            <span class="favori-nom">{{ produit.details.nom }}</span>
+            @if (produit.details.categorie) {
+              <span class="favori-cat">{{ produit.details.categorie }}</span>
+            }
+            <span class="favori-prix">{{ produit.details.prix | number:'1.0-0' }} Ar</span>
           </div>
-        } @empty {
-          <div class="empty-state">
-            <mat-icon>favorite_border</mat-icon>
-            <p>Aucun produit en favori</p>
-          </div>
-        }
+
+          <button
+            mat-icon-button
+            class="favori-remove-btn"
+            (click)="retirerFavori(produit.id)"
+            [attr.aria-label]="'Retirer ' + produit.details.nom + ' des favoris'"
+            matTooltip="Retirer des favoris">
+            <mat-icon class="coeur-actif">favorite</mat-icon>
+          </button>
+        </div>
       </div>
-    </div>
+
+    } @empty {
+      <div class="empty-state" role="status">
+        <mat-icon aria-hidden="true">favorite_border</mat-icon>
+        <p>Aucun produit en favori</p>
+        <span class="empty-hint">Ajoutez des produits depuis les boutiques du mall</span>
+      </div>
+    }
+  </div>
+
+</div>
