@@ -1,5 +1,5 @@
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
-import { CommonModule, SlicePipe, DecimalPipe, DatePipe } from '@angular/common';
+import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
@@ -11,13 +11,13 @@ import { BoutiqueService } from '@app/services/boutique.service';
 import { AuthService } from '@app/services/auth.service';
 
 type Vue      = 'attente' | 'toutes';
-type Statut   = 'tous' | 'EN_ATTENTE' | 'CONFIRMEE' ;
+type Statut   = 'tous' | 'EN_ATTENTE' | 'CONFIRMEE' | 'ANNULEE';
 type Livraison = 'tous' | 'livraison' | 'recuperation';
 
 @Component({
   selector: 'app-commande',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, ClientNavbarComponent, SlicePipe, DecimalPipe, DatePipe],
+  imports: [CommonModule, FormsModule, MatIconModule, ClientNavbarComponent, DecimalPipe, DatePipe],
   templateUrl: './commande.component.html',
   styleUrl: './commande.component.scss',
 })
@@ -49,6 +49,7 @@ export class MesCommandesComponent implements OnInit {
     { value: 'tous',       label: 'Tous'       },
     { value: 'EN_ATTENTE', label: 'En attente' },
     { value: 'CONFIRMEE',  label: 'Confirmée'  },
+    { value: 'ANNULEE',    label: 'Annulée'    },
   ];
 
   paiements: { key: string; label: string }[] = [

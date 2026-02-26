@@ -9,6 +9,7 @@ import { GestionStockComponent } from './features/boutique/gestion-stock/gestion
 import { FavorisComponent } from './features/client/favoris/favoris.component';
 import { DashboardBoutiqueComponent } from './features/boutique/dashboard/dashboard-boutique.component';
 import { LoginComponent } from './features/auth/login/login.component';
+import { BoutiqueMallComponent } from './features/boutique/boutique-mall/boutique-mall.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -24,7 +25,9 @@ export const routes: Routes = [
   { path: 'boutique/dashboard', component: DashboardBoutiqueComponent },
   { path: 'boutique/carte-fidelite', component: CarteFideliteConfigComponent },
   { path: 'boutique/gestion-stock', component: GestionStockComponent },
+  { path: 'boutique/mall', component: BoutiqueMallComponent },
   { path: 'mall/frais', component: FraisLivraisonComponent },
   { path: 'client/fidelite', loadComponent: () => import('@app/features/client/carte-fidelite/carte-fidelite.component').then(m => m.MesCartesFideliteComponent) },
   { path: 'client/commandes', loadComponent: () => import('@app/features/client/commande/commande.component').then(m => m.MesCommandesComponent) },
+
 ];

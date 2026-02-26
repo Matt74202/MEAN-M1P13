@@ -1,0 +1,124 @@
+<app-client-navbar />
+
+<div class="boutique-mall-wrapper">
+
+  <!-- ══ HEADER ══ -->
+  <div class="mall-header">
+    <div class="header-left">
+      <h1 class="mall-title">
+        @if (maBoutique(); as b) { {{ b.nom }} }
+        @else { Mon emplacement }
+      </h1>
+      <p class="mall-subtitle">
+        @if (maBox(); as box) {
+          <mat-icon>place</mat-icon>
+          Box {{ box.nom }} · {{ maBoxEtage }}
+        } @else {
+          Visualisez votre position dans le mall
+        }
+      </p>
+    </div>
+
+    <!-- Sélecteur d'étage -->
+    <div class="etage-selector">
+      @for (e of etages; track e.value) {
+        <button mat-stroked-button
+          [class.active]="currentEtage() === e.value"
+          (click)="setEtage(e.value)">
+          {{ e.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ══ BARRE DE STATS ══ -->
+  <div class="stats-bar">
+
+    <div class="stat-chip stat-ma-box">
+      <mat-icon>storefront</mat-icon>
+      <div class="stat-info">
+        <span class="stat-label">Ma box</span>
+        <span class="stat-value">{{ maBox()?.nom ?? '—' }}</span>
+      </div>
+    </div>
+
+    <div class="stat-divider"></div>
+
+    <div class="stat-chip">
+      <span class="stat-dot dot-libre"></span>
+      <div class="stat-info">
+        <span class="stat-label">Boxes libres</span>
+        <span class="stat-value">{{ nbBoxesLibres() }}</span>
+      </div>
+    </div>
+
+    <div class="stat-chip">
+      <span class="stat-dot dot-occupee"></span>
+      <div class="stat-info">
+        <span class="stat-label">Boxes occupées</span>
+        <span class="stat-value">{{ nbBoxesOccupees() }}</span>
+      </div>
+    </div>
+
+    <div class="stat-chip">
+      <div class="stat-info">
+        <span class="stat-label">Taux d'occupation</span>
+        <span class="stat-value">{{ tauxOccupation }}%</span>
+      </div>
+      <div class="progress-mini">
+        <div class="progress-mini-fill" [style.width.%]="tauxOccupation"></div>
+      </div>
+    </div>
+
+    <!-- Légende -->
+    <div class="legende">
+      <span class="legende-item">
+        <span class="legende-dot dot-ma-boutique"></span>
+        Ma boutique
+      </span>
+      <span class="legende-item">
+        <span class="legende-dot dot-libre"></span>
+        Libre
+      </span>
+      <span class="legende-item">
+        <span class="legende-dot dot-occupee"></span>
+        Occupée
+      </span>
+    </div>
+
+  </div>
+
+  <!-- ══ LOADING ══ -->
+  @if (isLoading()) {
+    <div class="loading-state" role="status">
+      <div class="loading-spinner"></div>
+      <p>Chargement du plan...</p>
+    </div>
+  }
+
+  <!-- ══ CARTE ══ -->
+  @if (!isLoading()) {
+    <div class="map-container">
+      <app-boutique-mall-map
+        [boxs]="boxs"
+        [boutiques]="boutiques"
+        [users]="users"
+        [contrats]="contrats"
+        [currentEtage]="currentEtage()"
+        [selectedTypeCommerce]="null"
+        [idsFavoris]="emptyFavoris"
+        [maBoxId]="maBox()?._id?.toString() ?? null"
+        (boutiqueClick)="$event"
+      />
+
+      <!-- Overlay : ma position -->
+      @if (maBox()) {
+        <div class="map-overlay-hint">
+          <mat-icon>my_location</mat-icon>
+          Votre box est surlignée en vert
+        </div>
+      }
+    </div>
+  }
+
+</div>

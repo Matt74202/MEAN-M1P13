@@ -33,7 +33,10 @@ export class BoutiqueNavbarComponent implements OnInit {
     {
       label: 'Boutique',
       icon: 'storefront',
-      links: [{ label: 'Gestion du stock', path: '/boutique/gestion-stock', icon: 'inventory_2' }],
+      links: [
+        { label: 'Mon emplacement',  path: '/boutique/mall',          icon: 'map'          },
+        { label: 'Gestion du stock', path: '/boutique/gestion-stock', icon: 'inventory_2'  },
+      ],
     },
     {
       label: 'Fidélité',
@@ -44,7 +47,7 @@ export class BoutiqueNavbarComponent implements OnInit {
       label: 'Finance',
       icon: 'bar_chart',
       links: [
-        { label: 'Dashboard',          path: '/boutique/dashboard', icon: 'dashboard' },
+        { label: 'Dashboard',          path: '/boutique/dashboard', icon: 'dashboard'    },
         { label: 'Gestion des loyers', path: '/boutique/loyers',    icon: 'receipt_long' },
       ],
     },
@@ -53,7 +56,7 @@ export class BoutiqueNavbarComponent implements OnInit {
       icon: 'admin_panel_settings',
       links: [
         { label: 'Contrats', path: '/boutique/contrats', icon: 'description' },
-        { label: 'Horaires', path: '/boutique/horaires', icon: 'schedule' },
+        { label: 'Horaires', path: '/boutique/horaires', icon: 'schedule'    },
       ],
     },
   ];
