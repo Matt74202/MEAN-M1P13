@@ -54,7 +54,6 @@ export class ClientNavbarComponent implements OnInit, OnDestroy {
 
   readonly navLinks: NavLink[] = [
     { label: 'Accueil',            path: '/client',           icon: 'home' },
-    { label: 'Dashboard',          path: '/client/dashboard', icon: 'dashboard' },
     { label: 'Mes commandes',      path: '/client/commandes', icon: 'receipt_long' },
     { label: 'Cartes de fidélité', path: '/client/fidelite',  icon: 'loyalty' },
     { label: 'Favoris',            path: '/client/favoris',   icon: 'favorite' },

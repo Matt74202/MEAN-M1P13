@@ -26,4 +26,5 @@ export const routes: Routes = [
   { path: 'boutique/gestion-stock', component: GestionStockComponent },
   { path: 'mall/frais', component: FraisLivraisonComponent },
   { path: 'client/fidelite', loadComponent: () => import('@app/features/client/carte-fidelite/carte-fidelite.component').then(m => m.MesCartesFideliteComponent) },
+  { path: 'client/commandes', loadComponent: () => import('@app/features/client/commande/commande.component').then(m => m.MesCommandesComponent) },
 ];

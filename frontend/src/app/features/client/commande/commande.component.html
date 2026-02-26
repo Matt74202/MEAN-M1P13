@@ -1,0 +1,237 @@
+<app-client-navbar />
+
+<div class="commandes-container">
+
+  <header class="commandes-header">
+    <h1>Mes commandes</h1>
+    @if (!isLoading() && commandesFiltrees().length > 0) {
+      <span class="commandes-count">{{ commandesFiltrees().length }} commande{{ commandesFiltrees().length > 1 ? 's' : '' }}</span>
+    }
+  </header>
+
+  <!-- ══ ONGLETS ══ -->
+  <div class="tabs-bar">
+    <button class="tab-btn" [class.active]="vue() === 'attente'" (click)="setVue('attente')">
+      <span class="tab-dot attente"></span>
+      En attente
+      @if (nbAttente() > 0) {
+        <span class="tab-badge">{{ nbAttente() }}</span>
+      }
+    </button>
+    <button class="tab-btn" [class.active]="vue() === 'toutes'" (click)="setVue('toutes')">
+      Toutes les commandes
+    </button>
+  </div>
+
+  <!-- ══ FILTRES ══ -->
+  @if (vue() === 'toutes') {
+    <div class="filtres-bar">
+
+      <div class="filtres-row">
+        <!-- Statut -->
+        <div class="filtre-group">
+          <span class="filtre-label">Statut</span>
+          <div class="filtre-pills">
+            @for (s of statuts; track s.value) {
+              <button class="pill" [class.active]="filtreStatut() === s.value" (click)="setFiltreStatut(s.value)">
+                {{ s.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Paiement -->
+        <div class="filtre-group">
+          <span class="filtre-label">Paiement</span>
+          <div class="filtre-pills">
+            @for (p of paiements; track p.key) {
+              <button class="pill" [class.active]="filtrePaiement() === p.key" (click)="setFiltrePaiement(p.key)">
+                {{ p.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Livraison -->
+        <div class="filtre-group">
+          <span class="filtre-label">Livraison</span>
+          <div class="filtre-pills">
+            <button class="pill" [class.active]="filtreLivraison() === 'tous'"        (click)="setFiltreLivraison('tous')">Tous</button>
+            <button class="pill" [class.active]="filtreLivraison() === 'livraison'"   (click)="setFiltreLivraison('livraison')">Livraison</button>
+            <button class="pill" [class.active]="filtreLivraison() === 'recuperation'"(click)="setFiltreLivraison('recuperation')">Récupération</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ligne 2 : date + boutique -->
+      <div class="filtres-row filtres-row-search">
+
+        <div class="filtre-group filtre-group-dates">
+          <span class="filtre-label">Période</span>
+          <div class="date-range">
+            <input type="date" class="date-input"
+              [value]="filtreDateDebut()"
+              (change)="filtreDateDebut.set($any($event.target).value)"
+              placeholder="Du" />
+            <span class="date-sep">→</span>
+            <input type="date" class="date-input"
+              [value]="filtreDateFin()"
+              (change)="filtreDateFin.set($any($event.target).value)"
+              placeholder="Au" />
+          </div>
+        </div>
+
+        <div class="filtre-group filtre-group-boutique">
+          <span class="filtre-label">Boutique</span>
+          <div class="search-input-wrapper">
+            <mat-icon>search</mat-icon>
+            <input type="text" class="search-input" placeholder="Rechercher une boutique…"
+              [ngModel]="rechercheBoutique()"
+              (ngModelChange)="rechercheBoutique.set($event)" />
+            @if (rechercheBoutique()) {
+              <button class="search-clear" (click)="rechercheBoutique.set('')">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (hasFiltresActifs()) {
+          <button class="btn-reset-filtres" (click)="resetFiltres()">
+            <mat-icon>close</mat-icon>
+            Réinitialiser
+          </button>
+        }
+
+      </div>
+
+    </div>
+  }
+
+  <!-- ══ LOADING ══ -->
+  @if (isLoading()) {
+    <div class="loading-state" role="status">
+      <div class="loading-spinner"></div>
+      <p>Chargement de vos commandes...</p>
+    </div>
+  }
+
+  <!-- ══ GRILLE ══ -->
+  @if (!isLoading()) {
+    <div class="commandes-grid">
+
+      @for (commande of commandesFiltrees(); track commande._id) {
+
+        <div class="commande-card" [class]="'statut-' + commande.statut.toLowerCase()">
+
+          <!-- En-tête toujours visible — cliquable pour ouvrir -->
+          <div class="commande-card-header" (click)="toggleExpand(commande._id + '')">
+
+            <div class="commande-header-main">
+              <div class="commande-meta">
+                <span class="commande-boutique">
+                  <mat-icon>storefront</mat-icon>
+                  {{ commande.nomBoutique ?? 'Boutique' }}
+                </span>
+                <span class="commande-date">{{ commande.createdAt | date:'d MMM yyyy · HH:mm' }}</span>
+              </div>
+
+              <div class="commande-header-right">
+                <span class="total-montant">{{ commande.total | number:'1.0-0' }} Ar</span>
+                <div class="statut-badge" [class]="'badge-' + commande.statut.toLowerCase()">
+                  <span class="statut-dot"></span>
+                  {{ getStatutLabel(commande.statut) }}
+                </div>
+                <mat-icon class="chevron" [class.open]="isExpanded(commande._id + '')">expand_more</mat-icon>
+              </div>
+            </div>
+
+            <!-- Résumé compact (visible quand fermé) -->
+            @if (!isExpanded(commande._id + '')) {
+              <div class="commande-resume">
+                <span>{{ commande.details?.length ?? 0 }} article{{ (commande.details?.length ?? 0) > 1 ? 's' : '' }}</span>
+                <span class="resume-sep">·</span>
+                <span>{{ getPaiementLabel(commande.modePaiement) }}</span>
+                <span class="resume-sep">·</span>
+                <span>{{ commande.typeLivraison === 'livraison' ? 'Livraison' : 'Récupération' }}</span>
+              </div>
+            }
+
+          </div>
+
+          <!-- Contenu accordéon -->
+          @if (isExpanded(commande._id + '')) {
+            <div class="commande-body">
+
+              <!-- Articles -->
+              <div class="commande-articles">
+                @for (article of commande.details; track article.idProduit) {
+                  <div class="article-row">
+                    <span class="article-qty">×{{ article.quantite }}</span>
+                    <span class="article-nom">{{ article.nom }}</span>
+                    <span class="article-prix">{{ (article.quantite * article.prixUnitaire) | number:'1.0-0' }} Ar</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Footer infos -->
+              <div class="commande-card-footer">
+                <div class="commande-infos">
+                  <span class="info-chip">
+                    <mat-icon>{{ commande.typeLivraison === 'livraison' ? 'local_shipping' : 'store' }}</mat-icon>
+                    {{ commande.typeLivraison === 'livraison' ? 'Livraison' : 'Récupération' }}
+                  </span>
+                  <span class="info-chip">
+                    <mat-icon>payments</mat-icon>
+                    {{ getPaiementLabel(commande.modePaiement) }}
+                  </span>
+                  @if (commande.reduction > 0) {
+                    <span class="info-chip reduction">
+                      <mat-icon>discount</mat-icon>
+                      -{{ commande.reduction | number:'1.0-0' }} Ar
+                    </span>
+                  }
+                </div>
+
+                <div class="commande-total-detail">
+                  <span class="total-label">Total</span>
+                  <span class="total-montant-lg">{{ commande.total | number:'1.0-0' }} Ar</span>
+                </div>
+              </div>
+
+              <!-- Action confirmer -->
+              @if (commande.statut === 'EN_ATTENTE') {
+                <div class="commande-actions">
+                  <button class="btn-confirmer"
+                    [disabled]="confirmingId() === commande._id"
+                    (click)="confirmerReception(commande._id + '')">
+                    @if (confirmingId() === commande._id) {
+                      <div class="btn-spinner"></div>
+                      Confirmation...
+                    } @else {
+                      <mat-icon>check_circle</mat-icon>
+                      J'ai reçu ma commande
+                    }
+                  </button>
+                </div>
+              }
+
+            </div>
+          }
+
+        </div>
+
+      } @empty {
+        <div class="empty-state">
+          <div class="empty-icon">
+            <mat-icon>receipt_long</mat-icon>
+          </div>
+          <h2>{{ vue() === 'attente' ? 'Aucune commande en attente' : 'Aucune commande' }}</h2>
+          <p>{{ vue() === 'attente' ? 'Toutes vos commandes ont été confirmées.' : 'Aucune commande ne correspond à vos filtres.' }}</p>
+        </div>
+      }
+
+    </div>
+  }
+
+</div>
