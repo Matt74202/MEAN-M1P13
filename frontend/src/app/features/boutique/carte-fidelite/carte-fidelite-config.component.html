@@ -1,3 +1,5 @@
+<app-boutique-navbar />
+
 <div class="config-container">
 
   <div class="header">
@@ -20,6 +22,7 @@
             <mat-label>Slogan</mat-label>
             <input matInput [(ngModel)]="design.slogan" />
           </mat-form-field>
+
           <div class="color-row">
             <div class="color-picker">
               <label>Couleur principale</label>
@@ -32,6 +35,7 @@
               <span>{{ design.couleur2 }}</span>
             </div>
           </div>
+
           <div class="slider-field">
             <label>Nombre de cases ({{ design.nombreCases }})</label>
             <mat-slider min="4" max="20" step="1" discrete [displayWith]="formatLabel">
@@ -54,7 +58,8 @@
                 <div class="palier-header">
                   <span class="palier-num">Palier {{ $index + 1 }}</span>
                   <button mat-icon-button color="warn" (click)="supprimerPalier($index)"
-                    [disabled]="paliers.length === 1">
+                    [disabled]="paliers.length === 1"
+                    aria-label="Supprimer ce palier">
                     <mat-icon>delete</mat-icon>
                   </button>
                 </div>
@@ -75,11 +80,13 @@
                     </mat-select>
                   </mat-form-field>
 
-                  <mat-form-field appearance="outline" *ngIf="palier.type !== 'gratuit'">
-                    <mat-label>Valeur</mat-label>
-                    <input matInput type="number" [(ngModel)]="palier.valeur" min="1" />
-                    <span matSuffix>{{ palier.type === 'pourcentage' ? '%' : 'Ar' }}</span>
-                  </mat-form-field>
+                  @if (palier.type !== 'gratuit') {
+                    <mat-form-field appearance="outline">
+                      <mat-label>Valeur</mat-label>
+                      <input matInput type="number" [(ngModel)]="palier.valeur" min="1" />
+                      <span matSuffix>{{ palier.type === 'pourcentage' ? '%' : 'Ar' }}</span>
+                    </mat-form-field>
+                  }
                 </div>
 
                 <div class="description-preview">
@@ -116,7 +123,7 @@
           Réinitialiser démo
         </button>
         <button mat-raised-button color="primary" (click)="save()">
-          <mat-icon>save</mat-icon>Enregistrer
+          <mat-icon>save</mat-icon> Enregistrer
         </button>
       </div>
 
@@ -136,7 +143,7 @@
             <mat-icon>card_giftcard</mat-icon>
           </div>
           <div class="carte-title">
-           <h3>{{ nomBoutique() }} × Dyve </h3>
+            <h3>{{ nomBoutique() }} × Dyve</h3>
             <p>{{ design.slogan }}</p>
           </div>
         </div>
@@ -148,17 +155,17 @@
             <div class="case-tampon"
               [class.remplie]="i < casesRemplies()"
               [class.has-palier]="getPalierPourCase(i) !== null"
-              (click)="toggleCase(i)">
+              (click)="toggleCase(i)"
+              [attr.aria-label]="'Case ' + (i + 1)"
+              role="button">
               <div class="case-inner">
                 @if (i < casesRemplies()) {
-                  <!-- Case tamponnée : afficher la récompense si palier, sinon check -->
                   @if (getPalierPourCase(i); as palier) {
                     <span class="palier-stamp">{{ getPalierLabel(palier) }}</span>
                   } @else {
                     <mat-icon>check</mat-icon>
                   }
                 } @else {
-                  <!-- Case vide : afficher le label de palier ou le numéro -->
                   @if (getPalierPourCase(i); as palier) {
                     <div class="palier-preview">
                       <span class="palier-num-case">{{ i + 1 }}</span>
@@ -199,14 +206,14 @@
           <span>Programme actif</span>
         </div>
 
-      </div> <!-- fin .carte-physique -->
+      </div><!-- fin .carte-physique -->
 
       <div class="demo-info">
         <mat-icon>touch_app</mat-icon>
         <span>Cliquez sur les cases pour simuler les tampons</span>
       </div>
 
-    </div> <!-- fin .preview-section -->
+    </div><!-- fin .preview-section -->
 
   </div>
 </div>

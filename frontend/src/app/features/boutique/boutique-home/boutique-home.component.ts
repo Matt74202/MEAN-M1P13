@@ -9,7 +9,6 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormBuilder, Validators } from '@angular/forms';
 
 import { ProductGridComponent } from '@shared/components/product-grid/product-grid.component';
-import { EditProductsToolbarComponent } from '@shared/components/edit-product-toolbar/edit-product-toolbar.component';
 import { FilterChipsComponent } from '@app/shared/UI/filter/filter-chips.component';
 import { FormComponent, FormField } from '@app/shared/UI/form/form.component';
 
@@ -18,6 +17,7 @@ import { ProduitService } from '@app/services/produit.service';
 import { BoutiqueService } from '@app/services/boutique.service';
 import { PromotionService, Promotion } from '@app/services/promotion.service';
 import { AuthService } from '@app/services/auth.service';
+import { BoutiqueNavbarComponent } from '@app/shared/components/boutique-navbar/boutique-navbar.component';
 
 @Component({
   selector: 'app-boutique-home',
@@ -30,16 +30,16 @@ import { AuthService } from '@app/services/auth.service';
     MatCardModule,
     FilterChipsComponent,
     ProductGridComponent,
-    EditProductsToolbarComponent,
     MatDialogModule,
     MatSnackBarModule,
+    BoutiqueNavbarComponent,
   ],
   templateUrl: './boutique-home.component.html',
   styleUrl: './boutique-home.component.scss',
 })
 export class BoutiqueHomeComponent implements OnInit {
 
-  private authService = inject(AuthService);
+  private authService      = inject(AuthService);
   private dialog           = inject(MatDialog);
   private snackBar         = inject(MatSnackBar);
   private produitService   = inject(ProduitService);
@@ -54,7 +54,6 @@ export class BoutiqueHomeComponent implements OnInit {
   editMode         = signal(false);
   selectedCategory = signal<string | null>(null);
 
-  // ── Map idProduit → Promotion (objet complet) ──
   promotionsMap = signal<Record<string, Promotion>>({});
 
   // ────────────────────────────────────────────────
@@ -66,7 +65,7 @@ export class BoutiqueHomeComponent implements OnInit {
 
     this.boutiqueService.getBoutiqueById(this.boutiqueId).subscribe({
       next: (b) => this.nomBoutique.set(b.nom ?? 'Ma Boutique'),
-      error: () => {}
+      error: () => {},
     });
   }
 
@@ -84,12 +83,11 @@ export class BoutiqueHomeComponent implements OnInit {
           const idProduit = typeof p.details.idProduit === 'string'
             ? p.details.idProduit
             : (p.details.idProduit as any).id ?? (p.details.idProduit as any)._id;
-          
           if (idProduit) map[idProduit] = p;
         });
         this.promotionsMap.set(map);
       },
-      error: () => {}
+      error: () => {},
     });
   }
 
@@ -107,7 +105,7 @@ export class BoutiqueHomeComponent implements OnInit {
     this.produitService.deleteProduit(id).subscribe(() => this.loadProduits());
   }
 
-  onProduitUpdated(updated: Produit) {
+  onProduitUpdated(_updated: Produit) {
     this.loadProduits();
   }
 
@@ -163,7 +161,7 @@ export class BoutiqueHomeComponent implements OnInit {
         fields, formGroup,
         submitLabel: produit ? 'Modifier' : 'Ajouter',
         showCancel:  true,
-      }
+      },
     });
 
     dialogRef.componentInstance.submit.subscribe(() => {
@@ -198,7 +196,6 @@ export class BoutiqueHomeComponent implements OnInit {
   openPromotionForm(produit: Produit) {
     const promoExistante = this.promotionsMap()[produit.id];
 
-    // Pré-remplir avec les valeurs existantes si modification
     const today     = new Date().toISOString().split('T')[0];
     const inOneWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
 
@@ -212,16 +209,16 @@ export class BoutiqueHomeComponent implements OnInit {
     const formGroup = this.fb.group({
       pourcentage: [
         promoExistante?.details.pourcentage ?? 20,
-        [Validators.required, Validators.min(1), Validators.max(100)]
+        [Validators.required, Validators.min(1), Validators.max(100)],
       ],
       description: [promoExistante?.details.description ?? '', []],
       dateDebut:   [
         promoExistante ? promoExistante.details.dateDebut.split('T')[0] : today,
-        [Validators.required]
+        [Validators.required],
       ],
       dateFin:     [
         promoExistante ? promoExistante.details.dateFin.split('T')[0] : inOneWeek,
-        [Validators.required]
+        [Validators.required],
       ],
     });
 
@@ -237,7 +234,7 @@ export class BoutiqueHomeComponent implements OnInit {
         fields, formGroup,
         submitLabel: isModification ? 'Modifier la promotion' : 'Lancer la promotion',
         showCancel:  true,
-      }
+      },
     });
 
     dialogRef.componentInstance.submit.subscribe(() => {
@@ -252,7 +249,6 @@ export class BoutiqueHomeComponent implements OnInit {
         dateFin:     v.dateFin!,
       };
 
-      // Si promo existante → modifier, sinon → créer
       const request$ = isModification
         ? this.promotionService.modifierPromotion(promoExistante!._id, details)
         : this.promotionService.creerPromotion({ idBoutique: this.boutiqueId, details });
@@ -271,7 +267,7 @@ export class BoutiqueHomeComponent implements OnInit {
         error: (err) => {
           this.snackBar.open('Erreur lors de la promotion', '', { duration: 2000 });
           console.error(err);
-        }
+        },
       });
     });
 
@@ -289,7 +285,7 @@ export class BoutiqueHomeComponent implements OnInit {
       next: () => {
         this.snackBar.open('Promotion supprimée', '', { duration: 2500 });
         this.loadPromotionsActives();
-      }
+      },
     });
   }
 }

@@ -12,6 +12,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSliderModule } from '@angular/material/slider';
 
 import { CarteFideliteService, CarteFidelite, Palier } from '@app/services/carte-fidelite.service';
+import { AuthService } from '@app/services/auth.service';
+import { BoutiqueNavbarComponent } from '@app/shared/components/boutique-navbar/boutique-navbar.component';
 
 @Component({
   selector: 'app-carte-fidelite-config',
@@ -28,6 +30,7 @@ import { CarteFideliteService, CarteFidelite, Palier } from '@app/services/carte
     MatSlideToggleModule,
     MatSliderModule,
     MatSnackBarModule,
+    BoutiqueNavbarComponent,
   ],
   templateUrl: './carte-fidelite-config.component.html',
   styleUrl: './carte-fidelite-config.component.scss',
@@ -35,23 +38,25 @@ import { CarteFideliteService, CarteFidelite, Palier } from '@app/services/carte
 export class CarteFideliteConfigComponent implements OnInit {
 
   private carteService = inject(CarteFideliteService);
+  private authService  = inject(AuthService);
   private snackBar     = inject(MatSnackBar);
 
-  readonly boutiqueId = '698f190319727b22bdcb0ce2';
+  readonly boutiqueId = this.authService.getProfileId() ?? '';
 
   carte     = signal<CarteFidelite | null>(null);
   isLoading = signal(false);
+  nomBoutique = signal('');
 
   // ── Form data ──
   design = {
     couleur1:    '#7d936c',
     couleur2:    '#3a4a2f',
     slogan:      'Votre fidélité, nos récompenses',
-    nombreCases: 10
+    nombreCases: 10,
   };
 
   paliers: Palier[] = [
-    { achatNumero: 10, type: 'pourcentage', valeur: 10 }
+    { achatNumero: 10, type: 'pourcentage', valeur: 10 },
   ];
 
   actif = true;
@@ -60,8 +65,6 @@ export class CarteFideliteConfigComponent implements OnInit {
   casesRemplies = signal(0);
 
   // ── Lifecycle ──
-  nomBoutique = signal('');
-
   ngOnInit() {
     this.loadBoutique();
     this.loadCarte();
@@ -70,7 +73,7 @@ export class CarteFideliteConfigComponent implements OnInit {
   loadBoutique() {
     this.carteService.getBoutique(this.boutiqueId).subscribe({
       next: boutique => this.nomBoutique.set(boutique.nom),
-      error: () => this.nomBoutique.set('Boutique')
+      error: () => this.nomBoutique.set('Boutique'),
     });
   }
 
@@ -89,7 +92,7 @@ export class CarteFideliteConfigComponent implements OnInit {
       error: () => {
         this.snackBar.open('Erreur de chargement', '', { duration: 2000 });
         this.isLoading.set(false);
-      }
+      },
     });
   }
 
@@ -107,7 +110,7 @@ export class CarteFideliteConfigComponent implements OnInit {
       },
       error: () => {
         this.snackBar.open('Erreur lors de la sauvegarde', '', { duration: 2000 });
-      }
+      },
     });
   }
 
@@ -116,7 +119,7 @@ export class CarteFideliteConfigComponent implements OnInit {
     this.paliers.push({
       achatNumero: this.design.nombreCases,
       type:        'pourcentage',
-      valeur:      10
+      valeur:      10,
     });
   }
 
@@ -161,5 +164,4 @@ export class CarteFideliteConfigComponent implements OnInit {
   reinitialiserDemo() {
     this.casesRemplies.set(0);
   }
-
 }

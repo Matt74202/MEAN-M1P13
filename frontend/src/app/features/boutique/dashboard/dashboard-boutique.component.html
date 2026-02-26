@@ -1,20 +1,20 @@
+<app-boutique-navbar />
+
 <div class="dashboard-wrapper">
 
   <!-- ══ HEADER ══ -->
   <div class="dashboard-header">
     <div class="header-left">
-      <button mat-icon-button (click)="retour()">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
-      <div>
-        <h1>Tableau de bord</h1>
-        <p class="subtitle">Vue d'ensemble de votre boutique</p>
-      </div>
+      <h1>Tableau de bord</h1>
     </div>
 
-    <div class="periode-selector">
+    <div class="periode-selector" role="group" aria-label="Sélectionner la période">
       @for (j of [7, 30, 90]; track j) {
-        <button class="periode-btn" [class.active]="periode() === j" (click)="setPeriode(j)">
+        <button
+          class="periode-btn"
+          [class.active]="periode() === j"
+          (click)="setPeriode(j)"
+          [attr.aria-pressed]="periode() === j">
           {{ j }}j
         </button>
       }
@@ -23,8 +23,8 @@
 
   <!-- ══ LOADING ══ -->
   @if (isLoading()) {
-    <div class="loading">
-      <mat-icon class="spin">sync</mat-icon>
+    <div class="loading" role="status" aria-live="polite">
+      <mat-icon class="spin" aria-hidden="true">sync</mat-icon>
       <p>Chargement...</p>
     </div>
   }
@@ -38,7 +38,7 @@
         <div class="kpi-icon"><mat-icon>payments</mat-icon></div>
         <div class="kpi-content">
           <span class="kpi-label">CA total</span>
-          <span class="kpi-value">{{ data()!.ca.total | number:'1.0-0' }} Ar</span>
+          <span class="kpi-value">{{ data()!.ca.total | number:'1.0-0' }} <small>Ar</small></span>
           <span class="kpi-sub">{{ data()!.ca.periode | number:'1.0-0' }} Ar sur {{ periode() }}j</span>
         </div>
       </div>
@@ -58,7 +58,7 @@
           <span class="kpi-label">Note moyenne</span>
           <span class="kpi-value">
             {{ data()!.notes.moyenne ?? '—' }}
-            @if (data()!.notes.moyenne) {<small>/ 5</small>}
+            @if (data()!.notes.moyenne) { <small>/ 5</small> }
           </span>
           <span class="kpi-sub">{{ data()!.notes.total }} avis</span>
         </div>
@@ -75,133 +75,133 @@
 
     </div>
 
-  <div class="main-grid">
+    <!-- ══ GRILLE PRINCIPALE ══ -->
+    <div class="main-grid">
 
-  <!-- Colonne gauche, ligne 1 : Barres -->
-  <div class="chart-card">
-    <h3 class="card-title">
-      <mat-icon>bar_chart</mat-icon>
-      CA par jour
-    </h3>
-    @if (data()!.ventesParJour.length > 0) {
-      <canvas baseChart [data]="barChartData()" [options]="barChartOptions" type="bar"></canvas>
-    } @else {
-      <div class="chart-empty">
-        <mat-icon>bar_chart</mat-icon>
-        <p>Aucune vente sur cette période</p>
-      </div>
-    }
-  </div>
-
-  <!-- Colonne droite, ligne 1 : Top produits -->
-  <div class="section-card">
-    <h3 class="card-title">
-      <mat-icon>trending_up</mat-icon>
-      Top produits
-    </h3>
-    @if (data()!.produitsVendus.length > 0) {
-      <div class="produits-list">
-        @for (p of data()!.produitsVendus; track p._id; let i = $index) {
-          <div class="produit-row">
-            <span class="rank" [class.gold]="i===0" [class.silver]="i===1" [class.bronze]="i===2">
-              {{ i + 1 }}
-            </span>
-            <span class="produit-nom">{{ p.nom }}</span>
-            <span class="produit-qte">{{ p.quantite }} u.</span>
-            <span class="produit-ca">{{ p.chiffre | number:'1.0-0' }} Ar</span>
+      <!-- Barres : CA par jour -->
+      <div class="chart-card">
+        <h3 class="card-title">
+          <mat-icon aria-hidden="true">bar_chart</mat-icon>
+          CA par jour
+        </h3>
+        @if (data()!.ventesParJour.length > 0) {
+          <canvas baseChart [data]="barChartData()" [options]="barChartOptions" type="bar"></canvas>
+        } @else {
+          <div class="chart-empty">
+            <mat-icon aria-hidden="true">bar_chart</mat-icon>
+            <p>Aucune vente sur cette période</p>
           </div>
         }
       </div>
-    } @else {
-      <p class="empty-text">Aucune vente sur cette période</p>
-    }
-  </div>
 
-  <!-- Colonne gauche, ligne 2 : Camembert -->
-  <div class="chart-card">
-    <h3 class="card-title">
-      <mat-icon>donut_large</mat-icon>
-      Répartition produits
-    </h3>
-    @if (data()!.produitsVendus.length > 0) {
-      <div class="doughnut-wrapper">
-        <canvas baseChart [data]="doughnutData()" [options]="doughnutOptions" type="doughnut"></canvas>
-      </div>
-    } @else {
-      <div class="chart-empty">
-        <mat-icon>donut_large</mat-icon>
-        <p>Aucun produit vendu</p>
-      </div>
-    }
-  </div>
-
-  <!-- Colonne droite, ligne 2 : Avis -->
-  <div class="section-card">
-    <h3 class="card-title">
-      <mat-icon>reviews</mat-icon>
-      Avis clients
-    </h3>
-
-    @if (data()!.notes.total > 0) {
-      <div class="notes-summary-row">
-        <span class="note-grande">{{ data()!.notes.moyenne }}</span>
-        <div class="notes-right">
-          <div class="stars-row">
-            @for (star of getStars(data()!.notes.moyenne!); track $index) {
-              <mat-icon [class.filled]="star==='full'" [class.half]="star==='half'">
-                {{ star==='full' ? 'star' : star==='half' ? 'star_half' : 'star_border' }}
-              </mat-icon>
+      <!-- Top produits -->
+      <div class="section-card">
+        <h3 class="card-title">
+          <mat-icon aria-hidden="true">trending_up</mat-icon>
+          Top produits
+        </h3>
+        @if (data()!.produitsVendus.length > 0) {
+          <div class="produits-list">
+            @for (p of data()!.produitsVendus; track p._id; let i = $index) {
+              <div class="produit-row">
+                <span class="rank" [class.gold]="i===0" [class.silver]="i===1" [class.bronze]="i===2">
+                  {{ i + 1 }}
+                </span>
+                <span class="produit-nom">{{ p.nom }}</span>
+                <span class="produit-qte">{{ p.quantite }} u.</span>
+                <span class="produit-ca">{{ p.chiffre | number:'1.0-0' }} Ar</span>
+              </div>
             }
           </div>
-          <span class="notes-count">{{ data()!.notes.total }} avis</span>
-        </div>
+        } @else {
+          <p class="empty-text">Aucune vente sur cette période</p>
+        }
       </div>
 
-      <div class="repartition-list">
-        @for (n of [5,4,3,2,1]; track n) {
-          <div class="rep-row">
-            <span class="rep-label">{{ n }}★</span>
-            <div class="rep-bar-bg">
-              <div class="rep-bar-fill"
-                [style.width.%]="data()!.notes.total > 0
-                  ? (data()!.notes.repartition[n] / data()!.notes.total) * 100
-                  : 0">
-              </div>
-            </div>
-            <span class="rep-count">{{ data()!.notes.repartition[n] }}</span>
+      <!-- Camembert : répartition produits -->
+      <div class="chart-card">
+        <h3 class="card-title">
+          <mat-icon aria-hidden="true">donut_large</mat-icon>
+          Répartition produits
+        </h3>
+        @if (data()!.produitsVendus.length > 0) {
+          <div class="doughnut-wrapper">
+            <canvas baseChart [data]="doughnutData()" [options]="doughnutOptions" type="doughnut"></canvas>
+          </div>
+        } @else {
+          <div class="chart-empty">
+            <mat-icon aria-hidden="true">donut_large</mat-icon>
+            <p>Aucun produit vendu</p>
           </div>
         }
       </div>
 
-      <div class="avis-list">
-        @for (avis of data()!.notes.derniersAvis; track avis._id) {
-          <div class="avis-item">
-            <div class="avis-top">
-              <div class="avis-stars">
-                @for (i of [1,2,3,4,5]; track i) {
-                  <mat-icon [class.filled]="i <= avis.note">
-                    {{ i <= avis.note ? 'star' : 'star_border' }}
+      <!-- Avis clients -->
+      <div class="section-card">
+        <h3 class="card-title">
+          <mat-icon aria-hidden="true">reviews</mat-icon>
+          Avis clients
+        </h3>
+
+        @if (data()!.notes.total > 0) {
+          <div class="notes-summary-row">
+            <span class="note-grande">{{ data()!.notes.moyenne }}</span>
+            <div class="notes-right">
+              <div class="stars-row" [attr.aria-label]="'Note ' + data()!.notes.moyenne + ' sur 5'">
+                @for (star of getStars(data()!.notes.moyenne!); track $index) {
+                  <mat-icon [class.filled]="star==='full'" [class.half]="star==='half'" aria-hidden="true">
+                    {{ star==='full' ? 'star' : star==='half' ? 'star_half' : 'star_border' }}
                   </mat-icon>
                 }
               </div>
-              <span class="avis-date">{{ avis.date | date:'dd/MM/yy' }}</span>
+              <span class="notes-count">{{ data()!.notes.total }} avis</span>
             </div>
-            @if (avis.commentaire) {
-              <p class="avis-commentaire">"{{ avis.commentaire }}"</p>
+          </div>
+
+          <div class="repartition-list" aria-label="Répartition des notes">
+            @for (n of [5, 4, 3, 2, 1]; track n) {
+              <div class="rep-row">
+                <span class="rep-label">{{ n }}★</span>
+                <div class="rep-bar-bg" role="progressbar"
+                  [attr.aria-valuenow]="data()!.notes.repartition[n]"
+                  [attr.aria-valuemax]="data()!.notes.total">
+                  <div class="rep-bar-fill"
+                    [style.width.%]="data()!.notes.total > 0
+                      ? (data()!.notes.repartition[n] / data()!.notes.total) * 100
+                      : 0">
+                  </div>
+                </div>
+                <span class="rep-count">{{ data()!.notes.repartition[n] }}</span>
+              </div>
             }
           </div>
+
+          <div class="avis-list">
+            @for (avis of data()!.notes.derniersAvis; track avis._id) {
+              <div class="avis-item">
+                <div class="avis-top">
+                  <div class="avis-stars" [attr.aria-label]="'Note ' + avis.note + ' sur 5'">
+                    @for (i of [1, 2, 3, 4, 5]; track i) {
+                      <mat-icon [class.filled]="i <= avis.note" aria-hidden="true">
+                        {{ i <= avis.note ? 'star' : 'star_border' }}
+                      </mat-icon>
+                    }
+                  </div>
+                  <span class="avis-date">{{ avis.date | date:'dd/MM/yy' }}</span>
+                </div>
+                @if (avis.commentaire) {
+                  <p class="avis-commentaire">"{{ avis.commentaire }}"</p>
+                }
+              </div>
+            }
+          </div>
+
+        } @else {
+          <p class="no-avis">Aucun avis client pour le moment</p>
         }
       </div>
 
-    } @else {
-      <p class="no-avis">Aucun avis client pour le moment</p>
-    }
-  </div>
-
-</div>
-
-
-
+    </div><!-- fin .main-grid -->
 
   }
 

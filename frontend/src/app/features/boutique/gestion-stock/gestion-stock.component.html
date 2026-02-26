@@ -1,46 +1,68 @@
+<app-boutique-navbar />
+
 <div class="stock-container">
 
   <!-- Header -->
   <header class="stock-header">
-    <div class="header-left">
-      <h1>Gestion du stock</h1>
-      @if (produitsEnAlerte().length > 0) {
-        <button class="alerte-badge" (click)="toggleFiltreAlerte()"
-          [class.active]="filtreAlerte()">
-          <mat-icon>warning</mat-icon>
-          {{ produitsEnAlerte().length }} en stock faible
-        </button>
-      }
+    <div class="header-top">
+      <div class="header-left">
+        <h1>Gestion du stock</h1>
+        @if (produitsEnAlerte().length > 0) {
+          <button
+            class="alerte-badge"
+            (click)="toggleFiltreAlerte()"
+            [class.active]="filtreAlerte()"
+            [attr.aria-pressed]="filtreAlerte()">
+            <mat-icon>warning</mat-icon>
+            <span>{{ produitsEnAlerte().length }} en stock faible</span>
+          </button>
+        }
+      </div>
     </div>
 
-     <!-- Barre de recherche -->
-    <div class="search-bar">
-      <mat-icon class="search-icon">search</mat-icon>
+    <!-- Barre de recherche -->
+    <div class="search-bar" role="search">
+      <mat-icon class="search-icon" aria-hidden="true">search</mat-icon>
       <input
-        type="text"
+        type="search"
         placeholder="Rechercher un produit..."
         [value]="recherche()"
         (input)="onRecherche($event)"
         class="search-input"
+        aria-label="Rechercher un produit"
       />
       @if (recherche()) {
-        <button class="clear-btn" (click)="recherche.set('')">
-          <mat-icon>close</mat-icon>
+        <button class="clear-btn" (click)="recherche.set('')" aria-label="Effacer la recherche">
+          <mat-icon aria-hidden="true">close</mat-icon>
         </button>
       }
     </div>
   </header>
 
+  <!-- Compteur résultats -->
+  @if (produitAffiches().length > 0) {
+    <p class="results-count" aria-live="polite">
+      {{ produitAffiches().length }} produit{{ produitAffiches().length > 1 ? 's' : '' }}
+      @if (filtreAlerte()) { <span class="results-filter-tag">stock faible</span> }
+      @if (recherche()) { <span class="results-filter-tag">« {{ recherche() }} »</span> }
+    </p>
+  }
+
   <!-- Grille produits -->
-  <div class="stock-grid">
+  <div class="stock-grid" role="list">
+
     @for (produit of produitAffiches(); track produit.id) {
 
-      <div class="stock-card" [class.alerte]="produit.stockFaible">
+      <div class="stock-card" [class.alerte]="produit.stockFaible" role="listitem">
 
         <!-- Image + infos -->
         <div class="card-left">
-          <img [src]="produit.imageUrl || 'https://placehold.co/64x64?text=?'"
-               [alt]="produit.details.nom" class="stock-img" />
+          <img
+            [src]="produit.imageUrl || 'https://placehold.co/64x64?text=?'"
+            [alt]="produit.details.nom"
+            class="stock-img"
+            loading="lazy"
+          />
           <div class="stock-info">
             <span class="stock-nom">{{ produit.details.nom }}</span>
             <span class="stock-cat">{{ produit.details.categorie }}</span>
@@ -49,38 +71,53 @@
 
         <!-- Quantité -->
         <div class="stock-qty"
-          [class.low]="produit.stockFaible"
+          [class.low]="produit.stockFaible && produit.stock > 0"
           [class.zero]="produit.stock === 0">
           <span class="qty-number">{{ produit.stock }}</span>
           <span class="qty-label">{{ getUniteLabel(produit.stock) }}</span>
           @if (produit.stockFaible) {
-            <mat-icon class="warn-icon" matTooltip="Stock faible">warning</mat-icon>
+            <mat-icon class="warn-icon" matTooltip="Stock faible" aria-label="Stock faible">warning</mat-icon>
           }
         </div>
 
         <!-- Actions -->
         <div class="card-actions">
-          <button mat-stroked-button color="primary"
+          <button
+            mat-stroked-button
+            color="primary"
             (click)="openEntreeForm(produit)"
-            matTooltip="Enregistrer un approvisionnement">
-            <mat-icon>add</mat-icon> Entrée
+            matTooltip="Enregistrer un approvisionnement"
+            class="btn-entree"
+            [attr.aria-label]="'Entrée stock pour ' + produit.details.nom">
+            <mat-icon>add</mat-icon>
+            <span class="btn-label">Entrée</span>
           </button>
-          <button mat-stroked-button color="warn"
+          <button
+            mat-stroked-button
+            color="warn"
             [disabled]="produit.stock === 0"
             (click)="openSortieForm(produit)"
-            matTooltip="Enregistrer une sortie">
-            <mat-icon>remove</mat-icon> Sortie
+            matTooltip="{{ produit.stock === 0 ? 'Stock vide' : 'Enregistrer une sortie' }}"
+            class="btn-sortie"
+            [attr.aria-label]="'Sortie stock pour ' + produit.details.nom">
+            <mat-icon>remove</mat-icon>
+            <span class="btn-label">Sortie</span>
           </button>
         </div>
 
       </div>
 
     } @empty {
-      <div class="empty-state">
-        <mat-icon>inventory_2</mat-icon>
+      <div class="empty-state" role="status">
+        <mat-icon aria-hidden="true">inventory_2</mat-icon>
         <p>Aucun produit trouvé</p>
+        @if (filtreAlerte() || recherche()) {
+          <button class="reset-filters-btn" (click)="filtreAlerte.set(false); recherche.set('')">
+            Réinitialiser les filtres
+          </button>
+        }
       </div>
     }
-  </div>
 
+  </div>
 </div>

@@ -1,16 +1,22 @@
-<div class="boutique-container">
+<app-boutique-navbar />
 
-  <header class="boutique-header">
-    <h1 class="boutique-title">{{ nomBoutique() }}</h1>
+<!-- Banner contextuel mode édition -->
+@if (editMode()) {
+  <div class="edit-banner" role="status" aria-live="polite">
+    <mat-icon>edit</mat-icon>
+    <span>Mode édition activé — cliquez sur un produit pour le modifier, supprimer ou gérer sa promotion</span>
+    <button mat-stroked-button class="edit-banner-add" (click)="openProduitForm()">
+      <mat-icon>add</mat-icon> Nouveau produit
+    </button>
+    <button mat-icon-button class="edit-banner-close" (click)="toggleEditMode()" aria-label="Quitter le mode édition">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+}
 
-    <app-edit-products-toolbar
-      [editMode]="editMode()"
-      (toggleEdit)="toggleEditMode()"
-      (addProduit)="openProduitForm()"
-    ></app-edit-products-toolbar>
-  </header>
-
+<div class="boutique-container" [class.edit-active]="editMode()">
   <main class="content-area">
+
     <app-filter-chips
       [items]="categoryItems()"
       [selected]="selectedCategory()"
@@ -28,6 +34,18 @@
       (promo)="openPromotionForm($event)"
       (stopPromo)="supprimerPromotion($event)"
     ></app-product-grid>
-  </main>
 
+  </main>
 </div>
+
+<!-- FAB : toggle mode édition -->
+<button
+  class="fab-edit"
+  [class.fab-edit--active]="editMode()"
+  (click)="toggleEditMode()"
+  mat-fab
+  [matTooltip]="editMode() ? 'Quitter le mode édition' : 'Gérer mes produits'"
+  matTooltipPosition="left"
+  aria-label="Toggle mode édition produits">
+  <mat-icon>{{ editMode() ? 'close' : 'edit' }}</mat-icon>
+</button>
