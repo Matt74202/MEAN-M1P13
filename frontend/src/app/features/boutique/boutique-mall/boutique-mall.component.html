@@ -1,33 +1,50 @@
-<app-client-navbar />
+<app-boutique-navbar />
 
 <div class="boutique-mall-wrapper">
 
   <!-- ══ HEADER ══ -->
   <div class="mall-header">
-    <div class="header-left">
-      <h1 class="mall-title">
-        @if (maBoutique(); as b) { {{ b.nom }} }
-        @else { Mon emplacement }
-      </h1>
-      <p class="mall-subtitle">
-        @if (maBox(); as box) {
-          <mat-icon>place</mat-icon>
-          Box {{ box.nom }} · {{ maBoxEtage }}
-        } @else {
-          Visualisez votre position dans le mall
-        }
-      </p>
-    </div>
 
-    <!-- Sélecteur d'étage -->
-    <div class="etage-selector">
-      @for (e of etages; track e.value) {
-        <button mat-stroked-button
-          [class.active]="currentEtage() === e.value"
-          (click)="setEtage(e.value)">
-          {{ e.label }}
-        </button>
+    <p class="mall-subtitle">
+      @if (maBox(); as box) {
+        <mat-icon>place</mat-icon>
+        Box {{ box.nom }} · {{ maBoxEtage }}
+      } @else {
+        Visualisez votre position dans le mall
       }
+    </p>
+
+    <!-- Tous les contrôles sur une seule ligne -->
+    <div class="header-controls">
+
+      <!-- Étages -->
+      <button mat-stroked-button
+        [class.active]="currentEtage() === 'RC'"
+        (click)="setEtage('RC')">
+        Rez-de-chaussée
+      </button>
+      <button mat-stroked-button
+        [class.active]="currentEtage() === 'FC'"
+        (click)="setEtage('FC')">
+        1ᵉʳ étage
+      </button>
+
+      <div class="ctrl-sep"></div>
+
+      <!-- Vue -->
+      <button mat-stroked-button
+        [class.active]="viewMode() === 'map'"
+        (click)="setViewMode('map')">
+        <mat-icon>map</mat-icon>
+        Carte
+      </button>
+      <button mat-stroked-button
+        [class.active]="viewMode() === 'list'"
+        (click)="setViewMode('list')">
+        <mat-icon>view_module</mat-icon>
+        Liste
+      </button>
+
     </div>
   </div>
 
@@ -70,37 +87,27 @@
       </div>
     </div>
 
-    <!-- Légende -->
     <div class="legende">
-      <span class="legende-item">
-        <span class="legende-dot dot-ma-boutique"></span>
-        Ma boutique
-      </span>
-      <span class="legende-item">
-        <span class="legende-dot dot-libre"></span>
-        Libre
-      </span>
-      <span class="legende-item">
-        <span class="legende-dot dot-occupee"></span>
-        Occupée
-      </span>
+      <span class="legende-item"><span class="legende-dot dot-ma-boutique"></span>Ma boutique</span>
+      <span class="legende-item"><span class="legende-dot dot-libre"></span>Libre</span>
+      <span class="legende-item"><span class="legende-dot dot-occupee"></span>Occupée</span>
     </div>
 
   </div>
 
   <!-- ══ LOADING ══ -->
   @if (isLoading()) {
-    <div class="loading-state" role="status">
+    <div class="loading-state">
       <div class="loading-spinner"></div>
       <p>Chargement du plan...</p>
     </div>
   }
 
-  <!-- ══ CARTE ══ -->
-  @if (!isLoading()) {
+  <!-- ══ VUE CARTE ══ -->
+  @if (!isLoading() && viewMode() === 'map') {
     <div class="map-container">
       <app-boutique-mall-map
-        [boxs]="boxs"
+        [boxs]="boxs()"
         [boutiques]="boutiques"
         [users]="users"
         [contrats]="contrats"
@@ -110,14 +117,113 @@
         [maBoxId]="maBox()?._id?.toString() ?? null"
         (boutiqueClick)="$event"
       />
-
-      <!-- Overlay : ma position -->
       @if (maBox()) {
         <div class="map-overlay-hint">
           <mat-icon>my_location</mat-icon>
           Votre box est surlignée en vert
         </div>
       }
+    </div>
+  }
+
+  <!-- ══ VUE LISTE ══ -->
+  @if (!isLoading() && viewMode() === 'list') {
+    <div class="list-container">
+
+      <div class="list-header">
+        <div class="list-header-top">
+          <div>
+            <h2 class="list-title">Boxes disponibles à la location</h2>
+            <p class="list-subtitle">
+              {{ boxesLibres().length }} box{{ boxesLibres().length > 1 ? 'es' : '' }} libre{{ boxesLibres().length > 1 ? 's' : '' }}
+              sur {{ currentEtage() === 'RC' ? 'le rez-de-chaussée' : 'le 1ᵉʳ étage' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Filtres taille -->
+        <div class="taille-filtres">
+          <span class="filtre-label">Taille :</span>
+          @for (t of tailles; track t) {
+            <button
+              class="taille-pill"
+              [class.taille-active]="filtreTaille() === t"
+              (click)="setFiltreTaille(t)">
+              {{ t }}
+            </button>
+          }
+          @if (filtreTaille()) {
+            <button class="taille-reset" (click)="setFiltreTaille(null)">
+              <mat-icon>close</mat-icon>
+              Effacer
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (boxesLibres().length === 0) {
+        <div class="empty-list">
+          <div class="empty-icon-wrap">
+            <mat-icon>store_mall_directory</mat-icon>
+          </div>
+          <h3>Aucune box disponible</h3>
+          <p>Toutes les boxes de cet étage sont actuellement occupées.</p>
+          <button class="btn-switch" (click)="setEtage(currentEtage() === 'RC' ? 'FC' : 'RC')">
+            <mat-icon>swap_vert</mat-icon>
+            Voir {{ currentEtage() === 'RC' ? 'le 1ᵉʳ étage' : 'le rez-de-chaussée' }}
+          </button>
+        </div>
+
+      } @else {
+        <div class="boxes-grid">
+          @for (box of boxesLibres(); track box._id) {
+            <div class="box-card">
+
+              <div class="box-card-colorbar"></div>
+
+              <div class="box-card-content">
+
+                <div class="box-card-top">
+                  <div class="box-name-group">
+                    <span class="box-nom">{{ box.nom }}</span>
+                    <span class="box-etage-tag">{{ box.etage === 'RC' ? 'RDC' : 'F1' }}</span>
+                  </div>
+                  <span class="libre-badge">
+                    <span class="libre-dot"></span>
+                    Disponible
+                  </span>
+                </div>
+
+                <div class="box-metrics-row">
+                  <div class="box-metric">
+                    <span class="metric-number">{{ getSurface(box) }}</span>
+                    <span class="metric-label">m²</span>
+                  </div>
+                  <div class="metric-vsep"></div>
+                  <div class="box-metric">
+                    <span class="metric-number taille-num">{{ getTailleLabel(box) }}</span>
+                    <span class="metric-label">{{ getDimensionReelle(box) }}</span>
+                  </div>
+                  @if (box.loyer) {
+                    <div class="metric-vsep"></div>
+                    <div class="box-metric">
+                      <span class="metric-number">{{ box.loyer | number:'1.0-0' }}</span>
+                      <span class="metric-label">Ar / mois</span>
+                    </div>
+                  }
+                </div>
+
+                <button class="btn-louer" (click)="louerBox(box)">
+                  <mat-icon>add_business</mat-icon>
+                  Louer cette box
+                </button>
+
+              </div>
+            </div>
+          }
+        </div>
+      }
+
     </div>
   }
 

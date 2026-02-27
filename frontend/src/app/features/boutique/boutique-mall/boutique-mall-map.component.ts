@@ -163,11 +163,9 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
   }
 
   private getContrat(boxId: string): Contrat | undefined {
-    const now = new Date();
     return this.contrats.find(c => {
       if (this.getContratBoxId(c) !== this.toStringId(boxId)) return false;
-      if (c.statut !== 'ACTIF') return false;
-      return now >= new Date(c.dateDebut) && now <= new Date(c.dateFin);
+      return c.statut === 'ACTIF';
     });
   }
 
@@ -247,6 +245,26 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
     const background = new PIXI.Graphics();
     this.drawBackground(background, w, h, wallColor!, bgColor!);
     container.addChild(background);
+
+    // ── Halo "ma box" — bordure épaisse pulsante autour ──
+    if (estMaBox) {
+      const glow = new PIXI.Graphics();
+      glow.roundRect(-w/2 - 5, -h/2 - 5, w + 10, h + 10, 12)
+          .fill({ color: this.COLOR_MA_BOX, alpha: 0.18 });
+      glow.roundRect(-w/2 - 3, -h/2 - 3, w + 6, h + 6, 10)
+          .stroke({ width: 4, color: this.COLOR_MA_BOX, alpha: 0.9 });
+      container.addChildAt(glow, 0); // derrière le fond
+
+      // Animation pulsation via ticker
+      let tick = 0;
+      const pulse = () => {
+        tick += 0.06;
+        glow.alpha = 0.6 + Math.sin(tick) * 0.4;
+      };
+      this.app?.ticker.add(pulse);
+      // Stocker pour cleanup si besoin
+      (container as any).__pulseTicker = pulse;
+    }
 
     // Opacité réduite pour les boxes filtrées (mode client)
     container.alpha = isFiltered ? 0.25 : 1;
@@ -386,6 +404,12 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
 
   ngOnDestroy() {
     if (this.app) {
+      // Nettoyer les tickers de pulsation
+      this.boxesContainers.forEach(c => {
+        if ((c as any).__pulseTicker) {
+          this.app?.ticker.remove((c as any).__pulseTicker);
+        }
+      });
       this.app.stage.removeAllListeners();
       this.app.destroy(true, { children: true, texture: true });
       this.app = undefined;

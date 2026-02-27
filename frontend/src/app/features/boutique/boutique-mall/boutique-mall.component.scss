@@ -1,50 +1,52 @@
-@use 'sass:color';
-
 // ── Variables ──────────────────────────────────────────────────────────────────
-$border:     #e8eddc;
-$text:       #3a4a2f;
-$text-muted: #7d7369;
-$accent:     #7d936c;
-$ma-box:     #2e7d32;    // vert foncé pour "ma boutique"
-$libre:      #7d936c;    // vert clair pour libre
-$occupee:    #e8eddc;    // gris-vert pour occupée
-$bg-main:    #f7f8f5;
-$card-bg:    #ffffff;
+// Base neutre — le vert ne teinte plus le fond ni les bordures
+$bg:          #f8f9fa;     // fond global : gris très clair, presque blanc
+$card:        #ffffff;     // cartes : blanc pur
+$border:      #e9ecef;     // bordures : gris neutre standard
+$border-soft: #f1f3f5;     // séparateurs internes légers
+
+// Texte
+$text:        #1c2118;     // quasi-noir avec légère teinte verte (très subtile)
+$text-muted:  #868e96;     // gris moyen neutre
+$text-light:  #adb5bd;     // gris clair pour labels secondaires
+
+// Vert — uniquement pour les accents
+$accent:      #5a7a4a;     // vert principal (boutons actifs, CTA)
+$accent-soft: #f0f5ec;     // fond vert très pâle (badges, hover)
+$accent-mid:  #b8cfac;     // vert moyen doux (bordures actives, dots, barres)
+$ma-box:      #2e7d32;     // vert foncé "ma boutique" uniquement
+
+// ── Reset ──────────────────────────────────────────────────────────────────────
+* { box-sizing: border-box; }
 
 // ── Wrapper ─────────────────────────────────────────────────────────────────────
 .boutique-mall-wrapper {
   min-height: 100vh;
-  background: $bg-main;
+  background: $bg;
   font-family: 'Garet', system-ui, sans-serif;
   display: flex;
   flex-direction: column;
+  color: $text;
 }
 
-// ── Header ──────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════════════════════════════════════
 .mall-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem;
-  background: $card-bg;
+  justify-content: space-between;
+  padding: 0.875rem 2rem;
+  background: $card;
   border-bottom: 1px solid $border;
   gap: 1rem;
   flex-wrap: wrap;
 
-  @media (max-width: 768px) {
-    padding: 1rem;
+  @media (max-width: 900px) {
+    padding: 0.75rem 1rem;
     flex-direction: column;
     align-items: flex-start;
   }
-}
-
-.mall-title {
-  margin: 0 0 0.25rem;
-  font-family: 'Perandory Condensed', 'Garet', sans-serif;
-  font-size: clamp(1.4rem, 4vw, 2rem);
-  font-weight: 400;
-  color: $text;
-  letter-spacing: 0.5px;
 }
 
 .mall-subtitle {
@@ -53,74 +55,90 @@ $card-bg:    #ffffff;
   gap: 0.3rem;
   margin: 0;
   color: $text-muted;
-  font-size: 0.88rem;
-
-  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  font-size: 0.85rem;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; color: $accent; }
 }
 
-// ── Sélecteur étage ─────────────────────────────────────────────────────────────
-.etage-selector {
+// ── Contrôles header ───────────────────────────────────────────────────────────
+.header-controls {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 
-  button {
-    border-radius: 8px;
+  @media (max-width: 900px) { width: 100%; }
+
+  button[mat-stroked-button] {
     font-family: 'Garet', sans-serif;
+    font-size: 0.82rem;
     font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid $border;
+    color: $text-muted;
+    background: $card;
+    padding: 0 0.875rem;
+    height: 34px;
     transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
 
+    mat-icon { font-size: 15px; width: 15px; height: 15px; }
+
+    &:hover:not(.active) {
+      border-color: $accent-mid;
+      color: $text;
+    }
+
+    // Bouton actif : fond sombre neutre, pas vert
     &.active {
       background: $text;
-      color: white;
       border-color: $text;
+      color: #fff;
+      font-weight: 700;
     }
-  }
-
-  @media (max-width: 768px) {
-    width: 100%;
-    button { flex: 1; }
   }
 }
 
-// ── Barre de stats ──────────────────────────────────────────────────────────────
+.ctrl-sep {
+  width: 1px;
+  height: 22px;
+  background: $border;
+  flex-shrink: 0;
+  margin: 0 0.2rem;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BARRE DE STATS
+// ═══════════════════════════════════════════════════════════════════════════════
 .stats-bar {
   display: flex;
   align-items: center;
-  gap: 0;
   padding: 0 2rem;
-  background: $card-bg;
+  background: $card;
   border-bottom: 1px solid $border;
   flex-wrap: wrap;
-  min-height: 56px;
+  min-height: 50px;
 
-  @media (max-width: 768px) {
-    padding: 0.75rem 1rem;
-    gap: 0.75rem;
-  }
+  @media (max-width: 768px) { padding: 0.5rem 1rem; gap: 0.5rem; }
 }
 
 .stat-chip {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.875rem 1.25rem;
-
-  mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    color: $accent;
-  }
+  gap: 0.55rem;
+  padding: 0.7rem 1rem;
+  mat-icon { font-size: 17px; width: 17px; height: 17px; color: $text-light; }
 }
 
 .stat-ma-box {
-  mat-icon { color: $ma-box; }
-  .stat-value { color: $ma-box; font-weight: 800; }
+  mat-icon { color: $accent; }
+  .stat-value { color: $accent; font-weight: 800; }
 }
 
 .stat-divider {
   width: 1px;
-  height: 28px;
+  height: 20px;
   background: $border;
   flex-shrink: 0;
 }
@@ -128,121 +146,112 @@ $card-bg:    #ffffff;
 .stat-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
 }
 
 .stat-label {
-  font-size: 0.7rem;
-  color: $text-muted;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: $text-light;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
+  letter-spacing: 0.07em;
   white-space: nowrap;
 }
 
 .stat-value {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: $text;
 }
 
 .stat-dot {
-  width: 10px;
-  height: 10px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
-
-  &.dot-libre    { background: $libre; }
-  &.dot-occupee  { background: #f59e0b; }
+  &.dot-libre       { background: $accent-mid; }
+  &.dot-occupee     { background: #f0b429; }
   &.dot-ma-boutique { background: $ma-box; }
 }
 
-// ── Mini barre de progression ────────────────────────────────────────────────────
 .progress-mini {
-  width: 70px;
-  height: 4px;
+  width: 60px;
+  height: 3px;
   background: $border;
-  border-radius: 4px;
+  border-radius: 3px;
   overflow: hidden;
-  margin-top: 2px;
+  margin-top: 3px;
 }
-
 .progress-mini-fill {
   height: 100%;
-  background: $accent;
-  border-radius: 4px;
-  transition: width 0.4s ease;
+  background: $accent-mid;
+  border-radius: 3px;
+  transition: width 0.5s ease;
 }
 
-// ── Légende ──────────────────────────────────────────────────────────────────────
 .legende {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.875rem 1.25rem;
+  padding: 0.7rem 1rem;
   margin-left: auto;
-
-  @media (max-width: 768px) {
-    margin-left: 0;
-    width: 100%;
-    padding: 0;
-  }
+  @media (max-width: 900px) { display: none; }
 }
 
 .legende-item {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  color: $text-muted;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: $text-light;
 }
 
 .legende-dot {
-  width: 10px;
-  height: 10px;
+  width: 7px;
+  height: 7px;
   border-radius: 2px;
   flex-shrink: 0;
-
   &.dot-ma-boutique { background: $ma-box; }
-  &.dot-libre       { background: $libre; }
-  &.dot-occupee     { background: #f59e0b; }
+  &.dot-libre       { background: $accent-mid; }
+  &.dot-occupee     { background: #f0b429; }
 }
 
-// ── Loading ──────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOADING
+// ═══════════════════════════════════════════════════════════════════════════════
 .loading-state {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  padding: 5rem 2rem;
   gap: 1.25rem;
   color: $text-muted;
-
-  p { font-size: 0.9rem; margin: 0; }
+  padding: 5rem 2rem;
+  p { font-size: 0.88rem; margin: 0; }
 }
 
 .loading-spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid rgba($accent, 0.2);
+  width: 30px;
+  height: 30px;
+  border: 2px solid $border;
   border-top-color: $accent;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.75s linear infinite;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-// ── Carte ─────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// CARTE
+// ═══════════════════════════════════════════════════════════════════════════════
 .map-container {
   flex: 1;
   min-height: 500px;
   position: relative;
-
   @media (max-width: 768px) { min-height: 400px; }
 }
 
-// ── Hint overlay ──────────────────────────────────────────────────────────────────
 .map-overlay-hint {
   position: absolute;
   bottom: 1.25rem;
@@ -251,15 +260,334 @@ $card-bg:    #ffffff;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.5rem 1.1rem;
-  background: rgba($ma-box, 0.92);
+  padding: 0.45rem 1rem;
+  background: rgba(28, 33, 24, 0.85);
   color: white;
   border-radius: 50px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 600;
   pointer-events: none;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  mat-icon { font-size: 14px; width: 14px; height: 14px; color: $accent-mid; }
+}
 
-  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+// ═══════════════════════════════════════════════════════════════════════════════
+// VUE LISTE
+// ═══════════════════════════════════════════════════════════════════════════════
+.list-container {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  @media (max-width: 768px) { padding: 1rem; }
+}
+
+.list-header {
+  margin-bottom: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.list-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.list-title {
+  font-family: 'Perandory Condensed', 'Garet', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: $text;
+  margin: 0 0 0.2rem;
+  letter-spacing: 0.2px;
+}
+
+.list-subtitle {
+  font-size: 0.8rem;
+  color: $text-muted;
+  margin: 0;
+}
+
+// ── Filtres taille ─────────────────────────────────────────────────────────────
+.taille-filtres {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.filtre-label {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: $text-light;
+  margin-right: 0.1rem;
+}
+
+.taille-pill {
+  padding: 0.28rem 0.875rem;
+  background: $card;
+  border: 1px solid $border;
+  border-radius: 50px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.77rem;
+  font-weight: 600;
+  color: $text-muted;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(.taille-active) {
+    border-color: $accent-mid;
+    color: $text;
+  }
+
+  &.taille-active {
+    background: $accent;
+    border-color: $accent;
+    color: white;
+  }
+}
+
+.taille-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.28rem 0.7rem;
+  background: transparent;
+  border: 1px solid #f0d0d0;
+  border-radius: 50px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #c0392b;
+  cursor: pointer;
+  transition: background 0.15s;
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+  &:hover { background: #fff5f5; }
+}
+
+// ── Empty state ────────────────────────────────────────────────────────────────
+.empty-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5rem 2rem 4rem;
+  gap: 1rem;
+  text-align: center;
+}
+
+.empty-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: $bg;
+  border: 1px solid $border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  mat-icon { font-size: 34px; width: 34px; height: 34px; color: $text-light; }
+}
+
+.empty-list h3 {
+  font-family: 'Perandory Condensed', 'Garet', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: $text;
+  margin: 0;
+}
+
+.empty-list p {
+  font-size: 0.83rem;
+  color: $text-muted;
+  max-width: 300px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.btn-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: $text;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  &:hover { opacity: 0.85; }
+}
+
+// ── Grille ──────────────────────────────────────────────────────────────────────
+.boxes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 268px), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+// ── Carte box libre ──────────────────────────────────────────────────────────────
+.box-card {
+  background: $card;
+  border: 1px solid $border;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s, transform 0.2s;
+
+  &:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+    transform: translateY(-2px);
+  }
+}
+
+// Fine ligne verte en haut — discret, pas agressif
+.box-card-colorbar {
+  height: 2px;
+  background: $accent-mid;
+}
+
+.box-card-content {
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+// En-tête carte
+.box-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.box-name-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.box-nom {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: $text;
+  letter-spacing: 0.2px;
+}
+
+.box-etage-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: $bg;
+  color: $text-light;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// Badge "Disponible" — fond vert très pâle, texte vert foncé
+.libre-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.67rem;
+  font-weight: 600;
+  color: $accent;
+  background: $accent-soft;
+  border-radius: 50px;
+  padding: 0.18rem 0.6rem 0.18rem 0.4rem;
+}
+
+.libre-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: $accent;
+  animation: blink-dot 2.5s ease-in-out infinite;
+}
+
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+// Métriques — fond gris très léger, neutre
+.box-metrics-row {
+  display: flex;
+  align-items: stretch;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.box-metric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.55rem 0.4rem 0.45rem;
+  gap: 1px;
+  text-align: center;
+}
+
+.metric-vsep {
+  width: 1px;
+  background: $border;
+  margin: 0.4rem 0;
+}
+
+.metric-number {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: $text;
+  line-height: 1.2;
+}
+
+.taille-num {
+  font-size: 0.82rem;
+}
+
+.metric-label {
+  font-size: 0.6rem;
+  color: $text-light;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+// Bouton Louer — seul élément vraiment vert, CTA principal
+.btn-louer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  background: $accent;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.83rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, box-shadow 0.15s;
+  letter-spacing: 0.2px;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+
+  &:hover {
+    opacity: 0.88;
+    box-shadow: 0 3px 10px rgba(90, 122, 74, 0.22);
+  }
+  &:active { transform: scale(0.98); }
 }
