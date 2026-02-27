@@ -34,4 +34,6 @@ export const routes: Routes = [
   { path: 'mall/dashboard', component: FinancesDashboardComponent },
   { path: 'mall/loyers', loadComponent: () => import('@app/features/mall/loyers-admin/loyers-admin.component').then(m => m.LoyersAdminComponent) },
   { path: 'boutique/loyers', loadComponent: () => import('@app/features/boutique/boutique-loyers/boutique-loyers.component').then(m => m.LoyersBoutiqueComponent) },
+  { path: 'boutique/horaires', loadComponent: () => import('@app/features/boutique/boutique-mes-horaires/boutique-mes-horaires.component').then(m => m.BoutiqueMesHorairesComponent) },
+  { path: 'mall/horaires', loadComponent: () => import('@app/features/mall/admin-heures/admin-heures.component').then(m => m.AdminHeuresSupermarcheComponent) },
 ];

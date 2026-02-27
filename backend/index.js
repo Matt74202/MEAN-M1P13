@@ -51,6 +51,7 @@ app.use('/api/dashboard', require('./src/routes/dashboardRoutes'));
 app.use('/api/requests', require('./src/routes/requestRoutes'));
 app.use('/api/finances', require('./src/routes/financesRoutes'));
 app.use('/api/loyers', require('./src/routes/loyerRoutes'));
+app.use('/api/heures', require('./src/routes/heureRoutes'));
 
 if (process.env.NODE_ENV === 'development') {
   mongoose.set('debug', true);

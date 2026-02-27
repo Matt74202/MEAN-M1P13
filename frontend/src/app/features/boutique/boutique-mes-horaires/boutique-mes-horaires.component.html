@@ -1,0 +1,128 @@
+<!-- boutique-mes-horaires.component.html -->
+<app-boutique-navbar></app-boutique-navbar>
+
+<div class="heures-page">
+  <div class="heures-page__inner">
+
+    <div class="page-header">
+      <h1 class="page-header__title">Mes horaires d'ouverture</h1>
+      <p class="page-header__sub">Vos horaires doivent rester dans les plages autorisées par le supermarché</p>
+    </div>
+
+    @if (loading) {
+      <div class="state-loading">
+        <div class="state-loading__spinner"></div>
+        <p>Chargement de vos horaires...</p>
+      </div>
+    }
+
+    @else if (errorMessage) {
+      <div class="state-error">{{ errorMessage }}</div>
+    }
+
+    @else {
+
+      @if (successMsg) {
+        <div class="feedback feedback--success">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+          {{ successMsg }}
+        </div>
+      }
+      @if (errorSave) {
+        <div class="feedback feedback--error">{{ errorSave }}</div>
+      }
+
+      <!-- Contraintes supermarché -->
+      @if (supermarcheHoraires && (supermarcheHoraires | keyvalue).length > 0) {
+        <div class="contraintes-panel">
+          <div class="contraintes-panel__header">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Plages autorisées par le supermarché
+          </div>
+          <div class="contraintes-panel__grid">
+            @for (jour of joursSemaine; track jour.id) {
+              <div class="contrainte-chip">
+                <span class="contrainte-chip__jour">{{ jour.nom }}</span>
+                <span class="contrainte-chip__plage">
+                  {{ supermarcheHoraires[jour.id]?.ouverture || '--:--' }}
+                  →
+                  {{ supermarcheHoraires[jour.id]?.fermeture || '--:--' }}
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Mes horaires -->
+      <div class="hp-panel">
+        <div class="hp-panel__header">
+          <div>
+            <p class="hp-panel__title">Mes horaires personnalisés</p>
+            <p class="hp-panel__sub">Modifiez vos plages dans les limites autorisées</p>
+          </div>
+        </div>
+
+        <div class="hp-panel__body">
+          @for (jour of joursSemaine; track jour.id) {
+            <div class="jour-row" [class.jour-row--error]="erreurs[jour.id]">
+              <span class="jour-row__name">{{ jour.nom }}</span>
+
+              <div class="jour-row__fields">
+                <div class="time-field">
+                  <span class="time-field__label">Ouverture</span>
+                  <input type="time" class="f-time"
+                         [class.f-time--error]="erreurs[jour.id]"
+                         [(ngModel)]="mesHoraires[jour.id].ouverture"
+                         (change)="verifierPlage(jour.id)">
+                </div>
+                <span class="jour-row__sep">→</span>
+                <div class="time-field">
+                  <span class="time-field__label">Fermeture</span>
+                  <input type="time" class="f-time"
+                         [class.f-time--error]="erreurs[jour.id]"
+                         [(ngModel)]="mesHoraires[jour.id].fermeture"
+                         (change)="verifierPlage(jour.id)">
+                </div>
+              </div>
+
+              @if (erreurs[jour.id]) {
+                <span class="jour-row__err">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  </svg>
+                  {{ erreurs[jour.id] }}
+                </span>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="hp-panel__footer">
+          <button class="btn-save"
+                  (click)="sauvegarderMesHoraires()"
+                  [disabled]="saving || hasErrors()">
+            @if (saving) {
+              <span class="btn-save__spinner"></span> Enregistrement...
+            } @else if (hasErrors()) {
+              Corrigez les erreurs pour enregistrer
+            } @else {
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+              </svg>
+              Enregistrer mes horaires
+            }
+          </button>
+        </div>
+      </div>
+
+    }
+  </div>
+</div>
