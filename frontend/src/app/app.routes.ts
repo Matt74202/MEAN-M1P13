@@ -11,6 +11,7 @@ import { DashboardBoutiqueComponent } from './features/boutique/dashboard/dashbo
 import { LoginComponent } from './features/auth/login/login.component';
 import { BoutiqueMallComponent } from './features/boutique/boutique-mall/boutique-mall.component';
 import { FinancesDashboardComponent } from './features/mall/finances-dashboard/finances-dashboard.component';
+import { ContratsBoutiqueComponent } from './features/boutique/contrats-boutique/contrats-boutique.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -36,4 +37,5 @@ export const routes: Routes = [
   { path: 'boutique/loyers', loadComponent: () => import('@app/features/boutique/boutique-loyers/boutique-loyers.component').then(m => m.LoyersBoutiqueComponent) },
   { path: 'boutique/horaires', loadComponent: () => import('@app/features/boutique/boutique-mes-horaires/boutique-mes-horaires.component').then(m => m.BoutiqueMesHorairesComponent) },
   { path: 'mall/horaires', loadComponent: () => import('@app/features/mall/admin-heures/admin-heures.component').then(m => m.AdminHeuresSupermarcheComponent) },
+  { path: 'boutique/contrats', component: ContratsBoutiqueComponent },
 ];

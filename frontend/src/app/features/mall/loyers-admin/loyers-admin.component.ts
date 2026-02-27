@@ -4,6 +4,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MallNavbarComponent } from '@app/shared/components/mall-navbar/mall-navbar.component';
+import { environment } from '@environments/environment';
 
 @Component({
   selector: 'app-loyers-admin',
@@ -38,7 +39,7 @@ export class LoyersAdminComponent implements OnInit {
   chargerBoutiques() {
     const headers = this.getAuthHeaders();
     if (!('Authorization' in headers)) return;
-    this.http.get<any>('http://localhost:5000/api/loyers/boutiques', { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/loyers/boutiques`, { headers }).subscribe({
       next:  (res) => { if (res.success) this.boutiques = res.data || []; },
       error: (err) => console.error('Erreur boutiques', err)
     });
@@ -49,7 +50,7 @@ export class LoyersAdminComponent implements OnInit {
     const headers = this.getAuthHeaders();
     if (!('Authorization' in headers)) { this.loading = false; return; }
 
-    this.http.get<any>('http://localhost:5000/api/loyers/admin', { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/loyers/admin`, { headers }).subscribe({
       next: (res) => {
         if (res.success) this.loyersRaw = res.data || [];
         else this.errorMessage = res.message || 'Réponse invalide';

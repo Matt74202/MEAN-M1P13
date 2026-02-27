@@ -8,6 +8,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 
 import { MallNavbarComponent } from '@app/shared/components/mall-navbar/mall-navbar.component';
+import { environment } from '@environments/environment';
 
 interface RentalRequest {
   _id: string;
@@ -42,7 +43,7 @@ export class RentalRequestsComponent implements OnInit {
   private http     = inject(HttpClient);
   private snackBar = inject(MatSnackBar);
 
-  private readonly API = 'http://localhost:5000/api';
+  private readonly API = environment.apiUrl;
 
   isLoading   = signal(true);
   isActioning = signal<string | null>(null);

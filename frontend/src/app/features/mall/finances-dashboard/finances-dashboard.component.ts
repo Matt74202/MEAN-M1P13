@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MallNavbarComponent } from '@shared/components/mall-navbar/mall-navbar.component'; 
+import { environment } from '@environments/environment';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -68,8 +69,8 @@ export class FinancesDashboardComponent implements OnInit {
     { label: '🔄 Taux recouvrement',    question: "Mon taux de recouvrement est-il bon ? Comment est-il calculé et comment l'améliorer ?" },
   ];
 
-  private apiUrl  = 'http://localhost:5000/api/finances/dashboard';
-  private chatUrl = 'http://localhost:5000/api/finances/chat';
+  private apiUrl  = `${environment.apiUrl}/finances/dashboard`;
+  private chatUrl = `${environment.apiUrl}/finances/chat`;
 
   constructor(private http: HttpClient) {}
 
@@ -88,6 +89,10 @@ export class FinancesDashboardComponent implements OnInit {
       next: (res) => {
         if (res.success) {
           this.data      = res.data;
+          
+          console.log('analysePayeurs[0] :', res.data.analysePayeurs?.[0]);
+          console.log('Clés disponibles :', Object.keys(res.data.analysePayeurs?.[0] || {}));
+        
           this.contexte  = res.data.contexteChatbot || '';
           this.alertes   = res.data.alertesChatbot  || [];
           this.maxGraphValue = Math.max(

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MallNavbarComponent } from '@app/shared/components/mall-navbar/mall-navbar.component';
+import { environment } from '@environments/environment';
 
 @Component({
   selector: 'app-admin-heures-supermarche',
@@ -58,7 +59,7 @@ export class AdminHeuresSupermarcheComponent implements OnInit {
     const headers = this.getAuthHeaders();
     if (!('Authorization' in headers)) { this.loading = false; return; }
 
-    this.http.get<any>('http://localhost:5000/api/heures/supermarche', { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/heures/supermarche`, { headers }).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           res.data.jour?.forEach((entry: any) => {
@@ -100,7 +101,7 @@ export class AdminHeuresSupermarcheComponent implements OnInit {
       }))
     };
 
-    this.http.put('http://localhost:5000/api/heures/supermarche/standards', payload, { headers }).subscribe({
+    this.http.put(`${environment.apiUrl}/heures/supermarche/standards`, payload, { headers }).subscribe({
       next:  () => { this.successMsg = 'Horaires standards enregistrés ✓'; this.saving = false; },
       error: (err) => { this.errorSave = err.error?.message || 'Erreur serveur'; this.saving = false; }
     });
@@ -132,7 +133,7 @@ export class AdminHeuresSupermarcheComponent implements OnInit {
       }))
     };
 
-    this.http.put('http://localhost:5000/api/heures/supermarche/exceptions', payload, { headers }).subscribe({
+    this.http.put(`${environment.apiUrl}/heures/supermarche/exceptions`, payload, { headers }).subscribe({
       next:  () => { this.successMsg = 'Exceptions enregistrées ✓'; this.saving = false; },
       error: (err) => { this.errorSave = err.error?.message || 'Erreur serveur'; this.saving = false; }
     });

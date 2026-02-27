@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { BoutiqueNavbarComponent } from '@app/shared/components/boutique-navbar/boutique-navbar.component';
+import { environment } from '@environments/environment';
 
 @Component({
   selector: 'app-boutique-mes-horaires',
@@ -57,7 +58,7 @@ export class BoutiqueMesHorairesComponent implements OnInit {
     const headers = this.getAuthHeaders();
     if (!('Authorization' in headers)) return;
 
-    this.http.get<any>('http://localhost:5000/api/heures/supermarche', { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/heures/supermarche`, { headers }).subscribe({
       next: (res) => {
         if (res.success && res.data?.jour) {
           res.data.jour.forEach((entry: any) => {
@@ -84,7 +85,7 @@ export class BoutiqueMesHorairesComponent implements OnInit {
     const headers = this.getAuthHeaders();
     if (!('Authorization' in headers)) { this.loading = false; return; }
 
-    this.http.get<any>('http://localhost:5000/api/heures/boutique/me', { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/heures/boutique/me`, { headers }).subscribe({
       next: (res) => {
         if (res.success && res.data?.heures?.length) {
           res.data.heures.forEach((h: any) => {
@@ -144,7 +145,7 @@ export class BoutiqueMesHorairesComponent implements OnInit {
       }))
     };
 
-    this.http.put('http://localhost:5000/api/heures/boutique/me', payload, { headers }).subscribe({
+    this.http.put(`${environment.apiUrl}/heures/boutique/me`, payload, { headers }).subscribe({
       next:  () => { this.successMsg = 'Vos horaires ont été enregistrés ✓'; this.saving = false; },
       error: (err) => { this.errorSave = err.error?.message || 'Erreur serveur'; this.saving = false; }
     });

@@ -157,12 +157,12 @@ function genererAlertes(data) {
 // ─────────────────────────────────────────────────────────────
 exports.getDashboard = async (req, res) => {
   try {
-     console.log('[getDashboard] Début');
+    console.log('[getDashboard] Début');
     const today = new Date();
 
     // ── 1. Données brutes ────────────────────────────────────
     const loyersPayes    = await Loyer.find({ statut: 'paye' }).lean();
-     console.log('[getDashboard] loyersPayes OK:', loyersPayes.length);
+    console.log('[getDashboard] loyersPayes OK:', loyersPayes.length);
 
     const loyersImpayés  = await Loyer.find({ statut: 'impaye' }).lean();
     const revenuReel     = loyersPayes.reduce((s, l) => s + (l.montant || 0), 0);
@@ -174,19 +174,28 @@ exports.getDashboard = async (req, res) => {
       .reduce((s, l) => s + (l.montant || 0), 0);
 
     const contratsActifs = await Contrat.find({ statut: 'ACTIF' })
-    .populate('idBox', 'numero nom loyer superficie')
-    .populate('userId', 'nom mail')
-    .lean();
-      console.log('[getDashboard] contratsActifs OK:', contratsActifs.length);
+      .populate('idBox',      'numero nom loyer superficie')
+      .populate('idBoutique', 'nom mail')
+      .lean();
+    console.log('[getDashboard] contratsActifs OK:', contratsActifs.length);
     console.log('[getDashboard] Exemple contrat:', JSON.stringify(contratsActifs[0], null, 2));
 
     const tousLesContrats = await Contrat.find({})
-    .populate('idBox', 'numero nom loyer superficie')
-    .populate('userId', 'nom mail')
-    .lean();
+      .populate('idBox',      'numero nom loyer superficie')
+      .populate('idBoutique', 'nom mail')
+      .lean();
 
-    for (const c of contratsActifs)   c.loyerMensuel = c.idBox?.loyer || 0;
-    for (const c of tousLesContrats)  c.loyerMensuel = c.idBox?.loyer || 0;
+    // Normalisation : alias cohérents dans tout le contrôleur
+    for (const c of contratsActifs) {
+      c.loyerMensuel = c.idBox?.loyer || 0;
+      c.boxId        = c.idBox;        // alias boxId → idBox
+      c.userId       = c.idBoutique;   // alias userId → idBoutique
+    }
+    for (const c of tousLesContrats) {
+      c.loyerMensuel = c.idBox?.loyer || 0;
+      c.boxId        = c.idBox;
+      c.userId       = c.idBoutique;
+    }
 
     const revenuEstimeMensuel = contratsActifs.reduce((s, c) => s + (c.loyerMensuel || 0), 0);
 
@@ -198,7 +207,7 @@ exports.getDashboard = async (req, res) => {
 
     // ── NOUVELLES MÉTRIQUES ──────────────────────────────────
 
-    // Revenu attendu sur 12 mois glissants (contrats actifs × mois couverts)
+    // Revenu attendu sur 12 mois glissants
     let revenuAttendu12Mois = 0;
     for (let i = 0; i < 12; i++) {
       const d = addMonths(today, i);
@@ -207,8 +216,7 @@ exports.getDashboard = async (req, res) => {
         .reduce((s, c) => s + (c.loyerMensuel || 0), 0);
     }
 
-    // Revenu manqué : somme de tous les loyers qui auraient dû être payés
-    // mais ne l'ont pas été (mois passés des contrats sans paiement correspondant)
+    // Revenu manqué
     let revenuManque = 0;
     for (const contrat of tousLesContrats) {
       const debut    = new Date(contrat.dateDebut);
@@ -223,16 +231,14 @@ exports.getDashboard = async (req, res) => {
       }
     }
 
-    // Taux de croissance annuel : compare revenu des 12 derniers mois vs 12 mois précédents
+    // Taux de croissance annuel
     let revenuAn1 = 0, revenuAn2 = 0;
     for (let i = 1; i <= 12; i++) {
-      const d  = addMonths(today, -i);
-      const ml = moisStr(d);
+      const ml = moisStr(addMonths(today, -i));
       revenuAn1 += loyersPayes.filter(l => l.mois === ml).reduce((s, l) => s + (l.montant || 0), 0);
     }
     for (let i = 13; i <= 24; i++) {
-      const d  = addMonths(today, -i);
-      const ml = moisStr(d);
+      const ml = moisStr(addMonths(today, -i));
       revenuAn2 += loyersPayes.filter(l => l.mois === ml).reduce((s, l) => s + (l.montant || 0), 0);
     }
     const tauxCroissanceAnnuel = revenuAn2 > 0
@@ -246,12 +252,12 @@ exports.getDashboard = async (req, res) => {
         return fin >= today && fin <= dans3Mois;
       })
       .map(c => ({
-        contratId:   c._id.toString(),
-        boutiqueNom: c.userId?.nom || 'Inconnu',
+        contratId:    c._id.toString(),
+        boutiqueNom:  c.userId?.nom  || c.userId?.mail || 'Inconnu',
         boutiqueMail: c.userId?.mail || '',
-        boxNumero:   c.boxId?.numero || '?',
-        boxNom:      c.boxId?.nom || '',
-        dateFin:     c.dateFin,
+        boxNumero:    c.boxId?.numero || '?',
+        boxNom:       c.boxId?.nom   || '',
+        dateFin:      c.dateFin,
         loyerMensuel: c.loyerMensuel,
         joursRestants: Math.ceil((new Date(c.dateFin) - today) / (1000 * 60 * 60 * 24))
       }))
@@ -276,7 +282,9 @@ exports.getDashboard = async (req, res) => {
         revenusParBoxMap.set(boxId, { _id: boxId, boxNumero: c.boxId.numero, boxNom: c.boxId.nom, totalPercu: 0, nbPaiements: 0 });
       }
     }
-    const revenusParBox = Array.from(revenusParBoxMap.values()).sort((a, b) => b.totalPercu - a.totalPercu).slice(0, 10);
+    const revenusParBox = Array.from(revenusParBoxMap.values())
+      .sort((a, b) => b.totalPercu - a.totalPercu)
+      .slice(0, 10);
 
     // ── 3. Revenus par boutique ──────────────────────────────
     const revenusParBoutiqueMap = new Map();
@@ -304,11 +312,20 @@ exports.getDashboard = async (req, res) => {
         } catch (_) {}
       }
     }
-    const revenusParBoutique = Array.from(revenusParBoutiqueMap.values()).sort((a, b) => b.totalPercu - a.totalPercu).slice(0, 10);
+    const revenusParBoutique = Array.from(revenusParBoutiqueMap.values())
+      .sort((a, b) => b.totalPercu - a.totalPercu)
+      .slice(0, 10);
 
     // ── 4. Stats générales ───────────────────────────────────
-    const totalBoxes   = await Box.countDocuments();
-    const boxesOccupes = await Box.countDocuments({ statut: 'occupe' });
+    const totalBoxes = await Box.countDocuments();
+
+    // Occupation calculée depuis les contrats actifs (plus fiable que le statut Box)
+    const boxIdsOccupees = new Set(
+      contratsActifs
+        .filter(c => c.boxId?._id)
+        .map(c => c.boxId._id.toString())
+    );
+    const boxesOccupes   = boxIdsOccupees.size;
     const tauxOccupation = totalBoxes > 0 ? Math.round((boxesOccupes / totalBoxes) * 100) : 0;
 
     // ── 5. Timeline draggable ────────────────────────────────
@@ -335,7 +352,7 @@ exports.getDashboard = async (req, res) => {
       tousLesContrats.some(c2 =>
         c2._id.toString() !== c._id.toString() &&
         c2.userId?._id?.toString() === c.userId?._id?.toString() &&
-        c2.boxId?._id?.toString() === c.boxId?._id?.toString() &&
+        c2.boxId?._id?.toString()  === c.boxId?._id?.toString() &&
         Math.abs(new Date(c2.dateDebut) - new Date(c.dateFin)) < 1000 * 60 * 60 * 24 * 10
       )
     );
@@ -379,21 +396,49 @@ exports.getDashboard = async (req, res) => {
 
     // ── 6. Analyse ponctualité ───────────────────────────────
     const analyseParBoutique = new Map();
+
     for (const loyer of loyersPayes) {
       const boutiqueId = loyer.boutiqueId;
       if (!boutiqueId) continue;
+
       if (!analyseParBoutique.has(boutiqueId)) {
+        // Priorité 1 : récupérer le nom depuis revenusParBoutiqueMap (déjà résolu)
+        let boutiqueNom  = revenusParBoutiqueMap.get(boutiqueId)?.boutiqueNom  || null;
+        let boutiqueMail = revenusParBoutiqueMap.get(boutiqueId)?.boutiqueMail || '';
+
+        // Priorité 2 : si toujours inconnu, chercher via le contrat lié au loyer
+        if (!boutiqueNom || boutiqueNom === 'Inconnu') {
+          const contratLie = tousLesContrats.find(c => c._id.toString() === loyer.contratId);
+          if (contratLie?.userId) {
+            boutiqueNom  = contratLie.userId.nom  || contratLie.userId.mail || null;
+            boutiqueMail = contratLie.userId.mail || '';
+          }
+        }
+
+        // Priorité 3 : dernier recours — requête directe en base
+        if (!boutiqueNom || boutiqueNom === 'Inconnu') {
+          try {
+            const user = await User.findById(boutiqueId).select('nom mail').lean();
+            if (user) {
+              boutiqueNom  = user.nom  || user.mail || 'Inconnu';
+              boutiqueMail = user.mail || '';
+            }
+          } catch (_) {}
+        }
+
         analyseParBoutique.set(boutiqueId, {
           boutiqueId,
-          boutiqueNom:  revenusParBoutiqueMap.get(boutiqueId)?.boutiqueNom || 'Inconnu',
-          boutiqueMail: revenusParBoutiqueMap.get(boutiqueId)?.boutiqueMail || '',
+          boutiqueNom:  boutiqueNom  || 'Inconnu',
+          boutiqueMail: boutiqueMail || '',
           nbPayes: 0, nbATemps: 0, nbEnRetard: 0,
           montantTotal: 0, retardsMoyenJours: [], moisAttendus: 0,
         });
       }
+
       const entry = analyseParBoutique.get(boutiqueId);
       entry.nbPayes      += 1;
       entry.montantTotal += loyer.montant || 0;
+
       if (loyer.datePaiement && loyer.mois) {
         const [annee, moisNum] = loyer.mois.split('-').map(Number);
         const echeance = new Date(annee, moisNum - 1, 5, 23, 59, 59);
@@ -408,8 +453,11 @@ exports.getDashboard = async (req, res) => {
     }
 
     for (const [boutiqueId, entry] of analyseParBoutique) {
-      const contratsB = tousLesContrats.filter(
-        c => c.userId?._id?.toString() === boutiqueId || c.userId?.toString() === boutiqueId
+      const contratsB = tousLesContrats.filter(c =>
+        c.idBoutique?._id?.toString() === boutiqueId ||
+        c.idBoutique?.toString()       === boutiqueId ||
+        c.userId?._id?.toString()      === boutiqueId ||
+        c.userId?.toString()           === boutiqueId
       );
       entry.moisAttendus = contratsB.reduce((sum, c) => {
         const debut   = new Date(c.dateDebut);
@@ -424,9 +472,9 @@ exports.getDashboard = async (req, res) => {
         ? Math.round(entry.retardsMoyenJours.reduce((s, v) => s + v, 0) / entry.retardsMoyenJours.length) : 0;
       delete entry.retardsMoyenJours;
 
-      entry.scoreGlobal = Math.round(entry.tauxPaiement * 0.6 + entry.tauxPonctualite * 0.4);
-      entry.categorie   = entry.scoreGlobal >= 75 ? 'excellent' : entry.scoreGlobal >= 50 ? 'moyen' : 'mauvais';
-      entry.scoreRisque = Math.max(0, 100 - entry.scoreGlobal);
+      entry.scoreGlobal  = Math.round(entry.tauxPaiement * 0.6 + entry.tauxPonctualite * 0.4);
+      entry.categorie    = entry.scoreGlobal >= 75 ? 'excellent' : entry.scoreGlobal >= 50 ? 'moyen' : 'mauvais';
+      entry.scoreRisque  = Math.max(0, 100 - entry.scoreGlobal);
       entry.niveauRisque = entry.scoreRisque >= 70 ? 'élevé' : entry.scoreRisque >= 40 ? 'moyen' : 'faible';
     }
 
@@ -479,8 +527,8 @@ exports.getDashboard = async (req, res) => {
         graphiqueMensuel, timeline,
         analysePayeurs, bonsPayeurs, mauvaisPayeurs,
         previsions, contratsExpirants,
-        contexteChatbot,   // contexte enrichi pour le chatbot
-        alertesChatbot     // alertes automatiques affichées dans le chat
+        contexteChatbot,
+        alertesChatbot
       }
     });
 
@@ -501,7 +549,6 @@ exports.chat = async (req, res) => {
     const Groq = require('groq-sdk');
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-    // Construire les messages : system + historique + message courant
     const messages = [
       {
         role: 'system',
@@ -515,7 +562,7 @@ exports.chat = async (req, res) => {
     ];
 
     const completion = await groq.chat.completions.create({
-      model:       'llama-3.3-70b-versatile',   // gratuit, rapide
+      model:       'llama-3.3-70b-versatile',
       messages,
       max_tokens:  1024,
       temperature: 0.7,
