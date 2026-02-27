@@ -70,7 +70,9 @@ export class BoutiqueMallComponent implements OnInit {
   users:     any[]      = [];
 
   maBoutique  = signal<Boutique | null>(null);
-  maBox       = signal<Box | null>(null);
+
+  // ── Multi-boxes ───────────────────────────────────────────────────────────
+  mesBoxes = signal<Box[]>([]);
 
   nbBoxesLibres   = signal(0);
   nbBoxesOccupees = signal(0);
@@ -86,7 +88,6 @@ export class BoutiqueMallComponent implements OnInit {
   isEnvoi           = signal(false);
 
   // ── Dates estimées ────────────────────────────────────────────────────────
-  // Dates calculées une seule fois via effect — stable, pas de boucle
   readonly dateDebut = new Date();
   dateFin = signal<Date>(this._calculerDateFin(24));
 
@@ -125,7 +126,6 @@ export class BoutiqueMallComponent implements OnInit {
   readonly durees = [6, 12, 18, 24, 36];
 
   constructor() {
-    // Recalcule dateFin uniquement quand dureeSelectionnee change — UNE SEULE FOIS
     effect(() => {
       this.dateFin.set(this._calculerDateFin(this.dureeSelectionnee()));
     });
@@ -161,13 +161,19 @@ export class BoutiqueMallComponent implements OnInit {
   private resoudreContexte() {
     const boutique = this.boutiques.find(b => b._id?.toString() === this.boutiqueId);
     this.maBoutique.set(boutique ?? null);
-    const contrat = this.contrats.find(
+
+    // Tous les contrats actifs de cette boutique
+    const mesContrats = this.contrats.filter(
       c => c.idBoutique?.toString() === this.boutiqueId && c.statut === 'ACTIF'
     );
-    if (contrat) {
-      const boxId = (contrat as any).idBox?.toString() ?? (contrat as any).boxId?.toString() ?? '';
-      this.maBox.set(this.toutesBoxes.find(b => b._id?.toString() === boxId) ?? null);
-    }
+
+    const boxIds = new Set(
+      mesContrats.map(c => (c as any).idBox?.toString() ?? (c as any).boxId?.toString() ?? '')
+    );
+
+    this.mesBoxes.set(
+      this.toutesBoxes.filter(b => boxIds.has(b._id?.toString() ?? ''))
+    );
   }
 
   private filtrerBoxesEtage() {
@@ -186,6 +192,30 @@ export class BoutiqueMallComponent implements OnInit {
     this.nbBoxesTotal.set(current.length);
   }
 
+  // ── Helpers multi-boxes ───────────────────────────────────────────────────
+
+  /** Noms de toutes mes boxes, ex: "A1, B2" */
+  get mesBoxesLabel(): string {
+    const boxes = this.mesBoxes();
+    if (boxes.length === 0) return '—';
+    return boxes.map(b => b.nom).join(', ');
+  }
+
+  /** Étages distincts de mes boxes, ex: "Rez-de-chaussée & 1ᵉʳ étage" */
+  get mesBoxesEtages(): string {
+    const etages = [...new Set(this.mesBoxes().map(b =>
+      b.etage === 'RC' ? 'Rez-de-chaussée' : '1ᵉʳ étage'
+    ))];
+    return etages.join(' & ');
+  }
+
+  /** Set d'IDs pour surligner toutes mes boxes sur la carte */
+  get mesBoxIds(): Set<string> {
+    return new Set(this.mesBoxes().map(b => b._id?.toString() ?? ''));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   setEtage(etage: Etage) {
     if (this.currentEtage() === etage) return;
     this.currentEtage.set(etage);
@@ -200,7 +230,6 @@ export class BoutiqueMallComponent implements OnInit {
   // FLUX DEMANDE
   // ─────────────────────────────────────────────────────────────────────────
 
-  /** Étape 1 — ouvrir le modal avec les clauses */
   louerBox(box: Box) {
     this.boxSelectionnee.set(box);
     this.contratLuApprouve.set(false);
@@ -215,7 +244,6 @@ export class BoutiqueMallComponent implements OnInit {
     this.isEnvoi.set(false);
   }
 
-  /** Étape 2 — passer au choix de durée (checkbox validée) */
   passerADuree() {
     if (!this.contratLuApprouve()) return;
     this.fluxEtape.set('duree');
@@ -223,15 +251,6 @@ export class BoutiqueMallComponent implements OnInit {
 
   retourContrat() { this.fluxEtape.set('contrat'); }
 
-  /**
-   * Étape 3 — POST /api/requests
-   *
-   * rentalController.createRequest attend :
-   *   { boxId: string, message: string, dureeMois: number }
-   *   + Header Authorization: Bearer <token JWT rôle 'boutique'>
-   *
-   * En cas de succès → statut 'pending', l'admin validera ensuite.
-   */
   envoyerDemande() {
     const box = this.boxSelectionnee();
     if (!box) return;
@@ -246,7 +265,7 @@ export class BoutiqueMallComponent implements OnInit {
 
     const payload = {
       boxId:     box._id?.toString(),
-      userId:    this.boutiqueId,           // envoyé dans le body car pas de middleware auth
+      userId:    this.boutiqueId,
       message:   'Demande via plan du mall',
       dureeMois: this.dureeSelectionnee(),
     };
@@ -261,11 +280,10 @@ export class BoutiqueMallComponent implements OnInit {
         next: () => {
           this.isEnvoi.set(false);
           this.fluxEtape.set('confirmation');
-          this.loadAll(); // rafraîchit les boxes (le box reste 'libre' jusqu'à validation admin)
+          this.loadAll();
         },
         error: (err) => {
           this.isEnvoi.set(false);
-          // Le backend renvoie err.error.message dans tous les cas d'erreur
           const msg = err.error?.message ?? 'Une erreur est survenue. Veuillez réessayer.';
           this.snackBar.open(msg, 'Fermer', { duration: 5000 });
         },
@@ -275,9 +293,6 @@ export class BoutiqueMallComponent implements OnInit {
   // ─────────────────────────────────────────────────────────────────────────
   // HELPERS
   // ─────────────────────────────────────────────────────────────────────────
-  get maBoxEtage(): string {
-    return this.maBox()?.etage === 'RC' ? 'Rez-de-chaussée' : '1ᵉʳ étage';
-  }
 
   get tauxOccupation(): number {
     const total = this.nbBoxesTotal();

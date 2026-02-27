@@ -25,25 +25,22 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
   @Input() currentEtage: Etage = 'RC';
   @Input() selectedTypeCommerce: string | null = null;
   @Input() idsFavoris: Set<string> = new Set();
-  /** ID de la box appartenant au gérant connecté — surlignage vert foncé */
-  @Input() maBoxId: string | null = null;
+  /** IDs des boxes appartenant au gérant connecté — surlignage vert foncé */
+  @Input() maBoxIds: Set<string> = new Set();
 
   @Output() boutiqueClick = new EventEmitter<Box>();
 
   @ViewChild('mapContainer') mapContainerRef!: ElementRef<HTMLDivElement>;
 
   private app?: PIXI.Application;
-
   private root       = new PIXI.Container();
   private mapContent = new PIXI.Container();
   private boxesContainers: Map<string, PIXI.Container> = new Map();
 
   private readonly SCALE_FACTOR = 0.9;
-
-  // Couleurs spéciales pour la vue boutique
-  private readonly COLOR_MA_BOX  = 0x2e7d32;   // vert foncé — ma boutique
-  private readonly COLOR_LIBRE   = 0x7d936c;   // vert accent — libre
-  private readonly COLOR_OCCUPEE = 0xf59e0b;   // ambre — occupée par autre
+  private readonly COLOR_MA_BOX  = 0x2e7d32;
+  private readonly COLOR_LIBRE   = 0x7d936c;
+  private readonly COLOR_OCCUPEE = 0xf59e0b;
 
   constructor(private boutiqueService: BoutiqueService) {}
 
@@ -63,11 +60,9 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
     });
 
     el.appendChild(this.app.canvas);
-
     this.mapContent.scale.set(this.SCALE_FACTOR);
     this.root.addChild(this.mapContent);
     this.app.stage.addChild(this.root);
-
     this.drawMap(true);
   }
 
@@ -77,7 +72,7 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
     if (
       changes['selectedTypeCommerce'] ||
       changes['idsFavoris']           ||
-      changes['maBoxId']
+      changes['maBoxIds']
     ) {
       this.boxesContainers.forEach(c => this.mapContent.removeChild(c));
       this.boxesContainers.clear();
@@ -96,15 +91,13 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
       changes['currentEtage']         ||
       changes['selectedTypeCommerce'] ||
       changes['idsFavoris']           ||
-      changes['maBoxId']
+      changes['maBoxIds']
     ) {
       this.drawMap();
     }
   }
 
-  public forceRedraw() {
-    this.drawMap(false);
-  }
+  public forceRedraw() { this.drawMap(false); }
 
   private drawMap(isInitial = false) {
     if (!this.app) return;
@@ -112,13 +105,8 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
     if (isInitial) {
       this.mapContent.removeChildren();
       this.boxesContainers.clear();
-
       const bg = new PIXI.Graphics()
-        .rect(
-          0, 0,
-          this.app.screen.width  / this.SCALE_FACTOR,
-          this.app.screen.height / this.SCALE_FACTOR
-        )
+        .rect(0, 0, this.app.screen.width / this.SCALE_FACTOR, this.app.screen.height / this.SCALE_FACTOR)
         .fill(0xf8f9f5);
       this.mapContent.addChild(bg);
     }
@@ -134,13 +122,11 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
       .filter(b => b.etage === this.currentEtage)
       .forEach(box => {
         let container = this.boxesContainers.get(box._id);
-
         if (!container) {
           container = this.createBoxContainer(box);
           this.boxesContainers.set(box._id, container);
           this.mapContent.addChild(container);
         }
-
         container.x        = box.x;
         container.y        = box.y;
         container.rotation = box.rotation ?? 0;
@@ -149,7 +135,6 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
     this.app.renderer.render(this.app.stage);
   }
 
-  // ── Utilitaires ──────────────────────────────────────────────────────────────
   private toStringId(id: any): string {
     if (!id) return '';
     if (typeof id === 'string') return id;
@@ -163,10 +148,9 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
   }
 
   private getContrat(boxId: string): Contrat | undefined {
-    return this.contrats.find(c => {
-      if (this.getContratBoxId(c) !== this.toStringId(boxId)) return false;
-      return c.statut === 'ACTIF';
-    });
+    return this.contrats.find(c =>
+      this.getContratBoxId(c) === this.toStringId(boxId) && c.statut === 'ACTIF'
+    );
   }
 
   private getBoutique(contrat: Contrat): Boutique | undefined {
@@ -174,39 +158,26 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
       return contrat.idBoutique as any;
     }
     if (contrat.idBoutique) {
-      return this.boutiques.find(b =>
-        this.toStringId(b._id) === this.toStringId(contrat.idBoutique)
-      );
+      return this.boutiques.find(b => this.toStringId(b._id) === this.toStringId(contrat.idBoutique));
     }
     if ((contrat as any).userId) {
-      const user = this.users.find((u: any) =>
-        this.toStringId(u._id) === this.toStringId((contrat as any).userId)
-      );
-      if (user) return {
-        _id:          user._id,
-        nom:          user.nom,
-        typeCommerce: user.TypeCommerce ?? 'Inconnu',
-        mail:         user.mail,
-      } as unknown as Boutique;
+      const user = this.users.find((u: any) => this.toStringId(u._id) === this.toStringId((contrat as any).userId));
+      if (user) return { _id: user._id, nom: user.nom, typeCommerce: user.TypeCommerce ?? 'Inconnu', mail: user.mail } as unknown as Boutique;
     }
     return undefined;
   }
 
-  // ── Création du container visuel d'une box ───────────────────────────────────
   private createBoxContainer(box: Box): PIXI.Container {
     const w = box.width  ?? 140;
     const h = box.height ?? 100;
 
-    const boxIdStr = this.toStringId(box._id);
-    const contrat  = this.getContrat(boxIdStr);
-    const boutique = contrat ? this.getBoutique(contrat) : undefined;
+    const boxIdStr        = this.toStringId(box._id);
+    const contrat         = this.getContrat(boxIdStr);
+    const boutique        = contrat ? this.getBoutique(contrat) : undefined;
+    const modeVueBoutique = this.maBoxIds.size > 0;
+    const estMaBox        = modeVueBoutique && this.maBoxIds.has(boxIdStr); // ← Set.has() au lieu de ===
+    const estOccupee      = !!contrat;
 
-    // ── Mode "vue boutique" (maBoxId fourni) ──
-    const estMaBox    = this.maBoxId !== null && boxIdStr === this.maBoxId;
-    const estOccupee  = !!contrat;
-    const modeVueBoutique = this.maBoxId !== null;
-
-    // ── Mode "vue client" (filtre par type) ──
     const isFiltered = !modeVueBoutique && this.selectedTypeCommerce
       ? boutique?.typeCommerce !== this.selectedTypeCommerce
       : false;
@@ -214,9 +185,8 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
     const container = new PIXI.Container();
     container.pivot.set(w / 2, h / 2);
 
-    // Déterminer la couleur selon le mode
-    let wallColor: number | undefined;
-    let bgColor: number | undefined;
+    let wallColor: number;
+    let bgColor: number;
 
     if (modeVueBoutique) {
       if (estMaBox) {
@@ -226,93 +196,57 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
         wallColor = this.COLOR_OCCUPEE;
         bgColor   = this.lightenColor(this.COLOR_OCCUPEE, 0.85);
       } else {
-        // Libre
         wallColor = this.COLOR_LIBRE;
         bgColor   = this.lightenColor(this.COLOR_LIBRE, 0.82);
       }
     } else {
-      // Comportement original
-      const typeColor = boutique
-        ? this.boutiqueService.getColorForType(boutique.typeCommerce)
-        : undefined;
+      const typeColor = boutique ? this.boutiqueService.getColorForType(boutique.typeCommerce) : undefined;
       wallColor = typeColor ?? (estOccupee ? 0xff8888 : 0x888888);
-      bgColor   = estOccupee
-        ? (typeColor ? this.lightenColor(typeColor, 0.85) : 0xffdddd)
-        : 0xffffff;
+      bgColor   = estOccupee ? (typeColor ? this.lightenColor(typeColor, 0.85) : 0xffdddd) : 0xffffff;
     }
 
-    // Fond
     const background = new PIXI.Graphics();
-    this.drawBackground(background, w, h, wallColor!, bgColor!);
+    this.drawBackground(background, w, h, wallColor, bgColor);
     container.addChild(background);
 
-    // ── Halo "ma box" — bordure épaisse pulsante autour ──
     if (estMaBox) {
       const glow = new PIXI.Graphics();
-      glow.roundRect(-w/2 - 5, -h/2 - 5, w + 10, h + 10, 12)
-          .fill({ color: this.COLOR_MA_BOX, alpha: 0.18 });
-      glow.roundRect(-w/2 - 3, -h/2 - 3, w + 6, h + 6, 10)
-          .stroke({ width: 4, color: this.COLOR_MA_BOX, alpha: 0.9 });
-      container.addChildAt(glow, 0); // derrière le fond
+      glow.roundRect(-w/2 - 5, -h/2 - 5, w + 10, h + 10, 12).fill({ color: this.COLOR_MA_BOX, alpha: 0.18 });
+      glow.roundRect(-w/2 - 3, -h/2 - 3, w + 6, h + 6, 10).stroke({ width: 4, color: this.COLOR_MA_BOX, alpha: 0.9 });
+      container.addChildAt(glow, 0);
 
-      // Animation pulsation via ticker
       let tick = 0;
-      const pulse = () => {
-        tick += 0.06;
-        glow.alpha = 0.6 + Math.sin(tick) * 0.4;
-      };
+      const pulse = () => { tick += 0.06; glow.alpha = 0.6 + Math.sin(tick) * 0.4; };
       this.app?.ticker.add(pulse);
-      // Stocker pour cleanup si besoin
       (container as any).__pulseTicker = pulse;
     }
 
-    // Opacité réduite pour les boxes filtrées (mode client)
     container.alpha = isFiltered ? 0.25 : 1;
 
-    // ── Textes ──
     const textContainer = new PIXI.Container();
     textContainer.rotation = -(box.rotation ?? 0);
 
-    const labelColor = estMaBox ? 0x1b5e20 : 0x222222;
-
-    const label = new PIXI.Text(box.nom, {
-      fontSize: 14, fill: labelColor,
-      fontWeight: 'bold', align: 'center'
-    });
+    const label = new PIXI.Text(box.nom, { fontSize: 14, fill: estMaBox ? 0x1b5e20 : 0x222222, fontWeight: 'bold', align: 'center' });
     label.anchor.set(0.5);
     label.y = boutique ? -8 : 0;
     textContainer.addChild(label);
 
     if (boutique) {
-      const bLabel = new PIXI.Text(boutique.nom, {
-        fontSize: 12, fill: estMaBox ? 0x2e7d32 : 0x333333, align: 'center',
-        wordWrap: true, wordWrapWidth: w * 0.85, breakWords: true
-      });
-      bLabel.anchor.set(0.5);
-      bLabel.y = 10;
+      const bLabel = new PIXI.Text(boutique.nom, { fontSize: 12, fill: estMaBox ? 0x2e7d32 : 0x333333, align: 'center', wordWrap: true, wordWrapWidth: w * 0.85, breakWords: true });
+      bLabel.anchor.set(0.5); bLabel.y = 10;
       textContainer.addChild(bLabel);
 
-      const tLabel = new PIXI.Text(boutique.typeCommerce, {
-        fontSize: 10, fill: 0x666666,
-        fontStyle: 'italic', align: 'center'
-      });
-      tLabel.anchor.set(0.5);
-      tLabel.y = 26;
+      const tLabel = new PIXI.Text(boutique.typeCommerce, { fontSize: 10, fill: 0x666666, fontStyle: 'italic', align: 'center' });
+      tLabel.anchor.set(0.5); tLabel.y = 26;
       textContainer.addChild(tLabel);
     } else if (!estOccupee && modeVueBoutique) {
-      // Box libre — afficher "Libre"
-      const libreLabel = new PIXI.Text('Libre', {
-        fontSize: 11, fill: 0x4a7c59,
-        fontStyle: 'italic', align: 'center'
-      });
-      libreLabel.anchor.set(0.5);
-      libreLabel.y = 14;
+      const libreLabel = new PIXI.Text('Libre', { fontSize: 11, fill: 0x4a7c59, fontStyle: 'italic', align: 'center' });
+      libreLabel.anchor.set(0.5); libreLabel.y = 14;
       textContainer.addChild(libreLabel);
     }
 
     container.addChild(textContainer);
 
-    // ── Épingle "ma boutique" ──
     if (estMaBox) {
       const pin = new PIXI.Text('📍', { fontSize: 18 });
       pin.anchor.set(0.5);
@@ -322,11 +256,9 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
       container.addChild(pin);
     }
 
-    // ── Cœur favori (mode client uniquement) ──
     if (!modeVueBoutique && boutique) {
       const boutiqueId = this.toStringId(boutique._id);
-      const estFavori  = this.idsFavoris.has(boutiqueId);
-      const heartText  = new PIXI.Text(estFavori ? '❤️' : '🤍', { fontSize: 14 });
+      const heartText  = new PIXI.Text(this.idsFavoris.has(boutiqueId) ? '❤️' : '🤍', { fontSize: 14 });
       heartText.anchor.set(0.5);
       heartText.x =  w / 2 - 14;
       heartText.y = -h / 2 + 12;
@@ -334,7 +266,6 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
       container.addChild(heartText);
     }
 
-    // ── Zone cliquable ──
     const cliquable = !isFiltered && (
       (!modeVueBoutique && !!boutique) ||
       (modeVueBoutique && !!boutique && !estMaBox)
@@ -345,51 +276,28 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
       hitArea.rect(-w/2, -h/2, w, h).fill(0x000000, 0);
       hitArea.eventMode = 'static';
       hitArea.cursor    = 'pointer';
-
-      hitArea.on('pointerover', () => {
-        background.tint = 0xdddddd;
-        this.app?.renderer.render(this.app.stage);
-      });
-      hitArea.on('pointerout', () => {
-        background.tint = 0xffffff;
-        this.app?.renderer.render(this.app.stage);
-      });
-      hitArea.on('pointerdown', () => {
-        this.boutiqueClick.emit(box);
-      });
-
+      hitArea.on('pointerover', () => { background.tint = 0xdddddd; this.app?.renderer.render(this.app.stage); });
+      hitArea.on('pointerout',  () => { background.tint = 0xffffff; this.app?.renderer.render(this.app.stage); });
+      hitArea.on('pointerdown', () => { this.boutiqueClick.emit(box); });
       container.addChild(hitArea);
     }
 
     return container;
   }
 
-  // ── Dessin du fond de box ─────────────────────────────────────────────────────
-  private drawBackground(
-    graphics:  PIXI.Graphics,
-    w:         number,
-    h:         number,
-    wallColor: number,
-    bgColor:   number,
-  ) {
+  private drawBackground(graphics: PIXI.Graphics, w: number, h: number, wallColor: number, bgColor: number) {
     const doorWidth = w * 0.6;
+    const left = -w/2, right = w/2, top = -h/2, bottom = h/2;
+    const doorLeft = -doorWidth/2, doorRight = doorWidth/2;
 
     graphics.clear();
     graphics.roundRect(-w/2, -h/2, w, h, 8).fill(bgColor);
     graphics.setStrokeStyle({ width: 2, color: wallColor });
-
-    const left      = -w / 2;
-    const right     =  w / 2;
-    const top       = -h / 2;
-    const bottom    =  h / 2;
-    const doorLeft  = -doorWidth / 2;
-    const doorRight =  doorWidth / 2;
-
-    graphics.moveTo(left,      top);    graphics.lineTo(right,      top);
-    graphics.moveTo(right,     top);    graphics.lineTo(right,      bottom);
-    graphics.moveTo(left,      bottom); graphics.lineTo(doorLeft,   bottom);
-    graphics.moveTo(doorRight, bottom); graphics.lineTo(right,      bottom);
-    graphics.moveTo(left,      bottom); graphics.lineTo(left,       top);
+    graphics.moveTo(left, top);      graphics.lineTo(right, top);
+    graphics.moveTo(right, top);     graphics.lineTo(right, bottom);
+    graphics.moveTo(left, bottom);   graphics.lineTo(doorLeft, bottom);
+    graphics.moveTo(doorRight, bottom); graphics.lineTo(right, bottom);
+    graphics.moveTo(left, bottom);   graphics.lineTo(left, top);
     graphics.stroke();
   }
 
@@ -404,11 +312,8 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
 
   ngOnDestroy() {
     if (this.app) {
-      // Nettoyer les tickers de pulsation
       this.boxesContainers.forEach(c => {
-        if ((c as any).__pulseTicker) {
-          this.app?.ticker.remove((c as any).__pulseTicker);
-        }
+        if ((c as any).__pulseTicker) this.app?.ticker.remove((c as any).__pulseTicker);
       });
       this.app.stage.removeAllListeners();
       this.app.destroy(true, { children: true, texture: true });

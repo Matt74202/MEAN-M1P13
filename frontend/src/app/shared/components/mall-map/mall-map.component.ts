@@ -551,15 +551,15 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
     let bgColor: number;
     let wallColor: number;
 
-    if (!isFree) {
-      bgColor = 0xffdddd;
-      wallColor = 0xff8888;
-    } else if (typeColor !== undefined) {
-      bgColor = this.lightenColor(typeColor, 0.85);
+    if (typeColor !== undefined) {
       wallColor = typeColor;
-    } else {
-      bgColor = 0xffffff;
+      bgColor   = this.lightenColor(typeColor, 0.85);
+    } else if (isFree) {
+      bgColor   = 0xffffff;
       wallColor = 0x888888;
+    } else {
+      bgColor   = 0xffdddd;
+      wallColor = 0xff8888;
     }
 
     graphics.roundRect(-w/2, -h/2, w, h, 8).fill(bgColor);

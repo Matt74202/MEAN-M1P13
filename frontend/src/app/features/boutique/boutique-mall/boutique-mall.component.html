@@ -5,9 +5,9 @@
   <!-- ══ HEADER ══ -->
   <div class="mall-header">
     <p class="mall-subtitle">
-      @if (maBox(); as box) {
+      @if (mesBoxes().length > 0) {
         <mat-icon>place</mat-icon>
-        Box {{ box.nom }} · {{ maBoxEtage }}
+        Mes boxes : {{ mesBoxesLabel }} · {{ mesBoxesEtages }}
       } @else {
         Visualisez votre position dans le mall
       }
@@ -45,8 +45,8 @@
     <div class="stat-chip stat-ma-box">
       <mat-icon>storefront</mat-icon>
       <div class="stat-info">
-        <span class="stat-label">Ma box</span>
-        <span class="stat-value">{{ maBox()?.nom ?? '—' }}</span>
+        <span class="stat-label">Mes boxes</span>
+        <span class="stat-value">{{ mesBoxesLabel }}</span>
       </div>
     </div>
     <div class="stat-divider"></div>
@@ -99,13 +99,13 @@
         [currentEtage]="currentEtage()"
         [selectedTypeCommerce]="null"
         [idsFavoris]="emptyFavoris"
-        [maBoxId]="maBox()?._id?.toString() ?? null"
+       [maBoxIds]="mesBoxIds"
         (boutiqueClick)="$event"
       />
-      @if (maBox()) {
+     @if (mesBoxes().length > 0) {
         <div class="map-overlay-hint">
           <mat-icon>my_location</mat-icon>
-          Votre box est surlignée en vert
+          Vos boxes sont surlignées en vert
         </div>
       }
     </div>
