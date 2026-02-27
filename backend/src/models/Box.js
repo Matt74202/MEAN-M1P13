@@ -59,4 +59,4 @@ const boxSchema = new mongoose.Schema({
 boxSchema.index({ etage: 1, statut: 1 });
 boxSchema.index({ x: 1, y: 1 });
 
-module.exports = mongoose.model('Box', boxSchema);
+module.exports = mongoose.models.Box || mongoose.model('Box', boxSchema);

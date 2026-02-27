@@ -1,0 +1,583 @@
+<!-- finances-dashboard.component.html -->
+<app-mall-navbar></app-mall-navbar>
+
+<div class="dashboard">
+  <div class="dashboard__inner">
+
+    <!-- ── Header ── -->
+    <div class="dash-header">
+      <div>
+        <h1 class="dash-header__title">Tableau de bord financier</h1>
+        <p class="dash-header__sub">Analyse complète · Projection 5 ans · Comportement payeurs</p>
+      </div>
+      <button class="btn-refresh" (click)="chargerDashboard()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Actualiser
+      </button>
+    </div>
+
+    <!-- ── Loading ── -->
+    @if (loading) {
+      <div class="loading-state">
+        <div class="loading-state__spinner"></div>
+        <p>Chargement...</p>
+      </div>
+    }
+
+    <!-- ── Erreur ── -->
+    @else if (errorMessage) {
+      <div class="error-banner">{{ errorMessage }}</div>
+    }
+
+    <!-- ── Dashboard ── -->
+    @else if (data) {
+
+      <!-- Alertes contrats expirants -->
+      @if (data.contratsExpirants?.length) {
+        <div class="alert-banner">
+          <svg class="alert-banner__icon" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+          <div>
+            <p class="alert-banner__title">
+              {{ data.contratsExpirants.length }} contrat(s) expirent dans moins de 3 mois
+            </p>
+            <div class="alert-banner__tags">
+              @for (c of data.contratsExpirants; track c.contratId) {
+                <span class="contract-tag">
+                  <span class="contract-tag__name">{{ c.boutiqueNom }}</span>
+                  · Box {{ c.boxNumero }}
+                  · <span [class]="getJoursClass(c.joursRestants)">{{ c.joursRestants }}j</span>
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Stats principales ── -->
+      <div class="cards-row cards-row--4">
+
+        <div class="stat-card">
+          <div class="stat-card__label">
+            Revenus réels totaux
+            <span class="stat-card__icon stat-card__icon--green">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </span>
+          </div>
+          <p class="stat-card__value">{{ data.stats.revenuReel | number:'1.0-0' }} <small>Ar</small></p>
+          <p class="stat-card__sub">Ce mois : {{ data.stats.revenuReelMoisCourant | number:'1.0-0' }} Ar</p>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card__label">
+            Attendu 12 mois
+            <span class="stat-card__icon stat-card__icon--blue">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </span>
+          </div>
+          <p class="stat-card__value">{{ formatMontant(data.stats.revenuAttendu12Mois) }} <small>Ar</small></p>
+          <p class="stat-card__sub">{{ data.stats.nbContratsActifs }} contrat(s) actif(s)</p>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card__label">
+            Revenu manqué
+            <span class="stat-card__icon stat-card__icon--red">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
+              </svg>
+            </span>
+          </div>
+          <p class="stat-card__value stat-card__value--red">{{ formatMontant(data.stats.revenuManque) }} <small>Ar</small></p>
+          <p class="stat-card__sub">Loyers impayés cumulés</p>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card__label">
+            Croissance annuelle
+            <span class="stat-card__icon" [class]="data.stats.tauxCroissanceAnnuel >= 0 ? 'stat-card__icon--green' : 'stat-card__icon--red'">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  [attr.d]="data.stats.tauxCroissanceAnnuel >= 0 ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'"/>
+              </svg>
+            </span>
+          </div>
+          <p class="stat-card__value" [class]="data.stats.tauxCroissanceAnnuel >= 0 ? 'stat-card__value--green' : 'stat-card__value--red'">
+            {{ data.stats.tauxCroissanceAnnuel >= 0 ? '+' : '' }}{{ data.stats.tauxCroissanceAnnuel }}<small>%</small>
+          </p>
+          <p class="stat-card__sub">vs les 12 mois précédents</p>
+        </div>
+
+      </div>
+
+      <!-- ── Stats secondaires ── -->
+      <div class="cards-row cards-row--3" style="margin-bottom:1.75rem">
+
+        <div class="stat-card">
+          <div class="stat-card__label">En attente</div>
+          <p class="stat-card__value stat-card__value--amber">{{ data.stats.montantEnAttente | number:'1.0-0' }} <small>Ar</small></p>
+          <p class="stat-card__sub">Loyers déclarés impayés</p>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card__label">Occupation</div>
+          <p class="stat-card__value">{{ data.stats.tauxOccupation }}<small>%</small></p>
+          <div class="progress-bar">
+            <div class="progress-bar__fill progress-bar__fill--amber" [style.width.%]="data.stats.tauxOccupation"></div>
+          </div>
+          <p class="stat-card__sub">{{ data.stats.boxesOccupes }}/{{ data.stats.totalBoxes }} boxes</p>
+        </div>
+
+        <div class="stat-card stat-card--accent-fill">
+          <div class="stat-card__label">Prévision CA annuel</div>
+          <p class="stat-card__value">{{ formatMontant(data.previsions?.previsionAnnuelle) }} <small>Ar</small></p>
+          <p class="stat-card__detail">
+            Recouvrement : <strong>{{ data.previsions?.tauxRecouvrement }}%</strong>
+          </p>
+        </div>
+
+      </div>
+
+      <!-- ── Timeline ── -->
+      @if (data.timeline?.length) {
+        <div class="panel">
+          <div class="panel__header">
+            <div>
+              <h2 class="panel__title">Évolution &amp; Projection</h2>
+              <p class="panel__sub">Glissez ← → · 2 ans d'historique + 5 ans de projection</p>
+            </div>
+            <button class="btn-today" (click)="goToToday()">Aujourd'hui</button>
+          </div>
+          <div class="panel__body">
+
+            <div class="timeline-nav">
+              <button class="btn-icon" (click)="navigateTimeline(-1)" aria-label="Précédent">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+              </button>
+              <span class="timeline-nav__range">{{ timelineRangeLabel }}</span>
+              <button class="btn-icon" (click)="navigateTimeline(1)" aria-label="Suivant">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="timeline-legend">
+              <span class="timeline-legend__item">
+                <span class="timeline-legend__dot timeline-legend__dot--real"></span>Réel encaissé
+              </span>
+              <span class="timeline-legend__item">
+                <span class="timeline-legend__dot timeline-legend__dot--missed"></span>Estimé non encaissé
+              </span>
+              <span class="timeline-legend__item">
+                <span class="timeline-legend__dot timeline-legend__dot--projection"></span>Projection
+              </span>
+            </div>
+
+            <div class="timeline-chart" [class.grabbing]="isDragging"
+                 (mousedown)="onTimelineDragStart($event)"
+                 (touchstart)="onTimelineDragStart($event)">
+              @for (t of timelineWindow; track t.mois) {
+                <div class="timeline-bar-group">
+
+                  <!-- Tooltip -->
+                  <div class="timeline-tooltip">
+                    <span class="timeline-tooltip__title">
+                      {{ t.moisNom }}
+                      @if (t.type === 'present') { <span style="color:#a8d4e0;font-size:.65rem"> ← maintenant</span> }
+                    </span>
+                    @if (t.type !== 'futur') {
+                      <span class="timeline-tooltip__row">
+                        <span class="timeline-tooltip__key">Encaissé</span>
+                        <span class="timeline-tooltip__val">{{ t.percu | number:'1.0-0' }} Ar</span>
+                      </span>
+                      <span class="timeline-tooltip__row">
+                        <span class="timeline-tooltip__key">Estimé</span>
+                        <span class="timeline-tooltip__miss">{{ t.estimeCont | number:'1.0-0' }} Ar</span>
+                      </span>
+                      @if (t.estimeCont > t.percu) {
+                        <span class="timeline-tooltip__row">
+                          <span class="timeline-tooltip__key" style="color:#e88">Manque</span>
+                          <span style="color:#e88">{{ (t.estimeCont - t.percu) | number:'1.0-0' }} Ar</span>
+                        </span>
+                      }
+                    } @else {
+                      <span class="timeline-tooltip__row">
+                        <span class="timeline-tooltip__key">Projection</span>
+                        <span class="timeline-tooltip__proj">{{ t.projection | number:'1.0-0' }} Ar</span>
+                      </span>
+                      <span class="timeline-tooltip__row">
+                        <span class="timeline-tooltip__key">Fourchette</span>
+                        <span class="timeline-tooltip__proj">{{ t.projMin | number:'1.0-0' }}–{{ t.projMax | number:'1.0-0' }}</span>
+                      </span>
+                    }
+                    <span class="timeline-tooltip__arrow"></span>
+                  </div>
+
+                  <!-- Barres -->
+                  <div class="timeline-bar-group__bars">
+                    @if (t.type === 'futur' || t.type === 'present') {
+                      <div class="bar-proj-max" [style.height.%]="timelineBarHeight(t.projMax)"></div>
+                      <div class="bar-proj"     [style.height.%]="timelineBarHeight(t.projection)"></div>
+                    } @else {
+                      @if (t.estimeCont > t.percu) {
+                        <div class="bar-missed" [style.height.%]="timelineBarHeight(t.estimeCont)"></div>
+                      }
+                      <div class="bar-real"
+                           [class.bar-real--zero]="t.percu === 0"
+                           [style.height.%]="t.percu > 0 ? timelineBarHeight(t.percu) : 3"></div>
+                    }
+                    @if (t.type === 'present') {
+                      <div class="bar-present-line"></div>
+                    }
+                  </div>
+
+                  <span class="timeline-bar-group__label"
+                        [class.timeline-bar-group__label--present]="t.type === 'present'"
+                        [class.timeline-bar-group__label--future]="t.type === 'futur'">
+                    {{ t.moisNom }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <div class="timeline-scrollbar">
+              <div class="timeline-scrollbar__thumb"
+                   [style.left.%]="timelineProgressPct"
+                   [style.width.%]="(timelineWindowSize / data.timeline.length) * 100"></div>
+            </div>
+            <div class="timeline-scale">
+              <span>Il y a 2 ans</span><span>Aujourd'hui</span><span>Dans 5 ans</span>
+            </div>
+
+          </div>
+        </div>
+      }
+
+      <!-- ── Analyse payeurs ── -->
+      @if (data.analysePayeurs?.length) {
+        <div class="panel">
+          <div class="panel__header">
+            <div>
+              <h2 class="panel__title">Comportement de paiement</h2>
+              <p class="panel__sub">À temps = avant le 5 du mois · Score = 60% taux + 40% ponctualité</p>
+            </div>
+            <div class="tabs">
+              <button class="tab-btn" [class.tab-btn--active]="activePayeursTab === 'tous'"
+                      (click)="activePayeursTab = 'tous'">
+                Tous ({{ data.analysePayeurs.length }})
+              </button>
+              <button class="tab-btn"
+                      [class.tab-btn--active]="activePayeursTab === 'bons'"
+                      (click)="activePayeursTab = 'bons'">
+                ✓ Bons ({{ data.bonsPayeurs?.length || 0 }})
+              </button>
+              <button class="tab-btn"
+                      [class.tab-btn--active]="activePayeursTab === 'mauvais'"
+                      (click)="activePayeursTab = 'mauvais'">
+                ✗ Mauvais ({{ data.mauvaisPayeurs?.length || 0 }})
+              </button>
+            </div>
+          </div>
+
+          @for (b of payeursAffiches; track b.boutiqueId) {
+            <div class="payeur-row">
+              <div class="payeur-row__avatar" [class]="'payeur-row__avatar--' + b.categorie">
+                {{ b.boutiqueNom.charAt(0).toUpperCase() }}
+              </div>
+              <div class="payeur-row__body">
+                <p class="payeur-row__name">
+                  {{ b.boutiqueNom }}
+                  <span class="payeur-badge" [class]="'payeur-badge--' + b.categorie">
+                    {{ getCategorieLabel(b.categorie) }}
+                  </span>
+                </p>
+                <p class="payeur-row__mail">{{ b.boutiqueMail }}</p>
+
+                <div class="payeur-stats">
+                  <div class="payeur-stat">
+                    <div class="payeur-stat__label">Taux de paiement</div>
+                    <div class="payeur-stat__value"
+                         [class]="b.tauxPaiement >= 80 ? 'payeur-stat__value--green' : b.tauxPaiement >= 50 ? 'payeur-stat__value--amber' : 'payeur-stat__value--red'">
+                      {{ b.tauxPaiement }}%
+                    </div>
+                    <div class="payeur-stat__sub">{{ b.nbPayes }}/{{ b.moisAttendus }} mois</div>
+                  </div>
+                  <div class="payeur-stat">
+                    <div class="payeur-stat__label">Ponctualité</div>
+                    <div class="payeur-stat__value"
+                         [class]="b.tauxPonctualite >= 80 ? 'payeur-stat__value--green' : b.tauxPonctualite >= 50 ? 'payeur-stat__value--amber' : 'payeur-stat__value--red'">
+                      {{ b.tauxPonctualite }}%
+                    </div>
+                    <div class="payeur-stat__sub">{{ b.nbATemps }} à temps</div>
+                  </div>
+                  <div class="payeur-stat">
+                    <div class="payeur-stat__label">Retards</div>
+                    <div class="payeur-stat__value"
+                         [class]="b.nbEnRetard === 0 ? 'payeur-stat__value--green' : b.nbEnRetard <= 2 ? 'payeur-stat__value--amber' : 'payeur-stat__value--red'">
+                      {{ b.nbEnRetard }}
+                    </div>
+                    <div class="payeur-stat__sub">{{ b.retardMoyenJours > 0 ? '~' + b.retardMoyenJours + 'j' : 'Aucun' }}</div>
+                  </div>
+                  <div class="payeur-stat">
+                    <div class="payeur-stat__label">Total encaissé</div>
+                    <div class="payeur-stat__value">{{ formatMontant(b.montantTotal) }} Ar</div>
+                    <div class="payeur-stat__sub">{{ b.nbPayes }} paiements</div>
+                  </div>
+                </div>
+
+                <div class="score-bar-wrap">
+                  <div class="score-bar-wrap__track">
+                    <div class="score-bar-wrap__fill"
+                         [class]="'score-bar-wrap__fill--' + b.categorie"
+                         [style.width.%]="b.scoreGlobal"></div>
+                  </div>
+                  <span class="score-bar-wrap__label">Score {{ b.scoreGlobal }}/100</span>
+                </div>
+              </div>
+              <div class="payeur-row__score" [class]="'payeur-row__score--' + b.categorie">
+                <span style="font-size:1.1rem;font-family:'Perandory Condensed',sans-serif">{{ b.scoreGlobal }}</span>
+                <span>/100</span>
+              </div>
+            </div>
+          } @empty {
+            <div style="padding:2rem;text-align:center;color:var(--text-secondary);font-size:.82rem">Aucune donnée</div>
+          }
+        </div>
+      }
+
+      <!-- ── Tableaux revenus ── -->
+      <div class="panel">
+        <div class="panel__header">
+          <div class="tabs">
+            <button class="tab-btn" [class.tab-btn--active]="activeTab === 'box'" (click)="activeTab = 'box'">
+              Revenus par box
+            </button>
+            <button class="tab-btn" [class.tab-btn--active]="activeTab === 'boutique'" (click)="activeTab = 'boutique'">
+              Revenus par boutique
+            </button>
+          </div>
+        </div>
+
+        @if (activeTab === 'box') {
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Box</th>
+                  <th class="right">Total perçu</th>
+                  <th class="right">Paiements</th>
+                  <th>Part</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of data.revenusParBox; track item._id) {
+                  <tr>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:.75rem">
+                        <div class="table-box-icon">{{ item.boxNumero || '?' }}</div>
+                        <span>{{ item.boxNom || 'Box ' + item.boxNumero }}</span>
+                      </div>
+                    </td>
+                    <td class="right bold">{{ item.totalPercu | number:'1.0-0' }} Ar</td>
+                    <td class="muted">{{ item.nbPaiements }}</td>
+                    <td>
+                      <div class="table-part">
+                        <div class="table-part__track">
+                          <div class="table-part__fill"
+                               [style.width.%]="data.stats.revenuReel > 0 ? (item.totalPercu / data.stats.revenuReel * 100) : 0"></div>
+                        </div>
+                        <span class="table-part__pct">
+                          {{ data.stats.revenuReel > 0 ? (item.totalPercu / data.stats.revenuReel * 100 | number:'1.0-0') : 0 }}%
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr class="empty-row"><td colspan="4">Aucun revenu enregistré</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (activeTab === 'boutique') {
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Boutique</th>
+                  <th class="right">Total perçu</th>
+                  <th class="right">Paiements</th>
+                  <th>Part</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of data.revenusParBoutique; track item._id) {
+                  <tr>
+                    <td>
+                      <p style="margin:0;font-weight:500">{{ item.boutiqueNom }}</p>
+                      <p style="margin:0;font-size:.72rem;color:var(--text-secondary)">{{ item.boutiqueMail }}</p>
+                    </td>
+                    <td class="right bold">{{ item.totalPercu | number:'1.0-0' }} Ar</td>
+                    <td class="muted">{{ item.nbPaiements }}</td>
+                    <td>
+                      <div class="table-part">
+                        <div class="table-part__track">
+                          <div class="table-part__fill table-part__fill--blue"
+                               [style.width.%]="data.stats.revenuReel > 0 ? (item.totalPercu / data.stats.revenuReel * 100) : 0"></div>
+                        </div>
+                        <span class="table-part__pct">
+                          {{ data.stats.revenuReel > 0 ? (item.totalPercu / data.stats.revenuReel * 100 | number:'1.0-0') : 0 }}%
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr class="empty-row"><td colspan="4">Aucun revenu enregistré</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+    } <!-- /data -->
+  </div>
+</div>
+
+<!-- ══ CHATBOT FLOTTANT ══ -->
+@if (!loading && !errorMessage) {
+
+  @if (!chatOuvert) {
+    <button class="chat-fab" (click)="toggleChat()" aria-label="Ouvrir l'assistant IA">
+      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+      </svg>
+      @if (nbAlertesTotal > 0) {
+        <span class="chat-badge" [class]="nbAlertesDanger > 0 ? 'chat-badge--danger' : 'chat-badge--warning'">
+          {{ nbAlertesTotal }}
+        </span>
+      }
+    </button>
+  }
+
+  @if (chatOuvert) {
+    <div class="chat-panel">
+
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="chat-header__info">
+          <div class="chat-header__avatar">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.35A3.005 3.005 0 0114 18.87V19a2 2 0 11-4 0v-.13a3.005 3.005 0 01-.833-1.67l-.347-.35z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="chat-header__name">Assistant Financier IA</p>
+            <p class="chat-header__sub">Llama 3.3 · {{ nbAlertesTotal }} alerte(s)</p>
+          </div>
+        </div>
+        <div class="chat-header__actions">
+          <button class="btn-chat-action" (click)="genererRapport()" [disabled]="rapportEnCours || chatLoading">
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Rapport
+          </button>
+          <button class="btn-chat-close" (click)="toggleChat()" aria-label="Fermer">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Raccourcis -->
+      <div class="chat-shortcuts">
+        <p class="chat-shortcuts__label">Raccourcis</p>
+        <div class="chat-shortcuts__list">
+          @for (q of questionsRapides; track q.label) {
+            <button class="shortcut-btn" [disabled]="chatLoading" (click)="useQuestion(q.question)">
+              {{ q.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chat-messages">
+        @for (msg of chatMessages; track $index) {
+
+          @if (msg.isAlerte) {
+            <button class="chat-alerte" [class]="'chat-alerte--' + (msg.alerteType || 'info')"
+                    (click)="useQuestion(msg.alerteAction || '')">
+              <div class="chat-alerte__header">
+                <span class="chat-alerte__emoji">
+                  {{ msg.alerteType === 'danger' ? '🔴' : msg.alerteType === 'warning' ? '⚠️' : 'ℹ️' }}
+                </span>
+                <div class="chat-alerte__body">
+                  <p class="chat-alerte__title" [class]="'chat-alerte__title--' + (msg.alerteType || 'info')">
+                    {{ msg.content }}
+                  </p>
+                  <p class="chat-alerte__hint">Cliquer pour obtenir des conseils →</p>
+                </div>
+              </div>
+            </button>
+          }
+
+          @else {
+            <div class="chat-bubble-wrap" [class]="'chat-bubble-wrap--' + msg.role">
+              <div class="chat-bubble" [class]="'chat-bubble--' + msg.role">
+                @if (msg.loading) {
+                  <div class="chat-typing">
+                    <span></span><span></span><span></span>
+                  </div>
+                } @else {
+                  {{ msg.content }}
+                }
+              </div>
+            </div>
+          }
+
+        }
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-area">
+        <div class="chat-input-area__row">
+          <textarea class="chat-textarea"
+                    [(ngModel)]="chatInput"
+                    (keydown)="onChatKeydown($event)"
+                    [disabled]="chatLoading"
+                    placeholder="Posez une question ou demandez un rapport..."
+                    rows="2"></textarea>
+          <button class="btn-send" (click)="envoyerMessage()"
+                  [disabled]="chatLoading || !chatInput.trim()" aria-label="Envoyer">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            </svg>
+          </button>
+        </div>
+        <p class="chat-input-area__hint">Entrée pour envoyer · Shift+Entrée nouvelle ligne</p>
+      </div>
+
+    </div>
+  }
+}

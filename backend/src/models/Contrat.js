@@ -53,4 +53,5 @@ contratSchema.index({ idBox: 1 });
 contratSchema.index({ statut: 1 });
 contratSchema.index({ dateDebut: 1, dateFin: 1 });
 
-module.exports = mongoose.model('Contrat', contratSchema);
+
+module.exports = mongoose.models.Contrat || mongoose.model('Contrat', contratSchema);
