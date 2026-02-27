@@ -33,6 +33,7 @@ export class MallNavbarComponent implements OnInit {
       links: [
         { label: 'Demandes de location', path: '/mall/rental-requests' },
         { label: 'Frais de livraison',   path: '/mall/frais'           },
+        { label: 'Gestion des loyers',   path: '/mall/loyers'           },
       ],
     },
     {

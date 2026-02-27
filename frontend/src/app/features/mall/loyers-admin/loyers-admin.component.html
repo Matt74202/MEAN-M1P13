@@ -1,0 +1,170 @@
+<!-- loyers-admin.component.html -->
+<app-mall-navbar></app-mall-navbar>
+
+<div class="loyers-page">
+  <div class="loyers-page__inner">
+
+    <!-- Header -->
+    <div class="page-header">
+      <h1 class="page-header__title">Gestion des loyers</h1>
+      <p class="page-header__sub">Consultez les loyers de toutes les boutiques · Filtrez par boutique, statut ou période</p>
+    </div>
+
+    <!-- Loading -->
+    @if (loading) {
+      <div class="state-loading">
+        <div class="state-loading__spinner"></div>
+        <p>Chargement des loyers...</p>
+      </div>
+    }
+
+    <!-- Erreur -->
+    @else if (errorMessage) {
+      <div class="state-error">{{ errorMessage }}</div>
+    }
+
+    @else {
+
+      <!-- Filtres -->
+      <div class="filter-panel">
+        <div class="filter-panel__row">
+
+          <div class="filter-panel__group">
+            <span class="filter-panel__label">Boutique</span>
+            <div class="f-search">
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+              </svg>
+              <input type="text" class="f-input f-input--search"
+                     [(ngModel)]="filtres.boutique"
+                     placeholder="Nom de boutique...">
+            </div>
+          </div>
+
+          <div class="filter-panel__group">
+            <span class="filter-panel__label">Statut</span>
+            <select class="f-select" [(ngModel)]="filtres.statut">
+              <option value="">Tous</option>
+              <option value="impaye">Impayé</option>
+              <option value="paye">Payé</option>
+            </select>
+          </div>
+
+          <div class="filter-panel__group">
+            <span class="filter-panel__label">Box</span>
+            <input type="text" class="f-input" [(ngModel)]="filtres.boxNumero"
+                   placeholder="ex: A01" style="width:90px">
+          </div>
+
+          <div class="filter-panel__group">
+            <span class="filter-panel__label">Mois</span>
+            <input type="month" class="f-input" [(ngModel)]="filtres.mois">
+          </div>
+
+          <button class="btn-reset" (click)="resetFiltres()" title="Réinitialiser">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Réinitialiser
+          </button>
+
+        </div>
+        @if (loyers.length !== loyersRaw.length) {
+          <p class="filter-panel__count">
+            {{ loyers.length }} / {{ loyersRaw.length }} loyers affichés
+          </p>
+        }
+      </div>
+
+      <!-- Tableau -->
+      <div class="table-panel">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Box</th>
+                <th>Boutique</th>
+                <th>Mois</th>
+                <th>Échéance</th>
+                <th>Montant</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (loyer of loyers; track loyer._id) {
+                <tr>
+
+                  <!-- Box -->
+                  <td class="td--nowrap">
+                    <div class="box-chip">
+                      <div class="box-chip__icon">{{ loyer.boxInfo?.numero || '?' }}</div>
+                      <span class="box-chip__name">{{ loyer.boxInfo?.nom || 'Box ' + loyer.boxInfo?.numero }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Boutique -->
+                  <td>
+                    <div class="boutique-cell">
+                      <p class="boutique-cell__name">{{ loyer.boutiqueNom }}</p>
+                      <p class="boutique-cell__mail">{{ loyer.boutiqueMail }}</p>
+                    </div>
+                  </td>
+
+                  <!-- Mois -->
+                  <td class="td--nowrap">
+                    <span class="mois-label">
+                      {{ loyer.mois + '-01' | date:'MMMM yyyy' | titlecase }}
+                    </span>
+                  </td>
+
+                  <!-- Échéance -->
+                  <td class="td--nowrap td--muted">
+                    {{ loyer.dateEcheance | date:'dd/MM/yyyy' }}
+                  </td>
+
+                  <!-- Montant -->
+                  <td class="td--nowrap td--bold">
+                    {{ loyer.montant | number:'1.0-0' }} Ar
+                  </td>
+
+                  <!-- Statut -->
+                  <td class="td--nowrap">
+                    @if (loyer.statut === 'paye') {
+                      <span class="badge badge--paye">
+                        <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Payé
+                      </span>
+                    } @else {
+                      <span class="badge badge--impaye">
+                        <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v4m0 4h.01"/>
+                        </svg>
+                        Impayé
+                      </span>
+                    }
+                  </td>
+
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6">
+                    <div class="state-empty">
+                      <div class="state-empty__icon">🗂️</div>
+                      <p class="state-empty__title">Aucun loyer trouvé</p>
+                      <p class="state-empty__sub">Modifiez les filtres pour affiner la recherche</p>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    }
+  </div>
+</div>

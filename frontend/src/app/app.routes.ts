@@ -31,5 +31,7 @@ export const routes: Routes = [
   { path: 'client/fidelite', loadComponent: () => import('@app/features/client/carte-fidelite/carte-fidelite.component').then(m => m.MesCartesFideliteComponent) },
   { path: 'client/commandes', loadComponent: () => import('@app/features/client/commande/commande.component').then(m => m.MesCommandesComponent) },
   { path: 'mall/rental-requests', loadComponent: () => import('@app/features/mall/rental-requests/rental-requests.component').then(m => m.RentalRequestsComponent) },
-  { path: 'mall/dashboard', component: FinancesDashboardComponent }
+  { path: 'mall/dashboard', component: FinancesDashboardComponent },
+  { path: 'mall/loyers', loadComponent: () => import('@app/features/mall/loyers-admin/loyers-admin.component').then(m => m.LoyersAdminComponent) },
+  { path: 'boutique/loyers', loadComponent: () => import('@app/features/boutique/boutique-loyers/boutique-loyers.component').then(m => m.LoyersBoutiqueComponent) },
 ];
