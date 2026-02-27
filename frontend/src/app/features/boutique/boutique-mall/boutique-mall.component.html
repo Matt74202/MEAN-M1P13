@@ -1,0 +1,449 @@
+<app-boutique-navbar />
+
+<div class="boutique-mall-wrapper">
+
+  <!-- ══ HEADER ══ -->
+  <div class="mall-header">
+    <p class="mall-subtitle">
+      @if (mesBoxes().length > 0) {
+        <mat-icon>place</mat-icon>
+        Mes boxes : {{ mesBoxesLabel }} · {{ mesBoxesEtages }}
+      } @else {
+        Visualisez votre position dans le mall
+      }
+    </p>
+
+    <div class="header-controls">
+      <button mat-stroked-button
+        [class.active]="currentEtage() === 'RC'"
+        (click)="setEtage('RC')">
+        Rez-de-chaussée
+      </button>
+      <button mat-stroked-button
+        [class.active]="currentEtage() === 'FC'"
+        (click)="setEtage('FC')">
+        1ᵉʳ étage
+      </button>
+
+      <div class="ctrl-sep"></div>
+
+      <button mat-stroked-button
+        [class.active]="viewMode() === 'map'"
+        (click)="setViewMode('map')">
+        <mat-icon>map</mat-icon> Carte
+      </button>
+      <button mat-stroked-button
+        [class.active]="viewMode() === 'list'"
+        (click)="setViewMode('list')">
+        <mat-icon>view_module</mat-icon> Liste
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ STATS ══ -->
+  <div class="stats-bar">
+    <div class="stat-chip stat-ma-box">
+      <mat-icon>storefront</mat-icon>
+      <div class="stat-info">
+        <span class="stat-label">Mes boxes</span>
+        <span class="stat-value">{{ mesBoxesLabel }}</span>
+      </div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-chip">
+      <span class="stat-dot dot-libre"></span>
+      <div class="stat-info">
+        <span class="stat-label">Boxes libres</span>
+        <span class="stat-value">{{ nbBoxesLibres() }}</span>
+      </div>
+    </div>
+    <div class="stat-chip">
+      <span class="stat-dot dot-occupee"></span>
+      <div class="stat-info">
+        <span class="stat-label">Boxes occupées</span>
+        <span class="stat-value">{{ nbBoxesOccupees() }}</span>
+      </div>
+    </div>
+    <div class="stat-chip">
+      <div class="stat-info">
+        <span class="stat-label">Taux d'occupation</span>
+        <span class="stat-value">{{ tauxOccupation }}%</span>
+      </div>
+      <div class="progress-mini">
+        <div class="progress-mini-fill" [style.width.%]="tauxOccupation"></div>
+      </div>
+    </div>
+    <div class="legende">
+      <span class="legende-item"><span class="legende-dot dot-ma-boutique"></span>Ma boutique</span>
+      <span class="legende-item"><span class="legende-dot dot-libre"></span>Libre</span>
+      <span class="legende-item"><span class="legende-dot dot-occupee"></span>Occupée</span>
+    </div>
+  </div>
+
+  <!-- ══ LOADING ══ -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement du plan...</p>
+    </div>
+  }
+
+  <!-- ══ VUE CARTE ══ -->
+  @if (!isLoading() && viewMode() === 'map') {
+    <div class="map-container">
+      <app-boutique-mall-map
+        [boxs]="boxs()"
+        [boutiques]="boutiques"
+        [users]="users"
+        [contrats]="contrats"
+        [currentEtage]="currentEtage()"
+        [selectedTypeCommerce]="null"
+        [idsFavoris]="emptyFavoris"
+       [maBoxIds]="mesBoxIds"
+        (boutiqueClick)="$event"
+      />
+     @if (mesBoxes().length > 0) {
+        <div class="map-overlay-hint">
+          <mat-icon>my_location</mat-icon>
+          Vos boxes sont surlignées en vert
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ══ VUE LISTE ══ -->
+  @if (!isLoading() && viewMode() === 'list') {
+    <div class="list-container">
+
+      <div class="list-header">
+        <div class="list-header-top">
+          <div>
+            <h2 class="list-title">Boxes disponibles à la location</h2>
+            <p class="list-subtitle">
+              {{ boxesLibres().length }} box{{ boxesLibres().length > 1 ? 'es' : '' }} libre{{ boxesLibres().length > 1 ? 's' : '' }}
+              sur {{ currentEtage() === 'RC' ? 'le rez-de-chaussée' : 'le 1ᵉʳ étage' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Filtres taille -->
+        <div class="taille-filtres">
+          <span class="filtre-label">Taille :</span>
+          @for (t of tailles; track t) {
+            <button class="taille-pill"
+              [class.taille-active]="filtreTaille() === t"
+              (click)="setFiltreTaille(t)">
+              {{ t }}
+            </button>
+          }
+          @if (filtreTaille()) {
+            <button class="taille-reset" (click)="setFiltreTaille(null)">
+              <mat-icon>close</mat-icon> Effacer
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (boxesLibres().length === 0) {
+        <div class="empty-list">
+          <div class="empty-icon-wrap">
+            <mat-icon>store_mall_directory</mat-icon>
+          </div>
+          <h3>Aucune box disponible</h3>
+          <p>Toutes les boxes de cet étage sont actuellement occupées.</p>
+          <button class="btn-switch" (click)="setEtage(currentEtage() === 'RC' ? 'FC' : 'RC')">
+            <mat-icon>swap_vert</mat-icon>
+            Voir {{ currentEtage() === 'RC' ? 'le 1ᵉʳ étage' : 'le rez-de-chaussée' }}
+          </button>
+        </div>
+      } @else {
+        <div class="boxes-grid">
+          @for (box of boxesLibres(); track box._id) {
+            <div class="box-card">
+              <div class="box-card-colorbar"></div>
+              <div class="box-card-content">
+
+                <div class="box-card-top">
+                  <div class="box-name-group">
+                    <span class="box-nom">{{ box.nom }}</span>
+                    <span class="box-etage-tag">{{ box.etage === 'RC' ? 'RDC' : 'F1' }}</span>
+                  </div>
+                  <span class="libre-badge">
+                    <span class="libre-dot"></span> Disponible
+                  </span>
+                </div>
+
+                <div class="box-metrics-row">
+                  <div class="box-metric">
+                    <span class="metric-number">{{ getSurface(box) }}</span>
+                    <span class="metric-label">m²</span>
+                  </div>
+                  <div class="metric-vsep"></div>
+                  <div class="box-metric">
+                    <span class="metric-number taille-num">{{ getTailleLabel(box) }}</span>
+                    <span class="metric-label">{{ getDimensionReelle(box) }}</span>
+                  </div>
+                  @if (box.loyer) {
+                    <div class="metric-vsep"></div>
+                    <div class="box-metric">
+                      <span class="metric-number">{{ box.loyer | number:'1.0-0' }}</span>
+                      <span class="metric-label">Ar / mois</span>
+                    </div>
+                  }
+                </div>
+
+                <button class="btn-louer" (click)="louerBox(box)">
+                  <mat-icon>add_business</mat-icon>
+                  Louer ce box
+                </button>
+
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  }
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     OVERLAY MODAL — 3 ÉTAPES
+     ══════════════════════════════════════════════════════════════════════════ -->
+@if (fluxEtape()) {
+  <div class="modal-overlay" (click)="fermerFlux()">
+    <div class="modal-panel" (click)="$event.stopPropagation()">
+
+      <!-- ── ÉTAPE 1 : CONDITIONS DU CONTRAT ────────────────────────────── -->
+      @if (fluxEtape() === 'contrat') {
+
+        <!-- En-tête -->
+        <div class="modal-header">
+          <div class="modal-header-left">
+            <div class="modal-step-badge">Étape 1 / 2</div>
+            <h2 class="modal-title">Conditions de location</h2>
+            <p class="modal-subtitle">
+              Box <strong>{{ boxSelectionnee()?.nom }}</strong> ·
+              {{ boxSelectionnee()?.etage === 'RC' ? 'Rez-de-chaussée' : '1ᵉʳ étage' }}
+            </p>
+          </div>
+          <button class="modal-close" (click)="fermerFlux()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Stepper visuel -->
+        <div class="modal-stepper">
+          <div class="step step-active">
+            <span class="step-num">1</span><span class="step-label">Contrat</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step step-inactive">
+            <span class="step-num">2</span><span class="step-label">Durée</span>
+          </div>
+        </div>
+
+        <!-- Contenu scroll -->
+        <div class="modal-body">
+
+          <!-- Recap box -->
+          <div class="recap-box">
+            <div class="recap-row">
+              <mat-icon>store</mat-icon>
+              <span>Box <strong>{{ boxSelectionnee()?.nom }}</strong></span>
+            </div>
+            @if (boxSelectionnee()?.loyer) {
+              <div class="recap-row">
+                <mat-icon>payments</mat-icon>
+                <span>Loyer : <strong>{{ boxSelectionnee()?.loyer | number:'1.0-0' }} Ar / mois</strong></span>
+              </div>
+            }
+            <div class="recap-row">
+              <mat-icon>straighten</mat-icon>
+              <span>Surface : <strong>{{ getSurface(boxSelectionnee()!) }} m²</strong> ({{ getDimensionReelle(boxSelectionnee()!) }})</span>
+            </div>
+          </div>
+
+          <!-- Clauses -->
+          <div class="clauses-titre">Conditions générales de location</div>
+          <ul class="clauses-list">
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Durée minimale de location : <strong>6 mois</strong></span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Paiement du loyer <strong>tous les 5 du mois</strong></span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Caution équivalente à <strong>2 mois de loyer</strong></span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Demande soumise à <strong>validation administrative</strong></span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Respect du <strong>règlement intérieur</strong> du centre commercial</span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Résiliation soumise à un préavis de <strong>1 mois</strong></span>
+            </li>
+          </ul>
+
+          <!-- Checkbox lu et approuvé -->
+          <label class="approve-checkbox">
+            <input type="checkbox"
+              [checked]="contratLuApprouve()"
+              (change)="contratLuApprouve.set(!contratLuApprouve())">
+            <span class="approve-text">
+              J'ai lu et j'accepte les conditions générales de location ci-dessus.
+            </span>
+          </label>
+        </div>
+
+        <!-- Pied -->
+        <div class="modal-footer">
+          <button class="btn-annuler" (click)="fermerFlux()">Annuler</button>
+          <button class="btn-suivant"
+            [disabled]="!contratLuApprouve()"
+            (click)="passerADuree()">
+            Continuer
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </div>
+      }
+
+      <!-- ── ÉTAPE 2 : CHOIX DE LA DURÉE ───────────────────────────────── -->
+      @if (fluxEtape() === 'duree') {
+
+        <div class="modal-header">
+          <div class="modal-header-left">
+            <div class="modal-step-badge">Étape 2 / 2</div>
+            <h2 class="modal-title">Durée de location</h2>
+            <p class="modal-subtitle">
+              Box <strong>{{ boxSelectionnee()?.nom }}</strong>
+            </p>
+          </div>
+          <button class="modal-close" (click)="fermerFlux()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-stepper">
+          <div class="step step-done">
+            <mat-icon class="step-check">check</mat-icon><span class="step-label">Contrat</span>
+          </div>
+          <div class="step-line step-line-done"></div>
+          <div class="step step-active">
+            <span class="step-num">2</span><span class="step-label">Durée</span>
+          </div>
+        </div>
+
+        <div class="modal-body">
+
+          <!-- Sélecteur durée -->
+          <div class="duree-label">Choisissez la durée souhaitée</div>
+          <div class="duree-grid">
+            @for (d of durees; track d) {
+              <button class="duree-pill"
+                [class.duree-active]="dureeSelectionnee() === d"
+                (click)="dureeSelectionnee.set(d)">
+                {{ d }} mois
+                @if (d === 36) { <span class="duree-max-tag">max</span> }
+              </button>
+            }
+          </div>
+
+          <!-- Récapitulatif dates -->
+          <div class="dates-recap">
+            <div class="date-row">
+              <mat-icon>event</mat-icon>
+              <div>
+                <span class="date-lbl">Date de début estimée</span>
+                <span class="date-val">{{ dateDebut | date:'dd MMMM yyyy' }}</span>
+              </div>
+            </div>
+            <div class="date-sep"></div>
+            <div class="date-row">
+              <mat-icon>event_available</mat-icon>
+              <div>
+                <span class="date-lbl">Date de fin estimée</span>
+                <span class="date-val">{{ dateFin() | date:'dd MMMM yyyy' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loyer récap -->
+          @if (boxSelectionnee()?.loyer) {
+            <div class="loyer-recap">
+              <mat-icon>receipt_long</mat-icon>
+              <span>Loyer mensuel : <strong>{{ boxSelectionnee()?.loyer | number:'1.0-0' }} Ar</strong></span>
+              <span class="loyer-total">
+                Total sur {{ dureeSelectionnee() }} mois :
+                <strong>{{ (boxSelectionnee()!.loyer! * dureeSelectionnee()) | number:'1.0-0' }} Ar</strong>
+              </span>
+            </div>
+          }
+
+          <!-- Note admin -->
+          <div class="note-admin">
+            <mat-icon>info</mat-icon>
+            <span>Votre demande sera transmise à l'administration pour validation. Vous serez notifié une fois confirmée.</span>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-retour" (click)="retourContrat()">
+            <mat-icon>arrow_back</mat-icon> Retour
+          </button>
+          <button class="btn-envoyer"
+            [disabled]="isEnvoi()"
+            (click)="envoyerDemande()">
+            @if (isEnvoi()) {
+              <span class="btn-spinner"></span> Envoi en cours...
+            } @else {
+              <mat-icon>send</mat-icon> Envoyer la demande
+            }
+          </button>
+        </div>
+      }
+
+      <!-- ── ÉTAPE 3 : CONFIRMATION ─────────────────────────────────────── -->
+      @if (fluxEtape() === 'confirmation') {
+        <div class="modal-confirmation">
+          <div class="confirm-icon-wrap">
+            <mat-icon>check_circle</mat-icon>
+          </div>
+          <h2 class="confirm-title">Demande envoyée !</h2>
+          <p class="confirm-subtitle">
+            Votre demande de location pour la box
+            <strong>{{ boxSelectionnee()?.nom }}</strong> a bien été transmise à l'administration.
+          </p>
+          <div class="confirm-details">
+            <div class="confirm-row">
+              <span class="confirm-lbl">Durée demandée</span>
+              <span class="confirm-val">{{ dureeSelectionnee() }} mois</span>
+            </div>
+            <div class="confirm-row">
+              <span class="confirm-lbl">Date de fin estimée</span>
+              <span class="confirm-val">{{ dateFin() | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="confirm-row">
+              <span class="confirm-lbl">Statut</span>
+              <span class="confirm-badge">En attente de validation</span>
+            </div>
+          </div>
+          <button class="btn-fermer" (click)="fermerFlux()">
+            <mat-icon>done</mat-icon> Fermer
+          </button>
+        </div>
+      }
+
+    </div>
+  </div>
+}

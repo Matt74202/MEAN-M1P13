@@ -1,0 +1,170 @@
+<nav class="navbar" role="navigation" aria-label="Navigation principale">
+
+  <!-- GAUCHE : brand -->
+  <a class="brand" routerLink="/boutique" (click)="closeMobileMenu()">
+    <span class="brand-name" [title]="nomBoutique()">{{ nomBoutique() }}</span>
+  </a>
+
+  <!-- CENTRE : liens desktop -->
+  <div class="nav-center desktop-nav" role="menubar">
+
+    <a class="nav-link"
+       routerLink="/boutique"
+       routerLinkActive="active"
+       [routerLinkActiveOptions]="{ exact: true }"
+       role="menuitem">
+      Accueil
+    </a>
+
+    @for (group of navGroups; track group.label) {
+      <div class="nav-group" role="menuitem" [attr.aria-haspopup]="true" [attr.aria-expanded]="openGroup() === group.label">
+        <button
+          class="nav-link group-trigger"
+          [class.active]="openGroup() === group.label"
+          (click)="toggleGroup(group.label)"
+          [attr.aria-expanded]="openGroup() === group.label">
+          {{ group.label }}
+          <svg class="chevron" [class.open]="openGroup() === group.label"
+               viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        @if (openGroup() === group.label) {
+          <div class="dropdown" role="menu">
+            @for (link of group.links; track link.path) {
+              <a class="dropdown-item"
+                 [routerLink]="link.path"
+                 routerLinkActive="active-item"
+                 role="menuitem"
+                 (click)="openGroup.set(null)">
+                {{ link.label }}
+              </a>
+            }
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+
+  <!-- DROITE : avatar + déconnexion (desktop) -->
+  <div class="nav-right desktop-nav">
+    <span class="user-avatar" [title]="nomBoutique()" aria-hidden="true">
+      {{ userInitials }}
+    </span>
+
+    <button class="btn-logout" (click)="logout()" aria-label="Se déconnecter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Déconnexion
+    </button>
+  </div>
+
+  <!-- HAMBURGER -->
+  <button
+    class="hamburger"
+    (click)="toggleMobileMenu()"
+    [attr.aria-expanded]="mobileMenuOpen()"
+    aria-label="Ouvrir le menu"
+    aria-controls="mobile-menu">
+    <span class="bar"></span>
+    <span class="bar"></span>
+    <span class="bar"></span>
+  </button>
+
+</nav>
+
+<!-- OVERLAY sombre derrière le menu mobile -->
+@if (mobileMenuOpen()) {
+  <div class="mobile-overlay" (click)="closeMobileMenu()" aria-hidden="true"></div>
+}
+
+<!-- MENU MOBILE (slide-in depuis la droite) -->
+<div
+  id="mobile-menu"
+  class="mobile-menu"
+  [class.mobile-menu--open]="mobileMenuOpen()"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-hidden]="!mobileMenuOpen()">
+
+  <div class="mobile-header">
+    <div class="mobile-brand">
+      <span class="brand-name">{{ nomBoutique() }}</span>
+    </div>
+    <button class="close-btn" (click)="closeMobileMenu()" aria-label="Fermer le menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <nav class="mobile-links" aria-label="Navigation mobile">
+
+    <a class="mobile-link"
+       routerLink="/boutique"
+       [routerLinkActiveOptions]="{ exact: true }"
+       routerLinkActive="mobile-link--active"
+       (click)="closeMobileMenu()">
+      Accueil
+    </a>
+
+    @for (group of navGroups; track group.label) {
+      <div class="mobile-group">
+        <button
+          class="mobile-group-trigger"
+          [class.open]="openGroup() === group.label"
+          (click)="toggleGroup(group.label)"
+          [attr.aria-expanded]="openGroup() === group.label">
+          <span>{{ group.label }}</span>
+          <svg class="chevron" [class.open]="openGroup() === group.label"
+               viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        @if (openGroup() === group.label) {
+          <div class="mobile-group-links">
+            @for (link of group.links; track link.path) {
+              <a class="mobile-sublink"
+                 [routerLink]="link.path"
+                 routerLinkActive="mobile-sublink--active"
+                 (click)="closeMobileMenu()">
+                {{ link.label }}
+              </a>
+            }
+          </div>
+        }
+      </div>
+    }
+
+  </nav>
+
+  <div class="mobile-footer">
+    <div class="mobile-user">
+      <span class="user-avatar user-avatar--lg">{{ userInitials }}</span>
+      <span class="mobile-user-name">{{ nomBoutique() }}</span>
+    </div>
+    <button class="mobile-logout" (click)="logout(); closeMobileMenu()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Déconnexion
+    </button>
+  </div>
+
+</div>

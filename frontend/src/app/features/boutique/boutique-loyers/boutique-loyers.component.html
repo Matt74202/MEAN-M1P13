@@ -1,0 +1,168 @@
+<!-- boutique-loyers.component.html -->
+<app-boutique-navbar></app-boutique-navbar>
+
+<div class="loyers-page">
+  <div class="loyers-page__inner">
+
+    <!-- Header -->
+    <div class="page-header">
+      <h1 class="page-header__title">Mes loyers</h1>
+      <p class="page-header__sub">Historique de vos loyers par box · Payez directement en ligne</p>
+    </div>
+
+    <!-- Loading -->
+    @if (loading) {
+      <div class="state-loading">
+        <div class="state-loading__spinner"></div>
+        <p>Chargement de vos loyers...</p>
+      </div>
+    }
+
+    <!-- Erreur -->
+    @else if (errorMessage) {
+      <div class="state-error">{{ errorMessage }}</div>
+    }
+
+    @else {
+
+      <!-- Filtres -->
+      <div class="filter-panel">
+        <div class="filter-panel__row">
+
+          <label class="f-checkbox">
+            <input type="checkbox" [(ngModel)]="filtres.impayesOnly">
+            <span>Impayés uniquement</span>
+          </label>
+
+          <div class="filter-panel__group">
+            <span class="filter-panel__label">Du</span>
+            <input type="date" class="f-input" [(ngModel)]="filtres.dateDebut">
+          </div>
+
+          <div class="filter-panel__group">
+            <span class="filter-panel__label">Au</span>
+            <input type="date" class="f-input" [(ngModel)]="filtres.dateFin">
+          </div>
+
+          <button class="btn-filter" (click)="appliquerFiltres()">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+            </svg>
+            Appliquer
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Groupes par box -->
+      @for (groupe of loyersGroupes; track groupe.boxInfo?._id) {
+        <div class="table-panel table-panel--group">
+
+          <!-- En-tête box -->
+          <div class="box-group-header">
+            <div class="box-group-header__icon">
+              {{ groupe.boxInfo?.numero || '?' }}
+            </div>
+            <div>
+              <p class="box-group-header__name">
+                {{ groupe.boxInfo?.nom || 'Box ' + groupe.boxInfo?.numero }}
+              </p>
+              <p class="box-group-header__meta">
+                @if (groupe.boxInfo?.superficie) {
+                  {{ groupe.boxInfo.superficie }} m² ·
+                }
+                {{ groupe.loyers.length }} loyer(s) ·
+                {{ groupe.loyers[0]?.montant | number:'1.0-0' }} Ar/mois
+              </p>
+            </div>
+          </div>
+
+          <!-- Table loyers du box -->
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mois</th>
+                  <th>Échéance</th>
+                  <th>Montant</th>
+                  <th>Statut</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (loyer of groupe.loyers; track loyer._id) {
+                  <tr>
+
+                    <!-- Mois -->
+                    <td class="td--nowrap">
+                      <span class="mois-label">
+                        {{ loyer.mois + '-01' | date:'MMMM yyyy' | titlecase }}
+                      </span>
+                    </td>
+
+                    <!-- Échéance -->
+                    <td class="td--nowrap td--muted">
+                      {{ loyer.dateEcheance | date:'dd/MM/yyyy' }}
+                    </td>
+
+                    <!-- Montant -->
+                    <td class="td--nowrap td--bold">
+                      {{ loyer.montant | number:'1.0-0' }} Ar
+                    </td>
+
+                    <!-- Statut -->
+                    <td class="td--nowrap">
+                      @if (loyer.statut === 'paye') {
+                        <span class="badge badge--paye">
+                          <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                          </svg>
+                          Payé
+                        </span>
+                        @if (loyer.datePaiement) {
+                          <span class="pay-date">le {{ loyer.datePaiement | date:'dd/MM/yyyy' }}</span>
+                        }
+                      } @else {
+                        <span class="badge badge--impaye">
+                          <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v4m0 4h.01"/>
+                          </svg>
+                          Impayé
+                        </span>
+                      }
+                    </td>
+
+                    <!-- Action -->
+                    <td class="td--nowrap">
+                      @if (loyer.statut === 'impaye') {
+                        <button class="btn-pay" (click)="payerLoyer(loyer._id, loyer)">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          Payer
+                        </button>
+                      } @else {
+                        <span class="btn-dash">—</span>
+                      }
+                    </td>
+
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      } @empty {
+        <div class="state-empty">
+          <div class="state-empty__icon">📭</div>
+          <p class="state-empty__title">Aucun loyer ne correspond à vos critères</p>
+          <p class="state-empty__sub">Essayez de modifier les filtres ou revenez plus tard.</p>
+        </div>
+      }
+
+    }
+  </div>
+</div>

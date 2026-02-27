@@ -1,0 +1,170 @@
+<app-mall-navbar />
+
+<div class="requests-container">
+
+  <!-- ══ HEADER ══ -->
+  <div class="header">
+    <div>
+      <h1>Demandes de location</h1>
+      <p class="subtitle">Validez ou rejetez les demandes soumises par les boutiques</p>
+    </div>
+    <button mat-stroked-button (click)="loadRequests()" [disabled]="isLoading()">
+      <mat-icon>refresh</mat-icon>
+      <span class="btn-label">Actualiser</span>
+    </button>
+  </div>
+
+  <!-- ══ STATS RAPIDES ══ -->
+  <div class="stats-row">
+    <div class="stat-pill stat-pending">
+      <mat-icon>hourglass_empty</mat-icon>
+      <span><strong>{{ nbPending }}</strong> en attente</span>
+    </div>
+    <div class="stat-pill stat-approved">
+      <mat-icon>check_circle</mat-icon>
+      <span><strong>{{ requests().length - nbPending }}</strong> traitées</span>
+    </div>
+  </div>
+
+  <!-- ══ FILTRES ══ -->
+  <div class="filtres-bar">
+    @for (f of filtres; track f.value) {
+      <button
+        class="filtre-pill"
+        [class.filtre-active]="filtreStatut() === f.value"
+        (click)="filtreStatut.set(f.value)">
+        {{ f.label }}
+        @if (f.value === 'pending' && nbPending > 0) {
+          <span class="filtre-badge">{{ nbPending }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- ══ LOADING ══ -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Chargement des demandes...</p>
+    </div>
+  }
+
+  <!-- ══ LISTE ══ -->
+  @if (!isLoading()) {
+
+    @if (requestsFiltrees.length === 0) {
+      <div class="empty-state">
+        <mat-icon>inbox</mat-icon>
+        <h3>Aucune demande</h3>
+        <p>Il n'y a aucune demande {{ filtreStatut() === 'pending' ? 'en attente' : 'dans cette catégorie' }}.</p>
+      </div>
+    } @else {
+      <div class="requests-list">
+        @for (req of requestsFiltrees; track req._id) {
+
+          <mat-card class="request-card"
+            [class.card-approved]="req.statut === 'approved'"
+            [class.card-rejected]="req.statut === 'rejected'">
+
+            <div class="card-side-bar"></div>
+
+            <div class="card-body">
+
+              <!-- En-tête -->
+              <div class="card-top">
+                <div class="card-top-left">
+                  <div class="box-info">
+                    <mat-icon>store</mat-icon>
+                    <span class="box-nom">{{ req.boxId?.nom ?? '—' }}</span>
+                    <span class="etage-tag">{{ req.boxId?.etage === 'RC' ? 'RDC' : 'F1' }}</span>
+                    <span class="type-tag">{{ req.boxId?.typeNom }}</span>
+                  </div>
+                  <div class="boutique-info">
+                    <mat-icon>person</mat-icon>
+                    <span>{{ req.userId?.nom ?? 'Boutique inconnue' }}</span>
+                    @if (req.userId?.mail) {
+                      <span class="mail">· {{ req.userId?.mail }}</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="statut-badge" [class]="'badge-' + req.statut">
+                  @if (req.statut === 'pending')  { <mat-icon>hourglass_empty</mat-icon> En attente }
+                  @if (req.statut === 'approved') { <mat-icon>check_circle</mat-icon>   Approuvée  }
+                  @if (req.statut === 'rejected') { <mat-icon>cancel</mat-icon>         Rejetée    }
+                </div>
+              </div>
+
+              <!-- Métriques -->
+              <div class="card-metrics">
+                <div class="metric">
+                  <span class="metric-label">Durée demandée</span>
+                  <span class="metric-value">{{ req.dureeMois }} mois</span>
+                </div>
+                <div class="metric-sep"></div>
+                @if (req.boxId?.loyer) {
+                  <div class="metric">
+                    <span class="metric-label">Loyer mensuel</span>
+                    <span class="metric-value">{{ req.boxId!.loyer | number:'1.0-0' }} Ar</span>
+                  </div>
+                  <div class="metric-sep"></div>
+                  <div class="metric">
+                    <span class="metric-label">Total estimé</span>
+                    <span class="metric-value accent">{{ (req.boxId!.loyer * req.dureeMois) | number:'1.0-0' }} Ar</span>
+                  </div>
+                  <div class="metric-sep"></div>
+                }
+                <div class="metric">
+                  <span class="metric-label">Date de fin estimée</span>
+                  <span class="metric-value">{{ getDateFin(req.createdAt, req.dureeMois) | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="metric-sep"></div>
+                <div class="metric">
+                  <span class="metric-label">Soumise le</span>
+                  <span class="metric-value">{{ req.createdAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+
+              <!-- Message boutique -->
+              @if (req.messageBoutique) {
+                <div class="message-boutique">
+                  <mat-icon>chat_bubble_outline</mat-icon>
+                  <span>{{ req.messageBoutique }}</span>
+                </div>
+              }
+
+              <!-- Actions -->
+              @if (req.statut === 'pending') {
+                <div class="card-actions">
+                  <button mat-stroked-button class="btn-rejeter"
+                    [disabled]="isActioning() === req._id"
+                    (click)="rejeter(req)">
+                    @if (isActioning() === req._id) {
+                      <span class="btn-spinner"></span>
+                    } @else {
+                      <mat-icon>close</mat-icon>
+                    }
+                    Rejeter
+                  </button>
+                  <button mat-flat-button class="btn-valider"
+                    [disabled]="isActioning() === req._id"
+                    (click)="valider(req)">
+                    @if (isActioning() === req._id) {
+                      <span class="btn-spinner btn-spinner-white"></span>
+                    } @else {
+                      <mat-icon>check</mat-icon>
+                    }
+                    Valider
+                  </button>
+                </div>
+              }
+
+            </div>
+          </mat-card>
+
+        }
+      </div>
+    }
+  }
+
+</div>

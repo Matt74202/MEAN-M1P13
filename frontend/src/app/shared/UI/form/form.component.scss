@@ -1,0 +1,128 @@
+.form-container {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.form-header {
+  padding: 2rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: white;
+}
+
+.form-title {
+  margin: 0 0 0.5rem 0;
+  font-family: 'New Icon Script', 'Garet', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 400;
+  letter-spacing: 0.8px;
+  color: var(--text-primary);
+}
+
+.form-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.form-content {
+  padding: 2rem;
+  max-height: 70vh; 
+  overflow-y: auto;
+}
+
+.form-field {
+  margin-bottom: 1.5rem;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+// Styles Material personnalisés
+:host ::ng-deep {
+  // Outline des champs
+  .mat-mdc-form-field-outline {
+    color: #ddd !important;
+  }
+
+  // Outline au focus
+  .mat-mdc-form-field.mat-focused .mat-mdc-form-field-outline {
+    color: #222 !important;
+  }
+
+  // Labels
+  .mat-mdc-form-field label {
+    color: var(--text-primary) !important;
+    font-family: 'Garet', sans-serif !important;
+  }
+
+  // Input text
+  .mat-mdc-input-element {
+    color: var(--text-primary) !important;
+    font-family: 'Garet', sans-serif !important;
+  }
+
+  // Erreurs
+  .mat-mdc-form-field-error {
+    color: #d32f2f !important;
+    font-size: 0.85rem;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  z-index: 10;
+
+  // Bouton annuler (stroked)
+  button[mat-stroked-button] {
+    border-color: #222222 !important;
+    color: #222222 !important;
+    background-color: transparent !important;
+    font-family: 'Garet', sans-serif;
+    padding: 0 1.5rem;
+
+    &:hover {
+      border-color: #000000 !important;
+      background-color: #f5f5f5 !important;
+    }
+  }
+
+  // Bouton submit (raised)
+  button[mat-raised-button] {
+    background-color: #222222 !important;
+    color: white !important;
+    font-family: 'Garet', sans-serif;
+    padding: 0 1.5rem;
+
+    &:hover:not(:disabled) {
+      background-color: #000000 !important;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      margin-right: 0.5rem;
+    }
+  }
+}

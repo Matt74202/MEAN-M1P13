@@ -1,0 +1,160 @@
+<!-- admin-heures.component.html -->
+<app-mall-navbar></app-mall-navbar>
+
+<div class="heures-page">
+  <div class="heures-page__inner">
+
+    <div class="page-header">
+      <h1 class="page-header__title">Horaires du supermarché</h1>
+      <p class="page-header__sub">Définissez les plages d'ouverture hebdomadaires et gérez les exceptions</p>
+    </div>
+
+    @if (loading) {
+      <div class="state-loading">
+        <div class="state-loading__spinner"></div>
+        <p>Chargement des horaires...</p>
+      </div>
+    }
+
+    @else if (errorMessage) {
+      <div class="state-error">{{ errorMessage }}</div>
+    }
+
+    @else {
+
+      <!-- Feedback global -->
+      @if (successMsg) {
+        <div class="feedback feedback--success">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+          {{ successMsg }}
+        </div>
+      }
+      @if (errorSave) {
+        <div class="feedback feedback--error">{{ errorSave }}</div>
+      }
+
+      <!-- ── Horaires standards ── -->
+      <div class="hp-panel">
+        <div class="hp-panel__header">
+          <div>
+            <p class="hp-panel__title">Horaires habituels</p>
+            <p class="hp-panel__sub">Lundi → Dimanche</p>
+          </div>
+        </div>
+
+        <div class="hp-panel__body">
+          @for (jour of joursSemaine; track jour.id) {
+            <div class="jour-row">
+              <span class="jour-row__name">{{ jour.nom }}</span>
+
+              <div class="jour-row__fields">
+                <div class="time-field">
+                  <span class="time-field__label">Ouverture</span>
+                  <input type="time" class="f-time"
+                         [(ngModel)]="horaires[jour.id].ouverture">
+                </div>
+                <span class="jour-row__sep">→</span>
+                <div class="time-field">
+                  <span class="time-field__label">Fermeture</span>
+                  <input type="time" class="f-time"
+                         [(ngModel)]="horaires[jour.id].fermeture">
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="hp-panel__footer">
+          <button class="btn-save" (click)="sauvegarderHoraires()" [disabled]="saving">
+            @if (saving) {
+              <span class="btn-save__spinner"></span> Enregistrement...
+            } @else {
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+              </svg>
+              Enregistrer les horaires
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Exceptions ── -->
+      <div class="hp-panel">
+        <div class="hp-panel__header">
+          <div>
+            <p class="hp-panel__title">Jours exceptionnels</p>
+            <p class="hp-panel__sub">Jours fériés, fermetures imprévues, horaires spéciaux</p>
+          </div>
+          <button class="btn-add" (click)="ajouterException()">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nouvelle exception
+          </button>
+        </div>
+
+        <div class="hp-panel__body">
+          @if (exceptions.length === 0) {
+            <div class="state-empty state-empty--inline">
+              <div class="state-empty__icon">📅</div>
+              <p class="state-empty__title">Aucune exception configurée</p>
+              <p class="state-empty__sub">Ajoutez des jours fériés ou des fermetures spéciales</p>
+            </div>
+          } @else {
+            @for (exc of exceptions; track $index) {
+              <div class="exc-row">
+                <div class="exc-row__date">
+                  <span class="time-field__label">Date</span>
+                  <input type="date" class="f-input" [(ngModel)]="exc.date">
+                </div>
+                <div class="exc-row__times">
+                  <div class="time-field">
+                    <span class="time-field__label">Ouverture</span>
+                    <input type="time" class="f-time" [(ngModel)]="exc.ouverture">
+                  </div>
+                  <span class="jour-row__sep">→</span>
+                  <div class="time-field">
+                    <span class="time-field__label">Fermeture</span>
+                    <input type="time" class="f-time" [(ngModel)]="exc.fermeture">
+                  </div>
+                </div>
+                <div class="exc-row__motif">
+                  <span class="time-field__label">Motif</span>
+                  <input type="text" class="f-input f-input--motif"
+                         [(ngModel)]="exc.motif"
+                         placeholder="ex: Fête nationale, Travaux...">
+                </div>
+                <button class="btn-delete" (click)="supprimerException($index)" title="Supprimer">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </div>
+            }
+          }
+        </div>
+
+        @if (exceptions.length > 0) {
+          <div class="hp-panel__footer">
+            <button class="btn-save" (click)="sauvegarderExceptions()" [disabled]="saving">
+              @if (saving) {
+                <span class="btn-save__spinner"></span> Enregistrement...
+              } @else {
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                </svg>
+                Enregistrer les exceptions
+              }
+            </button>
+          </div>
+        }
+      </div>
+
+    }
+  </div>
+</div>

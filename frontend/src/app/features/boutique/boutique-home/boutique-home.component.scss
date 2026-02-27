@@ -1,0 +1,214 @@
+// ── Variables ──────────────────────────────────────────────────────────────────
+$accent:      #7d936c;
+$accent-dark: #5a7050;
+$border:      #e8eddc;
+
+// ── Layout ─────────────────────────────────────────────────────────────────────
+.boutique-container {
+  min-height: 100vh;
+  background: #fff;
+  color: var(--text-primary);
+  font-family: 'Garet', system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+.content-area {
+  padding: 2rem;
+  max-width: 1280px;
+  margin: 0 auto;
+
+  @media (max-width: 600px) {
+    padding: 1rem;
+  }
+}
+
+// ── Banner mode édition ─────────────────────────────────────────────────────────
+.edit-banner {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.5rem;
+  background: #fffbeb;
+  border-bottom: 2px solid #f59e0b;
+  font-size: 0.875rem;
+  color: #92400e;
+  flex-wrap: wrap;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: #f59e0b;
+  }
+
+  span {
+    flex: 1;
+    min-width: 0;
+  }
+
+  @media (max-width: 600px) {
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+    gap: 0.5rem;
+
+    span {
+      display: none;
+    }
+  }
+}
+
+.edit-banner-add {
+  white-space: nowrap;
+  border-color: #f59e0b !important;
+  color: #92400e !important;
+  font-size: 0.8rem;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #92400e;
+  }
+}
+
+.edit-banner-close {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: #92400e !important;
+
+  mat-icon {
+    color: #92400e;
+  }
+}
+
+// ── FAB édition ────────────────────────────────────────────────────────────────
+.fab-edit {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 90;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  width: 60px;
+  height: 60px;
+  background-color: $accent !important;
+  color: #fff !important;
+  transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s;
+
+  mat-icon {
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
+  }
+
+  &:hover {
+    transform: scale(1.06);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  }
+
+  &--active {
+    background-color: #c62828 !important;
+    box-shadow: 0 4px 16px rgba(198, 40, 40, 0.35);
+
+    &:hover {
+      background-color: #b71c1c !important;
+    }
+  }
+
+  @media (max-width: 600px) {
+    bottom: 16px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+
+    mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+  }
+}
+
+// ── Pagination ─────────────────────────────────────────────────────────────────
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid $border;
+}
+
+.pagination-info {
+  font-size: 0.82rem;
+  color: #888;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.4rem;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #555;
+  font-size: 0.875rem;
+  font-family: 'Garet', system-ui, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover:not(:disabled):not(.page-btn--active) {
+    border-color: $accent;
+    color: $accent;
+  }
+
+  &--active {
+    background: $accent;
+    border-color: $accent;
+    color: #fff;
+    font-weight: 600;
+    cursor: default;
+  }
+
+  &--nav:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  color: #aaa;
+  user-select: none;
+}
+
+@media (max-width: 480px) {
+  .pagination {
+    flex-direction: column;
+    align-items: center;
+  }
+}

@@ -1,0 +1,506 @@
+// ── Variables ──────────────────────────────────────────────────────────────────
+$border:      #e0e0e0;
+$text:        #222;
+$text-muted:  #888;
+$accent:      #7d936c;
+$bg-main:     #f7f8f5;
+$card-bg:     #ffffff;
+
+// ── Wrapper ────────────────────────────────────────────────────────────────────
+.client-mall-wrapper {
+  min-height: 100vh;
+  background: $bg-main;
+  font-family: 'Garet', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Header ─────────────────────────────────────────────────────────────────────
+.mall-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: $card-bg;
+  border-bottom: 1px solid $border;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.875rem;
+  }
+}
+
+.mall-title {
+  margin: 0 0 0.2rem;
+  font-family: 'Perandory Condensed', system-ui, sans-serif;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 400;
+  color: #445c3f;
+}
+
+.mall-subtitle {
+  margin: 0;
+  color: $text-muted;
+  font-size: 0.88rem;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+}
+
+// ── Sélecteur d'étage ──────────────────────────────────────────────────────────
+.etage-selector {
+  display: flex;
+  gap: 0.5rem;
+
+  button {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+
+    &.active {
+      background: #445c3f;
+      color: white;
+      border-color: #445c3f;
+    }
+  }
+
+  @media (max-width: 768px) {
+    button { flex: 1; }
+  }
+}
+
+// ── Toggle vue ─────────────────────────────────────────────────────────────────
+.view-toggle {
+  ::ng-deep .mat-button-toggle-checked {
+    background: #445c3f;
+    color: white;
+  }
+
+  ::ng-deep .mat-button-toggle {
+    display: flex;
+    align-items: center;
+  }
+
+  .toggle-label {
+    @media (max-width: 480px) { display: none; } // icône seule sur très petit
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+
+    ::ng-deep .mat-button-toggle-group {
+      width: 100%;
+    }
+
+    ::ng-deep .mat-button-toggle {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+}
+
+// ── Commandes en attente ────────────────────────────────────────────────────────
+.commandes-bar {
+  background: $card-bg;
+  border-bottom: 1px solid $border;
+}
+
+.commandes-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: $text;
+  transition: background 0.15s;
+  text-align: left;
+
+  mat-icon:first-child { color: $accent; }
+
+  &:hover { background: $bg-main; }
+
+  .commandes-badge {
+    background: #e05555;
+    color: white;
+    border-radius: 12px;
+    padding: 1px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .chevron {
+    margin-left: auto;
+    transition: transform 0.2s;
+    &.open { transform: rotate(180deg); }
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px 1rem;
+  }
+}
+
+.commandes-list {
+  border-top: 1px solid $border;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.commande-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 2rem;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child { border-bottom: none; }
+
+  .commande-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .commande-date {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: $text-muted;
+
+    mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  }
+
+  .commande-produits {
+    font-weight: 600;
+    color: $text;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .commande-detail-produits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+  }
+
+  .detail-chip {
+    background: $bg-main;
+    border: 1px solid $border;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    color: $text-muted;
+  }
+
+  .btn-recue {
+    background: $accent;
+    color: white;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: 'Garet', sans-serif;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+    &:hover { background: #3a4a2f; }
+  }
+
+  // Sur mobile : bouton compact, label masqué
+  @media (max-width: 520px) {
+    padding: 12px 1rem;
+    gap: 10px;
+
+    .btn-recue-label { display: none; }
+  }
+}
+
+// ── Filtres ────────────────────────────────────────────────────────────────────
+.filter-bar {
+  padding: 0.875rem 2rem;
+  background: $card-bg;
+  border-bottom: 1px solid #f0f0f0;
+
+  @media (max-width: 768px) {
+    padding: 0.75rem 1rem;
+  }
+}
+
+// ── Loading ────────────────────────────────────────────────────────────────────
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 5rem;
+  color: #bbb;
+  gap: 1rem;
+
+  mat-icon { font-size: 3rem; width: 3rem; height: 3rem; }
+  p { font-size: 0.9rem; margin: 0; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.spin { animation: spin 1s linear infinite; }
+
+// ── Carte / Map ────────────────────────────────────────────────────────────────
+.map-container {
+  flex: 1;
+  min-height: 500px;
+  max-height: calc(100vh - 200px); // s'ajuste selon ce qui est affiché au-dessus
+
+  @media (max-width: 768px) {
+    min-height: 400px;
+    max-height: calc(100vh - 180px);
+  }
+}
+
+// ── Vue boutiques ──────────────────────────────────────────────────────────────
+.boutiques-container {
+  padding: 1.5rem 2rem 3rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    padding: 1rem 1rem 2rem;
+  }
+}
+
+.boutiques-count {
+  color: $text-muted;
+  font-size: 0.88rem;
+  margin: 0 0 1.25rem;
+}
+
+.boutiques-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+// ── Carte boutique ─────────────────────────────────────────────────────────────
+.boutique-card {
+  background: $card-bg;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.11);
+
+    .voir-produits { color: #445c3f; }
+    .voir-produits mat-icon { transform: translateX(4px); }
+  }
+
+  // Focus clavier
+  &:focus-visible {
+    outline: 2px solid $accent;
+    outline-offset: 2px;
+  }
+}
+
+.card-color-bar {
+  height: 5px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.card-body {
+  padding: 1.2rem 1.4rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  .store-icon {
+    color: #666;
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .card-header-info {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.boutique-nom {
+  margin: 0 0 0.15rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: $text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.box-ref {
+  font-size: 0.78rem;
+  color: #bbb;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.25rem 0.8rem;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+// ── Note boutique ──────────────────────────────────────────────────────────────
+.boutique-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: auto;
+
+  .stars-mini {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+  }
+
+  .star-mini {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: #e0e0e0;
+
+    &.filled { color: #f5a623; }
+  }
+
+  .rating-value {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: $text;
+  }
+
+  .rating-count {
+    font-size: 0.75rem;
+    color: $text-muted;
+  }
+}
+
+// ── Footer carte ───────────────────────────────────────────────────────────────
+.card-footer {
+  padding: 0.75rem 1.4rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.voir-produits {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: $text-muted;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.2s;
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    transition: transform 0.2s;
+  }
+}
+
+// ── Favori ─────────────────────────────────────────────────────────────────────
+.favori-btn-mall {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s, background 0.15s;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #ccc;
+    transition: color 0.2s, transform 0.2s;
+
+    &.favori-actif { color: #e05555; animation: heartPop 0.25s ease; }
+  }
+
+  &:hover {
+    background: rgba(224, 85, 85, 0.08);
+    transform: scale(1.1);
+    mat-icon { color: #e05555; }
+  }
+}
+
+@keyframes heartPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+// ── Empty state ────────────────────────────────────────────────────────────────
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem 2rem;
+  color: #bbb;
+  gap: 1rem;
+
+  mat-icon { font-size: 3.5rem; width: 3.5rem; height: 3.5rem; }
+  p { font-size: 1rem; margin: 0; }
+}

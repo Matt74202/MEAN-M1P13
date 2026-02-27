@@ -1,0 +1,618 @@
+@use 'sass:color';
+
+// ── Variables ──────────────────────────────────────────────────────────────────
+$border:     #e8eddc;
+$text:       #3a4a2f;
+$text-muted: #7d7369;
+$accent:     #7d936c;
+$bg-main:    #f7f8f5;
+$card-bg:    #ffffff;
+
+// ── Layout ─────────────────────────────────────────────────────────────────────
+.commandes-container {
+  min-height: 100vh;
+  background: $card-bg;
+  font-family: 'Garet', system-ui, sans-serif;
+  padding: 2rem 3rem 4rem;
+  box-sizing: border-box;
+
+  @media (max-width: 1024px) { padding: 1.75rem 2rem 3rem; }
+  @media (max-width: 768px)  { padding: 1.25rem 1rem 3rem; }
+}
+
+// ── Header ─────────────────────────────────────────────────────────────────────
+.commandes-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+
+  h1 {
+    font-family: 'Perandory Condensed', 'Garet', sans-serif;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    color: $text;
+    margin: 0;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+}
+
+.commandes-count {
+  font-size: 0.85rem;
+  color: $text-muted;
+  font-weight: 500;
+}
+
+// ── Onglets ─────────────────────────────────────────────────────────────────────
+.tabs-bar {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 2px solid $border;
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: $text-muted;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &.active {
+    color: $text;
+    border-bottom-color: $accent;
+    font-weight: 700;
+  }
+  &:hover:not(.active) { color: $text; }
+}
+
+.tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  &.attente { background: #f59e0b; }
+}
+
+.tab-badge {
+  background: #f59e0b;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 50px;
+  line-height: 1.4;
+}
+
+// ── Filtres ─────────────────────────────────────────────────────────────────────
+.filtres-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  background: $bg-main;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.filtres-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 2rem;
+}
+
+.filtres-row-search {
+  padding-top: 0.75rem;
+  border-top: 1px solid $border;
+  align-items: flex-end;
+}
+
+.filtre-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.filtre-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.filtre-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pill {
+  padding: 0.3rem 0.85rem;
+  background: white;
+  border: 1px solid $border;
+  border-radius: 50px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.8rem;
+  color: $text-muted;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.active {
+    background: $accent;
+    border-color: $accent;
+    color: white;
+    font-weight: 600;
+  }
+  &:hover:not(.active) {
+    border-color: $accent;
+    color: $text;
+  }
+}
+
+// ── Filtre date ─────────────────────────────────────────────────────────────────
+.filtre-group-dates {
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.date-input {
+  padding: 0.3rem 0.65rem;
+  background: white;
+  border: 1px solid $border;
+  border-radius: 8px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.8rem;
+  color: $text;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  outline: none;
+
+  &:focus { border-color: $accent; }
+  &::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
+}
+
+.date-sep {
+  font-size: 0.8rem;
+  color: $text-muted;
+}
+
+// ── Recherche boutique ──────────────────────────────────────────────────────────
+.filtre-group-boutique {
+  flex: 1;
+  min-width: 200px;
+  align-items: center;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+
+  mat-icon:first-child {
+    position: absolute;
+    left: 0.6rem;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: $text-muted;
+    pointer-events: none;
+  }
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.3rem 2rem 0.3rem 2rem;
+  background: white;
+  border: 1px solid $border;
+  border-radius: 8px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.8rem;
+  color: $text;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+
+  &:focus { border-color: $accent; }
+  &::placeholder { color: $text-muted; }
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  color: $text-muted;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:hover { color: $text; }
+}
+
+.btn-reset-filtres {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.3rem 0.85rem;
+  background: none;
+  border: 1px solid #fca5a5;
+  border-radius: 50px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.8rem;
+  color: #dc2626;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  margin-left: auto;
+
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  &:hover { background: #fef2f2; }
+}
+
+// ── Loading ─────────────────────────────────────────────────────────────────────
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem;
+  gap: 1.25rem;
+  color: $text-muted;
+
+  p { font-size: 0.9rem; margin: 0; }
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba($accent, 0.2);
+  border-top-color: $accent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ── Grille ──────────────────────────────────────────────────────────────────────
+.commandes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 0.875rem;
+  align-items: start;
+
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+// ── Carte commande ──────────────────────────────────────────────────────────────
+.commande-card {
+  background: white;
+  border: 1px solid $border;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+
+  &.statut-en_attente { border-left: 3px solid #f59e0b; }
+  &.statut-confirmee  { border-left: 3px solid $accent; }
+  &.statut-annulee    { border-left: 3px solid #ef4444; }
+}
+
+// ── En-tête carte (toujours visible) ───────────────────────────────────────────
+.commande-card-header {
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+
+  &:hover { background: $bg-main; }
+}
+
+.commande-header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.commande-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.commande-boutique {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: $text;
+
+  mat-icon { font-size: 14px; width: 14px; height: 14px; color: $text-muted; }
+}
+
+.commande-date {
+  font-size: 0.72rem;
+  color: $text-muted;
+}
+
+.commande-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.total-montant {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: $text;
+}
+
+.chevron {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: $text-muted;
+  transition: transform 0.2s;
+
+  &.open { transform: rotate(180deg); }
+}
+
+// ── Résumé compact ──────────────────────────────────────────────────────────────
+.commande-resume {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: $text-muted;
+}
+
+.resume-sep { opacity: 0.4; }
+
+// ── Badge statut ────────────────────────────────────────────────────────────────
+.statut-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 50px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.badge-en_attente {
+    background: #fef3c7;
+    color: #92400e;
+    .statut-dot { background: #f59e0b; }
+  }
+  &.badge-confirmee {
+    background: #f0fdf4;
+    color: #166534;
+    .statut-dot { background: $accent; }
+  }
+  &.badge-annulee {
+    background: #fef2f2;
+    color: #991b1b;
+    .statut-dot { background: #ef4444; }
+  }
+}
+
+.statut-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// ── Corps accordéon ─────────────────────────────────────────────────────────────
+.commande-body {
+  border-top: 1px solid $border;
+  animation: slideDown 0.18s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Articles ────────────────────────────────────────────────────────────────────
+.commande-articles {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.article-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.83rem;
+}
+
+.article-qty {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: $text-muted;
+  background: $bg-main;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.article-nom {
+  flex: 1;
+  color: $text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.article-prix {
+  font-size: 0.8rem;
+  color: $text-muted;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+// ── Footer carte ────────────────────────────────────────────────────────────────
+.commande-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: $bg-main;
+  flex-wrap: wrap;
+  border-top: 1px solid $border;
+}
+
+.commande-infos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.info-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  background: white;
+  border: 1px solid $border;
+  border-radius: 50px;
+  font-size: 0.72rem;
+  color: $text-muted;
+
+  mat-icon { font-size: 13px; width: 13px; height: 13px; }
+
+  &.reduction {
+    border-color: #fca5a5;
+    color: #dc2626;
+    background: #fef2f2;
+    mat-icon { color: #dc2626; }
+  }
+}
+
+.commande-total-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.total-label {
+  font-size: 0.68rem;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.total-montant-lg {
+  font-size: 1rem;
+  font-weight: 700;
+  color: $text;
+}
+
+// ── Actions ─────────────────────────────────────────────────────────────────────
+.commande-actions {
+  padding: 0.65rem 1rem 0.875rem;
+}
+
+.btn-confirmer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.55rem 1.1rem;
+  background: $accent;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Garet', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+
+  &:hover:not(:disabled) { background: color.adjust($accent, $lightness: -8%); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.btn-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(white, 0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+// ── Empty state ─────────────────────────────────────────────────────────────────
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5rem 2rem;
+  gap: 1rem;
+  text-align: center;
+
+  h2 {
+    font-family: 'Perandory Condensed', 'Garet', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: $text;
+    margin: 0;
+  }
+
+  p {
+    font-size: 0.88rem;
+    color: $text-muted;
+    max-width: 360px;
+    margin: 0;
+    line-height: 1.6;
+  }
+}
+
+.empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: $border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    color: $text-muted;
+    opacity: 0.5;
+  }
+}

@@ -1,0 +1,301 @@
+<app-client-navbar
+  (panierClick)="vue.set(vue() === 'panier' ? 'catalogue' : 'panier')"
+  (favorisClick)="allerFavoris()"
+/>
+
+<div class="boutique-container">
+
+  <!-- ══ VUE CATALOGUE ══ -->
+  @if (vue() === 'catalogue') {
+    <div class="content-area">
+
+      <!-- Filtres + recherche -->
+      <div class="filter-section">
+
+        <button class="chip-favori"
+          [class.actif]="filtreFavoris()"
+          (click)="toggleFiltreFavoris()"
+          [attr.aria-pressed]="filtreFavoris()">
+          <mat-icon>{{ filtreFavoris() ? 'favorite' : 'favorite_border' }}</mat-icon>
+          Favoris
+        </button>
+
+        @if (categoryItems().length > 0) {
+          <app-filter-chips
+            [items]="categoryItems()"
+            [selected]="selectedCategory()"
+            allLabel="Tous les produits"
+            (select)="onCategoryChange($event)"
+          />
+        }
+
+      </div>
+
+      <div class="search-bar" role="search">
+        <mat-icon class="search-icon" aria-hidden="true">search</mat-icon>
+        <input
+          type="search"
+          placeholder="Rechercher un produit..."
+          [value]="recherche()"
+          (input)="onRecherche($event)"
+          class="search-input"
+          aria-label="Rechercher un produit"
+        />
+        @if (recherche()) {
+          <button class="clear-btn" (click)="recherche.set('')" aria-label="Effacer la recherche">
+            <mat-icon aria-hidden="true">close</mat-icon>
+          </button>
+        }
+      </div>
+
+      <!-- Grille produits -->
+      <div class="products-grid" role="list">
+        @for (p of filteredProduits(); track p.id) {
+
+          <div class="product-card" role="listitem">
+
+            <!-- Image -->
+            <div class="image-container">
+              @if (getPromotion(p.id)) {
+                <div class="promo-badge-image" [attr.aria-label]="'Promotion −' + getPromotion(p.id)!.details.pourcentage + '%'">
+                  −{{ getPromotion(p.id)!.details.pourcentage }}%
+                </div>
+              }
+
+              <button class="favori-btn"
+                (click)="toggleFavoriProduit(p); $event.stopPropagation()"
+                [attr.aria-label]="(isFavori(p.id) ? 'Retirer des favoris : ' : 'Ajouter aux favoris : ') + p.details.nom"
+                [attr.aria-pressed]="isFavori(p.id)">
+                <mat-icon [class.favori-actif]="isFavori(p.id)">
+                  {{ isFavori(p.id) ? 'favorite' : 'favorite_border' }}
+                </mat-icon>
+              </button>
+
+              @if (p.imageUrl) {
+                <img [src]="p.imageUrl" [alt]="p.details.nom" class="product-image" loading="lazy" />
+              } @else {
+                <div class="no-image" aria-hidden="true">
+                  <mat-icon>image_not_supported</mat-icon>
+                </div>
+              }
+            </div>
+
+            <!-- Infos -->
+            <div class="product-info">
+              <h3 class="product-title">{{ p.details.nom }}</h3>
+
+              @if (getStatsProduit(p.id); as stats) {
+                <div class="product-rating" [attr.aria-label]="'Note ' + stats.moyenne + ' sur 5'">
+                  <div class="stars-mini" aria-hidden="true">
+                    @for (star of [1,2,3,4,5]; track star) {
+                      <mat-icon class="star-mini" [class.filled]="star <= stats.moyenne!">
+                        {{ star <= stats.moyenne! ? 'star' : 'star_border' }}
+                      </mat-icon>
+                    }
+                  </div>
+                  <span class="rating-value">{{ stats.moyenne }}</span>
+                  <span class="rating-count">({{ stats.total }})</span>
+                </div>
+              }
+
+              <div class="price-block">
+                @if (getPromotion(p.id); as promo) {
+                  <span class="prix-barre">{{ p.details.prix | number:'1.0-0' }} Ar</span>
+                  <span class="prix-promo">{{ getPrixPromo(p) | number:'1.0-0' }} Ar</span>
+                  <span class="promo-label-inline">
+                    {{ promo.details.description || 'Promo' }}
+                  </span>
+                } @else {
+                  <span class="price">{{ p.details.prix | number:'1.0-0' }} Ar</span>
+                }
+              </div>
+
+              @if (p.details.description) {
+                <p class="description">{{ p.details.description }}</p>
+              }
+              @if (p.details.categorie) {
+                <span class="category-chip">{{ p.details.categorie }}</span>
+              }
+            </div>
+
+            <!-- Actions -->
+            <div class="product-actions">
+              @if (isRuptureStock(p)) {
+                <div class="rupture-badge">
+                  <mat-icon aria-hidden="true">remove_shopping_cart</mat-icon>
+                  Rupture de stock
+                </div>
+              } @else {
+                @if (isStockFaible(p)) {
+                  <div class="stock-faible-hint">
+                    <mat-icon aria-hidden="true">warning</mat-icon>
+                    Stock faible
+                  </div>
+                }
+
+                <div class="quantite-selector" role="group" aria-label="Quantité">
+                  <button mat-icon-button (click)="decrementer(p.id)" aria-label="Diminuer la quantité">
+                    <mat-icon>remove</mat-icon>
+                  </button>
+                  <span class="quantite-value" aria-live="polite">{{ getQuantite(p.id) }}</span>
+                  <button mat-icon-button (click)="incrementer(p)" aria-label="Augmenter la quantité">
+                    <mat-icon>add</mat-icon>
+                  </button>
+                </div>
+
+                <button mat-flat-button class="btn-ajouter" (click)="ajouterAuPanier(p)"
+                  [attr.aria-label]="'Ajouter ' + p.details.nom + ' au panier'">
+                  <mat-icon>add_shopping_cart</mat-icon>
+                  <span class="btn-ajouter-label">Ajouter</span>
+                  @if (quantiteEnPanier(p.id) > 0) {
+                    <span class="deja-en-panier">({{ quantiteEnPanier(p.id) }} déjà)</span>
+                  }
+                </button>
+              }
+            </div>
+
+          </div>
+
+        } @empty {
+          <div class="empty-state" role="status">
+            <mat-icon aria-hidden="true">inventory_2</mat-icon>
+            <p>Aucun produit disponible</p>
+          </div>
+        }
+      </div>
+
+      <!-- ── Pagination ── -->
+      @if (totalPages() > 1) {
+        <nav class="pagination" aria-label="Navigation des pages">
+
+          <span class="pagination-info">
+            {{ totalProduits() }} produit{{ totalProduits() > 1 ? 's' : '' }}
+            &nbsp;·&nbsp;
+            Page {{ currentPage() }} / {{ totalPages() }}
+          </span>
+
+          <div class="pagination-controls">
+
+            <button
+              class="page-btn page-btn--nav"
+              [disabled]="currentPage() === 1"
+              (click)="prevPage()"
+              aria-label="Page précédente">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+
+            @for (p of pageNumbers(); track $index) {
+              @if (p === '...') {
+                <span class="page-ellipsis">…</span>
+              } @else {
+                <button
+                  class="page-btn"
+                  [class.page-btn--active]="p === currentPage()"
+                  (click)="goToPage(p)"
+                  [attr.aria-current]="p === currentPage() ? 'page' : null">
+                  {{ p }}
+                </button>
+              }
+            }
+
+            <button
+              class="page-btn page-btn--nav"
+              [disabled]="currentPage() === totalPages()"
+              (click)="nextPage()"
+              aria-label="Page suivante">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+
+          </div>
+
+        </nav>
+      }
+
+    </div>
+  }
+
+  <!-- ══ VUE PANIER ══ -->
+  @if (vue() === 'panier') {
+    <div class="content-area panier-view">
+
+      <div class="panier-header">
+        <button mat-icon-button (click)="vue.set('catalogue')" aria-label="Retour au catalogue">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <h2>Mon Panier</h2>
+        @if (panier().articles.length > 0) {
+          <button mat-button color="warn" (click)="viderPanier()">
+            <mat-icon>delete_sweep</mat-icon>
+            Tout vider
+          </button>
+        }
+      </div>
+
+      @if (panier().articles.length > 0) {
+        <div class="panier-articles" role="list">
+
+          @for (article of panier().articles; track article.idProduit) {
+            <div class="panier-article" role="listitem">
+
+              @if (article.image) {
+                <img [src]="article.image" [alt]="article.nom" class="article-image" loading="lazy" />
+              } @else {
+                <div class="article-image no-image" aria-hidden="true">
+                  <mat-icon>image_not_supported</mat-icon>
+                </div>
+              }
+
+              <div class="article-info">
+                <span class="article-nom">{{ article.nom }}</span>
+                <span class="article-prix">{{ article.prix | number:'1.0-0' }} Ar / unité</span>
+              </div>
+
+              <div class="article-quantite" role="group" [attr.aria-label]="'Quantité de ' + article.nom">
+                <button mat-icon-button (click)="modifierQuantite(article.idProduit, -1)"
+                  aria-label="Diminuer la quantité">
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <span aria-live="polite">{{ article.quantite }}</span>
+                <button mat-icon-button (click)="modifierQuantite(article.idProduit, +1)"
+                  aria-label="Augmenter la quantité">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+
+              <span class="article-sous-total">{{ article.sousTotal | number:'1.0-0' }} Ar</span>
+
+              <button mat-icon-button color="warn"
+                (click)="supprimerArticle(article.idProduit)"
+                [attr.aria-label]="'Supprimer ' + article.nom + ' du panier'">
+                <mat-icon>close</mat-icon>
+              </button>
+
+            </div>
+          }
+
+          <div class="panier-footer">
+            <div class="panier-total">
+              <span>Total</span>
+              <strong>{{ totalPanier() | number:'1.0-0' }} Ar</strong>
+            </div>
+            <button mat-flat-button class="btn-commander" (click)="passerCommande()">
+              <mat-icon>check_circle</mat-icon>
+              Passer la commande
+            </button>
+          </div>
+
+        </div>
+      } @else {
+        <div class="empty-state" role="status">
+          <mat-icon aria-hidden="true">shopping_cart</mat-icon>
+          <p>Votre panier est vide</p>
+          <button mat-flat-button (click)="vue.set('catalogue')">
+            Voir les produits
+          </button>
+        </div>
+      }
+
+    </div>
+  }
+
+</div>

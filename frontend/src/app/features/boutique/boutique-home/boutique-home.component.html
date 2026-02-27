@@ -1,0 +1,98 @@
+<app-boutique-navbar />
+
+<!-- Banner contextuel mode édition -->
+@if (editMode()) {
+  <div class="edit-banner" role="status" aria-live="polite">
+    <mat-icon>edit</mat-icon>
+    <span>Mode édition activé — cliquez sur un produit pour le modifier, supprimer ou gérer sa promotion</span>
+    <button mat-stroked-button class="edit-banner-add" (click)="openProduitForm()">
+      <mat-icon>add</mat-icon> Nouveau produit
+    </button>
+    <button mat-icon-button class="edit-banner-close" (click)="toggleEditMode()" aria-label="Quitter le mode édition">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+}
+
+<div class="boutique-container" [class.edit-active]="editMode()">
+  <main class="content-area">
+
+    <app-filter-chips
+      [items]="categoryItems()"
+      [selected]="selectedCategory()"
+      (select)="onCategoryChange($event)"
+      allLabel="Toutes les catégories"
+    />
+
+    <app-product-grid
+      [produits]="filteredProduits()"
+      [editMode]="editMode()"
+      [promotionsMap]="promotionsMap()"
+      (produitDeleted)="onProduitDeleted($event)"
+      (produitUpdated)="onProduitUpdated($event)"
+      (edit)="openProduitForm($event)"
+      (promo)="openPromotionForm($event)"
+      (stopPromo)="supprimerPromotion($event)"
+    ></app-product-grid>
+
+    <!-- ── Pagination ── -->
+    @if (totalPages() > 1) {
+      <nav class="pagination" aria-label="Navigation des pages">
+
+        <span class="pagination-info">
+          {{ totalProduits() }} produit{{ totalProduits() > 1 ? 's' : '' }}
+          &nbsp;·&nbsp;
+          Page {{ currentPage() }} / {{ totalPages() }}
+        </span>
+
+        <div class="pagination-controls">
+
+          <button
+            class="page-btn page-btn--nav"
+            [disabled]="currentPage() === 1"
+            (click)="prevPage()"
+            aria-label="Page précédente">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
+          @for (p of pageNumbers(); track $index) {
+            @if (p === '...') {
+              <span class="page-ellipsis">…</span>
+            } @else {
+              <button
+                class="page-btn"
+                [class.page-btn--active]="p === currentPage()"
+                (click)="goToPage(p)"
+                [attr.aria-current]="p === currentPage() ? 'page' : null">
+                {{ p }}
+              </button>
+            }
+          }
+
+          <button
+            class="page-btn page-btn--nav"
+            [disabled]="currentPage() === totalPages()"
+            (click)="nextPage()"
+            aria-label="Page suivante">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+
+        </div>
+
+      </nav>
+    }
+
+  </main>
+</div>
+
+<!-- FAB : toggle mode édition -->
+<button
+  class="fab-edit"
+  [class.fab-edit--active]="editMode()"
+  (click)="toggleEditMode()"
+  mat-fab
+  [matTooltip]="editMode() ? 'Quitter le mode édition' : 'Gérer mes produits'"
+  matTooltipPosition="left"
+  aria-label="Toggle mode édition produits">
+  <mat-icon>{{ editMode() ? 'close' : 'edit' }}</mat-icon>
+</button>
