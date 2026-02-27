@@ -48,7 +48,7 @@ app.use('/api/stock', stockRoutes);
 app.use('/api/favoris', require('./src/routes/favoriRoutes'));
 app.use('/api/notes', require('./src/routes/noteRoutes'));
 app.use('/api/dashboard', require('./src/routes/dashboardRoutes'));
-
+app.use('/api/requests', require('./src/routes/requestRoutes'));
 
 if (process.env.NODE_ENV === 'development') {
   mongoose.set('debug', true);

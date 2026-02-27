@@ -29,5 +29,5 @@ export const routes: Routes = [
   { path: 'mall/frais', component: FraisLivraisonComponent },
   { path: 'client/fidelite', loadComponent: () => import('@app/features/client/carte-fidelite/carte-fidelite.component').then(m => m.MesCartesFideliteComponent) },
   { path: 'client/commandes', loadComponent: () => import('@app/features/client/commande/commande.component').then(m => m.MesCommandesComponent) },
-
+  { path: 'mall/rental-requests', loadComponent: () => import('@app/features/mall/rental-requests/rental-requests.component').then(m => m.RentalRequestsComponent) },
 ];

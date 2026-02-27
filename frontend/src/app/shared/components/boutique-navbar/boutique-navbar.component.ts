@@ -34,7 +34,7 @@ export class BoutiqueNavbarComponent implements OnInit {
       label: 'Boutique',
       icon: 'storefront',
       links: [
-        { label: 'Mon emplacement',  path: '/boutique/mall',          icon: 'map'          },
+        { label: 'Voir les boxes',  path: '/boutique/mall',          icon: 'map'          },
         { label: 'Gestion du stock', path: '/boutique/gestion-stock', icon: 'inventory_2'  },
       ],
     },

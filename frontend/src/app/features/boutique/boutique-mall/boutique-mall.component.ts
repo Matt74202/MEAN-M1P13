@@ -1,5 +1,9 @@
-import { Component, signal, inject, OnInit, ViewChild, computed } from '@angular/core';
-import { CommonModule, DecimalPipe } from '@angular/common';
+import {
+  Component, signal, inject, OnInit, ViewChild, computed, effect
+} from '@angular/core';
+import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,12 +22,16 @@ import { UserService } from '@app/services/user.service';
 
 import { Box, Boutique, Contrat, Etage } from '@app/model/mall-models';
 
+type FluxEtape = 'contrat' | 'duree' | 'confirmation' | null;
+
 @Component({
   selector: 'app-boutique-mall',
   standalone: true,
   imports: [
     CommonModule,
     DecimalPipe,
+    DatePipe,
+    FormsModule,
     MatIconModule,
     MatButtonModule,
     MatButtonToggleModule,
@@ -37,6 +45,7 @@ import { Box, Boutique, Contrat, Etage } from '@app/model/mall-models';
 export class BoutiqueMallComponent implements OnInit {
 
   private authService     = inject(AuthService);
+  private http            = inject(HttpClient);
   private boxService      = inject(BoxService);
   private contratService  = inject(ContratService);
   private boutiqueService = inject(BoutiqueService);
@@ -46,40 +55,55 @@ export class BoutiqueMallComponent implements OnInit {
   @ViewChild(BoutiqueMallMapComponent) mallMapComp?: BoutiqueMallMapComponent;
 
   private readonly boutiqueId = this.authService.getProfileId() ?? '';
+  private readonly API        = 'http://localhost:5000/api';
 
-  // ── State ───────────────────────────────────────────────────────────────────
+  // ── State global ──────────────────────────────────────────────────────────
   isLoading    = signal(true);
   currentEtage = signal<Etage>('RC');
   viewMode     = signal<'map' | 'list'>('map');
 
-  // ── Données mall (TOUS étages) ──────────────────────────────────────────────
+  // ── Données mall ──────────────────────────────────────────────────────────
   private toutesBoxes: Box[] = [];
-  boxs      = signal<Box[]>([]);   // ← signal pour que computed() le track
+  boxs      = signal<Box[]>([]);
   contrats:  Contrat[]  = [];
   boutiques: Boutique[] = [];
   users:     any[]      = [];
 
-  // ── Ma boutique (persistante, ne change pas avec l'étage) ──────────────────
   maBoutique  = signal<Boutique | null>(null);
   maBox       = signal<Box | null>(null);
 
-  // ── Statistiques (étage courant) ────────────────────────────────────────────
-  nbBoxesLibres    = signal(0);
-  nbBoxesOccupees  = signal(0);
-  nbBoxesTotal     = signal(0);
+  nbBoxesLibres   = signal(0);
+  nbBoxesOccupees = signal(0);
+  nbBoxesTotal    = signal(0);
 
-  // ── Filtre taille ───────────────────────────────────────────────────────────
   filtreTaille = signal<'Petit' | 'Moyen' | 'Grand' | null>(null);
 
-  // ── Mapping dimensions → taille réelle ─────────────────────────────────────
-  // 140×140 = Petit (4m×4m) | 200×140 = Moyen (4m×8m) | 250×140 = Grand (10m×12m)
+  // ── Flux demande ──────────────────────────────────────────────────────────
+  fluxEtape         = signal<FluxEtape>(null);
+  boxSelectionnee   = signal<Box | null>(null);
+  contratLuApprouve = signal(false);
+  dureeSelectionnee = signal<number>(24);
+  isEnvoi           = signal(false);
+
+  // ── Dates estimées ────────────────────────────────────────────────────────
+  // Dates calculées une seule fois via effect — stable, pas de boucle
+  readonly dateDebut = new Date();
+  dateFin = signal<Date>(this._calculerDateFin(24));
+
+  private _calculerDateFin(duree: number): Date {
+    const d = new Date();
+    d.setMonth(d.getMonth() + duree);
+    d.setDate(d.getDate() - 1);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }
+
   private readonly TAILLES: { w: number; h: number; label: 'Petit' | 'Moyen' | 'Grand'; reel: string }[] = [
     { w: 140, h: 140, label: 'Petit', reel: '4m × 4m'   },
     { w: 200, h: 140, label: 'Moyen', reel: '4m × 8m'   },
     { w: 250, h: 140, label: 'Grand', reel: '10m × 12m'  },
   ];
 
-  // ── Boxes libres pour la vue liste (réactif car dépend de boxs signal) ──────
   boxesLibres = computed(() => {
     const boxIdsOccupees = new Set(
       this.contrats
@@ -94,21 +118,25 @@ export class BoutiqueMallComponent implements OnInit {
 
   readonly etages: { value: Etage; label: string }[] = [
     { value: 'RC', label: 'Rez-de-chaussée' },
-    { value: 'FC', label: '1ᵉʳ étage' },
+    { value: 'FC', label: '1ᵉʳ étage'       },
   ];
-
   readonly tailles: ('Petit' | 'Moyen' | 'Grand')[] = ['Petit', 'Moyen', 'Grand'];
   readonly emptyFavoris = new Set<string>();
+  readonly durees = [6, 12, 18, 24, 36];
 
-  ngOnInit() {
-    this.loadAll();
+  constructor() {
+    // Recalcule dateFin uniquement quand dureeSelectionnee change — UNE SEULE FOIS
+    effect(() => {
+      this.dateFin.set(this._calculerDateFin(this.dureeSelectionnee()));
+    });
   }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  ngOnInit() { this.loadAll(); }
 
   private loadAll() {
     this.isLoading.set(true);
-
     forkJoin({
-      // Charger les boxes des DEUX étages en parallèle
       boxesRC:   this.boxService.getBoxes('RC').pipe(catchError(() => of([]))),
       boxesFC:   this.boxService.getBoxes('FC').pipe(catchError(() => of([]))),
       contrats:  this.contratService.getContrats({ statut: 'ACTIF' }).pipe(catchError(() => of([]))),
@@ -120,41 +148,28 @@ export class BoutiqueMallComponent implements OnInit {
         this.contrats    = contrats  || [];
         this.boutiques   = boutiques || [];
         this.users       = users     || [];
-
-        // Résoudre ma boutique/box UNE SEULE FOIS sur toutes les boxes
         this.resoudreContexte();
-
-        // Filtrer les boxes affichées pour l'étage courant
         this.filtrerBoxesEtage();
         this.calculerStats();
         this.isLoading.set(false);
-
-        setTimeout(() => this.mallMapComp?.forceRedraw(), 50);
+        setTimeout(() => { try { this.mallMapComp?.forceRedraw(); } catch(e) {} }, 100);
       },
       error: () => this.isLoading.set(false),
     });
   }
 
-  // ── Résout ma boutique/box sur l'ensemble des boxes (tous étages) ──────────
   private resoudreContexte() {
-    const boutique = this.boutiques.find(
-      b => b._id?.toString() === this.boutiqueId
-    );
+    const boutique = this.boutiques.find(b => b._id?.toString() === this.boutiqueId);
     this.maBoutique.set(boutique ?? null);
-
     const contrat = this.contrats.find(
       c => c.idBoutique?.toString() === this.boutiqueId && c.statut === 'ACTIF'
     );
-
     if (contrat) {
       const boxId = (contrat as any).idBox?.toString() ?? (contrat as any).boxId?.toString() ?? '';
-      // Cherche dans TOUTES les boxes, pas juste celles de l'étage
-      const box = this.toutesBoxes.find(b => b._id?.toString() === boxId);
-      this.maBox.set(box ?? null);
+      this.maBox.set(this.toutesBoxes.find(b => b._id?.toString() === boxId) ?? null);
     }
   }
 
-  // ── Met à jour boxs (signal) pour l'étage affiché ─────────────────────────
   private filtrerBoxesEtage() {
     this.boxs.set(this.toutesBoxes.filter(b => b.etage === this.currentEtage()));
   }
@@ -166,39 +181,100 @@ export class BoutiqueMallComponent implements OnInit {
         .map(c => (c as any).idBox?.toString() ?? (c as any).boxId?.toString() ?? '')
     );
     const current = this.boxs();
-    const libres   = current.filter(b => !boxIdsOccupees.has(b._id?.toString() ?? '') && b.statut === 'LIBRE').length;
-    const occupees = current.filter(b =>  boxIdsOccupees.has(b._id?.toString() ?? '')).length;
-
-    this.nbBoxesLibres.set(libres);
-    this.nbBoxesOccupees.set(occupees);
+    this.nbBoxesLibres.set(current.filter(b => !boxIdsOccupees.has(b._id?.toString() ?? '') && b.statut === 'LIBRE').length);
+    this.nbBoxesOccupees.set(current.filter(b => boxIdsOccupees.has(b._id?.toString() ?? '')).length);
     this.nbBoxesTotal.set(current.length);
   }
 
-  // ── Changement d'étage — PAS de rechargement, juste un filtre ─────────────
   setEtage(etage: Etage) {
     if (this.currentEtage() === etage) return;
     this.currentEtage.set(etage);
     this.filtrerBoxesEtage();
     this.calculerStats();
-    // maBox reste inchangé — il pointe toujours vers la box du gérant
-    setTimeout(() => this.mallMapComp?.forceRedraw(), 50);
+    setTimeout(() => { try { this.mallMapComp?.forceRedraw(); } catch(e) {} }, 100);
   }
 
-  setViewMode(mode: 'map' | 'list') {
-    this.viewMode.set(mode);
-  }
+  setViewMode(mode: 'map' | 'list') { this.viewMode.set(mode); }
 
-  // ── Louer une box ──────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // FLUX DEMANDE
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** Étape 1 — ouvrir le modal avec les clauses */
   louerBox(box: Box) {
-    // À connecter à votre logique métier (ex: ouvrir un dialog de contrat)
-    this.snackBar.open(
-      `Demande de location pour la box ${box.nom} envoyée`,
-      'OK',
-      { duration: 3000 }
-    );
+    this.boxSelectionnee.set(box);
+    this.contratLuApprouve.set(false);
+    this.dureeSelectionnee.set(24);
+    this.fluxEtape.set('contrat');
   }
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
+  fermerFlux() {
+    this.fluxEtape.set(null);
+    this.boxSelectionnee.set(null);
+    this.contratLuApprouve.set(false);
+    this.isEnvoi.set(false);
+  }
+
+  /** Étape 2 — passer au choix de durée (checkbox validée) */
+  passerADuree() {
+    if (!this.contratLuApprouve()) return;
+    this.fluxEtape.set('duree');
+  }
+
+  retourContrat() { this.fluxEtape.set('contrat'); }
+
+  /**
+   * Étape 3 — POST /api/requests
+   *
+   * rentalController.createRequest attend :
+   *   { boxId: string, message: string, dureeMois: number }
+   *   + Header Authorization: Bearer <token JWT rôle 'boutique'>
+   *
+   * En cas de succès → statut 'pending', l'admin validera ensuite.
+   */
+  envoyerDemande() {
+    const box = this.boxSelectionnee();
+    if (!box) return;
+
+    this.isEnvoi.set(true);
+
+    const token = this.authService.getToken?.() ?? '';
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    });
+
+    const payload = {
+      boxId:     box._id?.toString(),
+      userId:    this.boutiqueId,           // envoyé dans le body car pas de middleware auth
+      message:   'Demande via plan du mall',
+      dureeMois: this.dureeSelectionnee(),
+    };
+
+    this.http
+      .post<{ success: boolean; message: string; request: any }>(
+        `${this.API}/requests`,
+        payload,
+        { headers }
+      )
+      .subscribe({
+        next: () => {
+          this.isEnvoi.set(false);
+          this.fluxEtape.set('confirmation');
+          this.loadAll(); // rafraîchit les boxes (le box reste 'libre' jusqu'à validation admin)
+        },
+        error: (err) => {
+          this.isEnvoi.set(false);
+          // Le backend renvoie err.error.message dans tous les cas d'erreur
+          const msg = err.error?.message ?? 'Une erreur est survenue. Veuillez réessayer.';
+          this.snackBar.open(msg, 'Fermer', { duration: 5000 });
+        },
+      });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────────────────────────────────────
   get maBoxEtage(): string {
     return this.maBox()?.etage === 'RC' ? 'Rez-de-chaussée' : '1ᵉʳ étage';
   }
@@ -215,7 +291,6 @@ export class BoutiqueMallComponent implements OnInit {
       (t.w === w && t.h === h) || (t.w === h && t.h === w)
     );
     if (match) return match.label;
-    // Fallback par surface si dimensions inconnues
     const s = w * h;
     if (s <= 140 * 140) return 'Petit';
     if (s <= 200 * 140) return 'Moyen';
@@ -238,7 +313,6 @@ export class BoutiqueMallComponent implements OnInit {
       (t.w === w && t.h === h) || (t.w === h && t.h === w)
     );
     if (match) {
-      // Calculer la surface réelle à partir du label
       const surfaces: Record<string, number> = { Petit: 16, Moyen: 32, Grand: 120 };
       return surfaces[match.label]?.toString() ?? '—';
     }

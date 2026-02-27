@@ -72,7 +72,10 @@ export class CarteFideliteConfigComponent implements OnInit {
 
   loadBoutique() {
     this.carteService.getBoutique(this.boutiqueId).subscribe({
-      next: boutique => this.nomBoutique.set(boutique.nom),
+      next: boutique => {
+        console.log('boutique reçue:', boutique); // ← regarde la structure réelle
+        this.nomBoutique.set(boutique.nom);
+      },
       error: () => this.nomBoutique.set('Boutique'),
     });
   }

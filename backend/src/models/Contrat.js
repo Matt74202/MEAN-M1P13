@@ -4,12 +4,12 @@ const contratSchema = new mongoose.Schema({
   idBoutique: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Boutique',
-    required: false,  // optionnel
+    required: false,
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: false,  // optionnel
+    required: false,
   },
   idBox: {
     type: mongoose.Schema.Types.ObjectId,
@@ -39,18 +39,15 @@ const contratSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Validation: dateFin doit être après dateDebut
-contratSchema.pre('save', function(next) {
+contratSchema.pre('save', async function() {
   if (!this.idBoutique && !this.userId) {
-    return next(new Error('Un contrat doit avoir soit idBoutique soit userId'));
+    throw new Error('Un contrat doit avoir soit idBoutique soit userId');
   }
   if (this.dateFin <= this.dateDebut) {
-    return next(new Error('La date de fin doit être postérieure à la date de début'));
+    throw new Error('La date de fin doit être postérieure à la date de début');
   }
-  next();
 });
 
-// Indexes utiles
 contratSchema.index({ idBoutique: 1 });
 contratSchema.index({ idBox: 1 });
 contratSchema.index({ statut: 1 });

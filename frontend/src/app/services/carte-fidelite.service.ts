@@ -43,6 +43,6 @@ export class CarteFideliteService {
   }
 
   getBoutique(boutiqueId: string): Observable<{ nom: string }> {
-    return this.http.get<{ nom: string }>(`${environment.apiUrl}/boutique/${boutiqueId}`);
+    return this.http.get<{ nom: string }>(`${environment.apiUrl}/boutiques/${boutiqueId}`);
   }
 }
