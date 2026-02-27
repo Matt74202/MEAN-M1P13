@@ -1,10 +1,23 @@
+// ── Page shell ─────────────────────────────────────────────────────────────────
+// Makes the navbar sticky at the top and the content area scrollable beneath it.
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg-main);
+}
+
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+// ── Frais container ────────────────────────────────────────────────────────────
 .frais-container {
   max-width: 900px;
   margin: 0 auto;
   padding: 2.5rem 2rem;
   font-family: 'Garet', system-ui, sans-serif;
-  background: var(--bg-main);
-  min-height: 100vh;
 }
 
 .header {
@@ -44,7 +57,7 @@
       .mat-mdc-text-field-wrapper {
         background: var(--bg-main);
       }
-      
+
       .mat-mdc-form-field-focus-overlay {
         background-color: var(--accent);
       }
@@ -100,20 +113,20 @@
     align-items: center;
     gap: 0.5rem;
     font-family: 'Garet', sans-serif;
-    
+
     &[color="primary"] {
       background-color: var(--accent);
       color: white;
-      
+
       &:hover {
         background-color: #6b7d5e;
       }
     }
-    
+
     &[mat-stroked-button] {
       border-color: var(--border);
       color: var(--text-primary);
-      
+
       &:hover {
         background-color: var(--bg-main);
         border-color: var(--accent);
@@ -122,9 +135,14 @@
   }
 }
 
+// ── Responsive ─────────────────────────────────────────────────────────────────
 @media (max-width: 768px) {
   .frais-container {
     padding: 1.5rem 1rem;
+  }
+
+  .header h1 {
+    font-size: 1.7rem;
   }
 
   .tranche-fields {
@@ -133,13 +151,19 @@
     .separator {
       display: none;
     }
+
+    .prix-field {
+      min-width: unset;
+      width: 100%;
+    }
   }
 
   .actions {
     flex-direction: column;
-    
+
     button {
       width: 100%;
+      justify-content: center;
     }
   }
 }

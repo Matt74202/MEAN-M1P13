@@ -1,22 +1,15 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '@app/services/auth.service';
-import { Router } from '@angular/router';
-
-// Import de la directive routerLink (pas tout RouterModule)
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    RouterLink   // ← ICI : juste RouterLink pour que <a routerLink="/register"> fonctionne
-  ],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrl: './login.component.scss',
 })
 export class LoginComponent {
 
@@ -27,106 +20,41 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
   ) {
-    // TOUS LES VALIDATORS DÉSACTIVÉS POUR FORCER LE TEST
     this.form = this.fb.group({
-      mail: [''],
-      mdp: ['']
-    });
-
-    // Log constant pour voir ce qui se passe en live
-    this.form.statusChanges.subscribe(status => {
-      console.log('[DEBUG STATUS CHANGE]', {
-        status,
-        valid: this.form.valid,
-        dirty: this.form.dirty,
-        touched: this.form.touched,
-        values: this.form.value,
-        mailErrors: this.form.get('mail')?.errors,
-        mdpErrors: this.form.get('mdp')?.errors
-      });
-    });
-
-    // Log initial
-    console.log('[DEBUG INIT] Formulaire initialisé', {
-      valid: this.form.valid,
-      values: this.form.value
+      mail: ['', [Validators.required, Validators.email]],
+      mdp:  ['', Validators.required],
     });
   }
 
   onSubmit() {
-    console.log('==================================================');
-    console.log('[onSubmit] FONCTION APPELEE !');
-    console.log('==================================================');
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
-    console.log('État actuel :', {
-      valid: this.form.valid,
-      dirty: this.form.dirty,
-      touched: this.form.touched,
-      values: this.form.value
-    });
-
-    // On force markAllAsTouched pour voir si ça change quelque chose
-    this.form.markAllAsTouched();
-    console.log('Après markAllAsTouched → valid ?', this.form.valid);
-
-    console.log('On continue → extraction valeurs');
-    const mail = this.form.get('mail')?.value || '';
-    const mdp = this.form.get('mdp')?.value || '';
-
-    console.log('Valeurs envoyées au service :', { mail, mdp });
-
-    this.isLoading = true;
+    const { mail, mdp } = this.form.value;
+    this.isLoading    = true;
     this.errorMessage = null;
 
     this.authService.login(mail, mdp).subscribe({
       next: (response) => {
         this.isLoading = false;
-        if (response.user?.role === 'supermarche') {
-          this.router.navigate(['/edition']);
-        } else if (response.user?.role === 'boutique') {
-          this.router.navigate(['/boutique']); 
-        } else {
-          this.router.navigate(['/client']);
-        }
+        this.redirectByRole(response.user?.role);
       },
       error: (err) => {
-        console.error('[ERREUR] :', err);
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || err.message || 'Erreur connexion';
-      }
+        this.isLoading    = false;
+        this.errorMessage = err.error?.message || 'Identifiants incorrects';
+      },
     });
   }
 
-  // Bouton test : appelle login SANS UTILISER LE FORM
-  testLoginHardcoded() {
-    console.log('==================================================');
-    console.log('[TEST HARDCODED] Appel direct sans form !');
-    console.log('==================================================');
-
-    const mail = 'admin@supermarche.mg';
-    const mdp = 'admin';
-
-    console.log('Test avec :', { mail, mdp });
-
-    this.isLoading = true;
-
-    this.authService.login(mail, mdp).subscribe({
-      next: (response) => {
-        console.log('[TEST SUCCÈS] :', response);
-        this.isLoading = false;
-        if (response.user?.role === 'supermarche') {
-          this.router.navigate(['/edition']);
-        } else {
-          this.router.navigate(['/shop']);
-        }
-      },
-      error: (err) => {
-        console.error('[TEST ÉCHEC] :', err);
-        this.isLoading = false;
-        this.errorMessage = 'Test échoué : ' + (err.message || 'Erreur');
-      }
-    });
+  private redirectByRole(role?: string) {
+    switch (role) {
+      case 'supermarche': this.router.navigate(['/mall']);  break;
+      case 'boutique':    this.router.navigate(['/boutique']); break;
+      default:            this.router.navigate(['/client']);   break;
+    }
   }
 }

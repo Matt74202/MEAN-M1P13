@@ -9,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { FraisLivraisonService, TrancheLivraison } from '@app/services/frais.service';
+import { MallNavbarComponent } from '@shared/components/mall-navbar/mall-navbar.component'; 
 
 @Component({
   selector: 'app-frais-livraison',
@@ -22,6 +23,7 @@ import { FraisLivraisonService, TrancheLivraison } from '@app/services/frais.ser
     MatInputModule,
     MatFormFieldModule,
     MatSnackBarModule,
+    MallNavbarComponent, // ← added
   ],
   templateUrl: './frais-livraison.component.html',
   styleUrl: './frais-livraison.component.scss',

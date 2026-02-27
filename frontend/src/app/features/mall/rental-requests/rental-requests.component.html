@@ -1,3 +1,5 @@
+<app-mall-navbar />
+
 <div class="requests-container">
 
   <!-- ══ HEADER ══ -->
@@ -8,7 +10,7 @@
     </div>
     <button mat-stroked-button (click)="loadRequests()" [disabled]="isLoading()">
       <mat-icon>refresh</mat-icon>
-      Actualiser
+      <span class="btn-label">Actualiser</span>
     </button>
   </div>
 
@@ -59,7 +61,10 @@
     } @else {
       <div class="requests-list">
         @for (req of requestsFiltrees; track req._id) {
-          <mat-card class="request-card" [class.card-approved]="req.statut === 'approved'" [class.card-rejected]="req.statut === 'rejected'">
+
+          <mat-card class="request-card"
+            [class.card-approved]="req.statut === 'approved'"
+            [class.card-rejected]="req.statut === 'rejected'">
 
             <div class="card-side-bar"></div>
 
@@ -149,13 +154,14 @@
                     } @else {
                       <mat-icon>check</mat-icon>
                     }
-                    Valider la demande
+                    Valider
                   </button>
                 </div>
               }
 
             </div>
           </mat-card>
+
         }
       </div>
     }

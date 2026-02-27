@@ -1,4 +1,4 @@
-// ── Variables (même système que boutique-mall) ─────────────────────────────────
+// ── Variables ──────────────────────────────────────────────────────────────────
 $bg:          #f8f9fa;
 $card:        #ffffff;
 $border:      #e9ecef;
@@ -12,7 +12,6 @@ $accent:      #5a7a4a;
 $accent-soft: #f0f5ec;
 $accent-mid:  #b8cfac;
 
-// Statuts
 $occupied-color:  #5a7a4a;
 $occupied-bg:     #f0f5ec;
 $occupied-border: #b8cfac;
@@ -25,24 +24,60 @@ $nonfunc-color:   #ef4444;
 $nonfunc-bg:      #fff5f5;
 $nonfunc-border:  #fecaca;
 
-// ── Reset ──────────────────────────────────────────────────────────────────────
+$edit-accent:     #f59e0b;
+
 * { box-sizing: border-box; }
 
-// ── Wrapper ─────────────────────────────────────────────────────────────────────
+// ── Wrapper ────────────────────────────────────────────────────────────────────
 .mall-canvas-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: calc(100vh - 64px); // soustrait hauteur navbar
   width: 100%;
   position: relative;
   background: $bg;
   font-family: 'Garet', system-ui, sans-serif;
   color: $text;
+
+  @media (max-width: 960px) {
+    min-height: calc(100vh - 56px);
+  }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// HEADER
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Loading ────────────────────────────────────────────────────────────────────
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba($bg, 0.85);
+  backdrop-filter: blur(2px);
+  gap: 1rem;
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: $text-muted;
+  }
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid $border;
+  border-top-color: $accent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── Header ─────────────────────────────────────────────────────────────────────
 .mall-header {
   display: flex;
   justify-content: space-between;
@@ -50,22 +85,22 @@ $nonfunc-border:  #fecaca;
   padding: 0.875rem 2rem;
   background: $card;
   border-bottom: 1px solid $border;
-  flex-wrap: wrap;
   gap: 1rem;
+  flex-wrap: wrap;
 
   @media (max-width: 768px) {
     padding: 0.75rem 1rem;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 0.75rem;
   }
 }
 
-// Sélecteur d'étage — même style que boutique-mall
+// ── Étages ─────────────────────────────────────────────────────────────────────
 .etage-selector {
   display: flex;
   gap: 0.4rem;
 
-  // Override Material raised button pour coller au style
   button[mat-raised-button] {
     font-family: 'Garet', sans-serif;
     font-size: 0.82rem;
@@ -74,36 +109,31 @@ $nonfunc-border:  #fecaca;
     min-width: unset;
     padding: 0 1rem;
     height: 34px;
-    letter-spacing: 0.2px;
     box-shadow: none !important;
-    transition: all 0.15s;
     border: 1px solid $border;
 
-    // État inactif
     &:not([color="primary"]) {
       background: $card !important;
       color: $text-muted !important;
-      &:hover:not([disabled]) {
-        border-color: $accent-mid;
-        color: $text !important;
-      }
+      &:hover:not([disabled]) { border-color: $accent-mid; color: $text !important; }
     }
 
-    // État actif (primary)
     &[color="primary"] {
       background: $text !important;
-      color: #ffffff !important;
+      color: #fff !important;
       border-color: $text;
       font-weight: 700;
     }
 
-    &[disabled] { opacity: 0.6; cursor: not-allowed; }
+    &[disabled] { opacity: 0.55; cursor: not-allowed; }
+  }
 
-    @media (max-width: 768px) { flex: 1; }
+  @media (max-width: 768px) {
+    button { flex: 1; justify-content: center; }
   }
 }
 
-// Toggle carte / liste
+// ── Toggle vue ─────────────────────────────────────────────────────────────────
 .view-mode-toggle {
   border: 1px solid $border;
   border-radius: 8px;
@@ -121,27 +151,23 @@ $nonfunc-border:  #fecaca;
     padding: 0 0.875rem;
     display: inline-flex;
     align-items: center;
+    gap: 0.3rem;
 
-    mat-icon {
-      font-size: 15px;
-      width: 15px;
-      height: 15px;
-      margin-right: 0.3rem;
-    }
-
-    span { letter-spacing: 0.2px; }
+    mat-icon { font-size: 15px; width: 15px; height: 15px; }
 
     &:hover { color: $text; background: $bg; }
   }
 
   ::ng-deep .mat-button-toggle-checked {
     background: $text !important;
-    color: #ffffff !important;
+    color: #fff !important;
     font-weight: 700;
   }
 
-  ::ng-deep .mat-button-toggle-separator {
-    border-color: $border;
+  ::ng-deep .mat-button-toggle-separator { border-color: $border; }
+
+  .toggle-label {
+    @media (max-width: 480px) { display: none; }
   }
 
   @media (max-width: 768px) {
@@ -149,14 +175,74 @@ $nonfunc-border:  #fecaca;
     ::ng-deep .mat-button-toggle {
       flex: 1;
       justify-content: center;
-      span { display: none; }
     }
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SECTION FILTRES
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Bandeau édition ────────────────────────────────────────────────────────────
+.edit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 2rem;
+  background: #fffbeb;
+  border-bottom: 2px solid $edit-accent;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    padding: 0.6rem 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.edit-banner-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: darken($edit-accent, 20%);
+
+  mat-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+}
+
+.add-box-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  button[mat-raised-button] {
+    font-family: 'Garet', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 8px;
+    min-width: unset;
+    box-shadow: none !important;
+    height: 34px;
+    padding: 0 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  }
+
+  .btn-label { font-weight: 700; }
+  .btn-sublabel {
+    opacity: 0.7;
+    font-size: 0.7rem;
+    @media (max-width: 480px) { display: none; }
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    button { flex: 1; justify-content: center; }
+  }
+}
+
+// ── Filtres ────────────────────────────────────────────────────────────────────
 .filter-section {
   padding: 0.75rem 2rem;
   background: $card;
@@ -164,7 +250,7 @@ $nonfunc-border:  #fecaca;
 
   @media (max-width: 768px) { padding: 0.75rem 1rem; }
 
-  .filter-group .filter-title {
+  .filter-title {
     font-size: 0.62rem;
     font-weight: 700;
     color: $text-light;
@@ -174,119 +260,84 @@ $nonfunc-border:  #fecaca;
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MODE ÉDITION — bandeau d'ajout
-// ═══════════════════════════════════════════════════════════════════════════════
-.add-box-controls {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.75rem 2rem;
-  background: #fffbeb;
-  border-bottom: 2px solid #f59e0b;
-  justify-content: center;
-  flex-wrap: wrap;
-
-  button[mat-raised-button] {
-    font-family: 'Garet', sans-serif;
-    font-size: 0.82rem;
-    font-weight: 600;
-    border-radius: 8px;
-    min-width: unset;
-    box-shadow: none !important;
-    height: 34px;
-    padding: 0 1rem;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.75rem 1rem;
-    button { flex: 1; }
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// PIXI CONTAINER
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── PIXI container ─────────────────────────────────────────────────────────────
 .pixi-container {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #edeee9;   // gris légèrement verdâtre, neutre
-  max-height: calc(100vh - 200px);
-  min-height: 500px;
-}
+  background: #edeee9;
+  min-height: 480px;
+  max-height: calc(100vh - 180px);
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MODE CARTES
-// ═══════════════════════════════════════════════════════════════════════════════
-.cards-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem;
-  background: $bg;
-  max-width: 1280px;
-  margin: 0 auto;
-  width: 100%;
-
-  @media (max-width: 768px) { padding: 1rem; }
-
-  .status-group {
-    margin-bottom: 2.5rem;
-    &:last-child { margin-bottom: 0; }
+  @media (max-width: 768px) {
+    min-height: 360px;
+    max-height: calc(100vh - 160px);
   }
 }
 
-// ── Header de groupe (Occupé / Libre / Non fonctionnel) ────────────────────────
+// ── Vue liste ──────────────────────────────────────────────────────────────────
+.cards-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 2rem 3rem;
+  background: $bg;
+
+  @media (max-width: 768px) { padding: 1rem 1rem 2rem; }
+}
+
+// ── Groupe statut ──────────────────────────────────────────────────────────────
+.status-group {
+  margin-bottom: 2rem;
+  &:last-child { margin-bottom: 0; }
+}
+
 .status-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
+  padding: 0.7rem 1rem;
   background: $card;
   border: 1px solid $border;
   border-radius: 10px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.875rem;
   cursor: pointer;
-  transition: box-shadow 0.15s;
   user-select: none;
+  transition: box-shadow 0.15s;
 
-  &:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); }
-  &:active { transform: scale(0.998); }
+  &:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 
   .status-header-left {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.5rem;
 
     .expand-icon {
       color: $text-light;
-      font-size: 1.3rem;
-      width: 1.3rem;
-      height: 1.3rem;
-      transition: transform 0.2s;
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
     }
 
     h3 {
       margin: 0;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 700;
       color: $text;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      font-family: 'Garet', sans-serif;
     }
   }
 
   .count-badge {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    padding: 0.2rem 0.7rem;
+    padding: 0.15rem 0.65rem;
     border-radius: 50px;
-    min-width: 28px;
+    min-width: 26px;
     text-align: center;
   }
 }
 
-// Badge de compteur coloré selon le groupe
 .status-group:nth-child(1) .status-header {
   border-left: 3px solid $occupied-border;
   .count-badge { background: $occupied-bg; color: $occupied-color; border: 1px solid $occupied-border; }
@@ -300,17 +351,19 @@ $nonfunc-border:  #fecaca;
   .count-badge { background: $nonfunc-bg; color: $nonfunc-color; border: 1px solid $nonfunc-border; }
 }
 
-// ── Grille ──────────────────────────────────────────────────────────────────────
+// ── Grille boxes ───────────────────────────────────────────────────────────────
 .boxes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
   gap: 1rem;
   align-items: start;
 
-  @media (max-width: 768px) { grid-template-columns: 1fr; }
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
 }
 
-// ── Carte box ───────────────────────────────────────────────────────────────────
+// ── Carte box ──────────────────────────────────────────────────────────────────
 .box-card {
   background: $card;
   border: 1px solid $border;
@@ -319,36 +372,14 @@ $nonfunc-border:  #fecaca;
   box-shadow: none;
   transition: box-shadow 0.2s, transform 0.2s;
 
-  &:hover {
-    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.07);
-    transform: translateY(-2px);
-  }
+  &:hover { box-shadow: 0 5px 16px rgba(0,0,0,0.07); transform: translateY(-2px); }
 
-  &.occupied {
-    border-left-color: $occupied-border;
-    &:hover { box-shadow: 0 5px 16px rgba(90, 122, 74, 0.1); }
-  }
+  &.occupied   { border-left-color: $occupied-border; }
+  &.libre      { border-left-color: $libre-border; }
+  &.non-functional { border-left-color: $nonfunc-border; background: $nonfunc-bg; }
 
-  &.libre {
-    border-left-color: $libre-border;
-    &:hover { box-shadow: 0 5px 16px rgba(59, 130, 246, 0.1); }
-  }
-
-  &.non-functional {
-    border-left-color: $nonfunc-border;
-    background: $nonfunc-bg;
-    &:hover { box-shadow: 0 5px 16px rgba(239, 68, 68, 0.08); }
-  }
-
-  ::ng-deep .mat-mdc-card-header {
-    padding: 0.875rem 1rem 0.5rem;
-  }
-
-  ::ng-deep .mat-mdc-card-content {
-    padding: 0.5rem 1rem 0.75rem;
-    min-height: unset;
-  }
-
+  ::ng-deep .mat-mdc-card-header  { padding: 0.875rem 1rem 0.5rem; }
+  ::ng-deep .mat-mdc-card-content { padding: 0.5rem 1rem 0.75rem; }
   ::ng-deep .mat-mdc-card-actions {
     padding: 0.5rem 1rem 0.875rem;
     margin: 0;
@@ -358,7 +389,6 @@ $nonfunc-border:  #fecaca;
   }
 }
 
-// ── Titre carte ─────────────────────────────────────────────────────────────────
 .box-card-title {
   width: 100%;
   display: flex;
@@ -369,91 +399,65 @@ $nonfunc-border:  #fecaca;
   .box-id {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.4rem;
 
-    .box-icon {
-      font-size: 1.1rem;
-      width: 1.1rem;
-      height: 1.1rem;
-      color: $text-light;
-    }
-
-    .box-name {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: $text;
-      letter-spacing: 0.2px;
-    }
+    .box-icon { font-size: 1.05rem; width: 1.05rem; height: 1.05rem; color: $text-light; }
+    .box-name { font-size: 0.92rem; font-weight: 700; color: $text; }
   }
 
   .taille-badge {
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-weight: 700;
-    padding: 0.18rem 0.55rem;
+    padding: 0.15rem 0.5rem;
     border-radius: 50px;
     background: $bg;
     color: $text-light;
     border: 1px solid $border;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 }
 
-// ── Détails box ─────────────────────────────────────────────────────────────────
 .box-details {
   display: flex;
   gap: 1rem;
   padding: 0.5rem 0 0.6rem;
   border-bottom: 1px solid $border-soft;
   margin-bottom: 0.6rem;
+  flex-wrap: wrap;
 
   .detail-row {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    font-size: 0.8rem;
+    gap: 0.3rem;
+    font-size: 0.78rem;
     color: $text-muted;
 
-    .detail-icon {
-      font-size: 0.95rem;
-      width: 0.95rem;
-      height: 0.95rem;
-      color: $text-light;
-    }
-
-    .loyer-amount {
-      color: $accent;
-      font-weight: 700;
-    }
+    .detail-icon { font-size: 0.9rem; width: 0.9rem; height: 0.9rem; color: $text-light; }
+    .loyer-amount { color: $accent; font-weight: 700; }
   }
 }
 
-// ── Info boutique ───────────────────────────────────────────────────────────────
 .boutique-info {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.45rem;
 
   .boutique-name {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
-    font-size: 0.88rem;
+    gap: 0.4rem;
+    font-size: 0.85rem;
 
-    .shop-icon {
-      font-size: 1rem;
-      width: 1rem;
-      height: 1rem;
-      color: $accent;
-    }
-
+    .shop-icon { font-size: 1rem; width: 1rem; height: 1rem; color: $accent; }
     strong { color: $text; font-weight: 600; }
   }
 
   .type-commerce-badge {
     display: inline-block;
-    padding: 0.2rem 0.65rem;
+    padding: 0.18rem 0.6rem;
     border-radius: 50px;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: white;
     align-self: flex-start;
@@ -462,83 +466,48 @@ $nonfunc-border:  #fecaca;
   .contrat-dates {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    font-size: 0.73rem;
+    gap: 0.3rem;
+    font-size: 0.72rem;
     color: $text-light;
 
-    .date-icon {
-      font-size: 0.9rem;
-      width: 0.9rem;
-      height: 0.9rem;
-    }
+    .date-icon { font-size: 0.85rem; width: 0.85rem; height: 0.85rem; }
   }
 }
 
-// ── État vide ───────────────────────────────────────────────────────────────────
 .empty-state {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0;
+  gap: 0.45rem;
+  padding: 0.3rem 0;
 
-  .empty-icon {
-    font-size: 1.1rem;
-    width: 1.1rem;
-    height: 1.1rem;
-    color: $text-light;
-    opacity: 0.6;
-  }
-
-  p {
-    margin: 0;
-    font-size: 0.78rem;
-    font-style: italic;
-    color: $text-muted;
-  }
+  .empty-icon { font-size: 1.05rem; width: 1.05rem; height: 1.05rem; color: $text-light; opacity: 0.6; }
+  p { margin: 0; font-size: 0.77rem; font-style: italic; color: $text-muted; }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// BOUTON FLOTTANT
-// ═══════════════════════════════════════════════════════════════════════════════
-.fab-edit {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: 1000;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
-  transition: transform 0.2s, box-shadow 0.2s;
-
-  &:hover {
-    transform: scale(1.06);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
-  }
-
-  @media (max-width: 768px) { bottom: 1rem; right: 1rem; }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// EMPTY MESSAGE
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── Empty message ──────────────────────────────────────────────────────────────
 .empty-message {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 5rem 2rem;
+  color: $text-light;
+  gap: 1rem;
 
-  mat-icon {
-    font-size: 3.5rem;
-    width: 3.5rem;
-    height: 3.5rem;
-    margin-bottom: 1rem;
-    opacity: 0.25;
-    color: $text-light;
-  }
+  mat-icon { font-size: 3.5rem; width: 3.5rem; height: 3.5rem; opacity: 0.25; }
+  p { margin: 0; font-size: 0.95rem; font-weight: 500; color: $text-muted; }
+}
 
-  p {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: $text-muted;
-  }
+// ── FAB ────────────────────────────────────────────────────────────────────────
+.fab-edit {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1000;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15) !important;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover { transform: scale(1.06); box-shadow: 0 6px 20px rgba(0,0,0,0.2) !important; }
+
+  @media (max-width: 768px) { bottom: 1rem; right: 1rem; }
 }

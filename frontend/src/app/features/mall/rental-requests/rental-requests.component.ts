@@ -7,6 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 
+import { MallNavbarComponent } from '@app/shared/components/mall-navbar/mall-navbar.component';
+
 interface RentalRequest {
   _id: string;
   userId:          { _id: string; nom: string; mail: string } | null;
@@ -30,6 +32,7 @@ interface RentalRequest {
     MatIconModule,
     MatSnackBarModule,
     MatChipsModule,
+    MallNavbarComponent,
   ],
   templateUrl: './rental-requests.component.html',
   styleUrl:    './rental-requests.component.scss',
@@ -42,16 +45,16 @@ export class RentalRequestsComponent implements OnInit {
   private readonly API = 'http://localhost:5000/api';
 
   isLoading   = signal(true);
-  isActioning = signal<string | null>(null); // id de la demande en cours de traitement
+  isActioning = signal<string | null>(null);
 
-  requests    = signal<RentalRequest[]>([]);
+  requests     = signal<RentalRequest[]>([]);
   filtreStatut = signal<'pending' | 'approved' | 'rejected' | 'all'>('pending');
 
   readonly filtres: { value: 'all' | 'pending' | 'approved' | 'rejected'; label: string }[] = [
-    { value: 'pending',  label: 'En attente'  },
-    { value: 'approved', label: 'Approuvées'  },
-    { value: 'rejected', label: 'Rejetées'    },
-    { value: 'all',      label: 'Toutes'      },
+    { value: 'pending',  label: 'En attente' },
+    { value: 'approved', label: 'Approuvées' },
+    { value: 'rejected', label: 'Rejetées'   },
+    { value: 'all',      label: 'Toutes'     },
   ];
 
   ngOnInit() { this.loadRequests(); }
@@ -90,7 +93,6 @@ export class RentalRequestsComponent implements OnInit {
     ).subscribe({
       next: () => {
         this.snackBar.open('✓ Demande validée — contrat créé', '', { duration: 3000 });
-        // Mettre à jour localement sans recharger
         this.requests.update(list =>
           list.map(r => r._id === request._id ? { ...r, statut: 'approved' as const } : r)
         );

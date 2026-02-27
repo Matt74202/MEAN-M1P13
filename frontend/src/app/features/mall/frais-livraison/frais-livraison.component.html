@@ -1,67 +1,80 @@
-<div class="frais-container">
+<!-- Page shell -->
+<div class="page-shell">
 
-  <div class="header">
-    <h1>Frais de Livraison</h1>
-    <p class="subtitle">Configurez les tarifs par tranche de distance</p>
-  </div>
+  <!-- Navbar -->
+  <app-mall-navbar />
 
-  <form [formGroup]="form" (ngSubmit)="save()">
+  <!-- Scrollable content -->
+  <main class="page-content">
 
-    <div class="tranches-list" formArrayName="tranches">
+    <div class="frais-container">
 
-      @for (tranche of tranches.controls; track $index) {
-        <mat-card class="tranche-card" [formGroupName]="$index">
+      <div class="header">
+        <h1>Frais de Livraison</h1>
+        <p class="subtitle">Configurez les tarifs par tranche de distance</p>
+      </div>
 
-          <div class="tranche-fields">
+      <form [formGroup]="form" (ngSubmit)="save()">
 
-            <mat-form-field appearance="outline">
-              <mat-label>Distance min (km)</mat-label>
-              <input matInput type="number" formControlName="distanceMin" />
-            </mat-form-field>
+        <div class="tranches-list" formArrayName="tranches">
 
-            <span class="separator">→</span>
+          @for (tranche of tranches.controls; track $index) {
+            <mat-card class="tranche-card" [formGroupName]="$index">
 
-            <mat-form-field appearance="outline">
-              <mat-label>Distance max (km)</mat-label>
-              <input matInput type="number" formControlName="distanceMax" placeholder="Laisser vide pour +" />
-              <mat-hint>Vide = illimité</mat-hint>
-            </mat-form-field>
+              <div class="tranche-fields">
 
-            <mat-form-field appearance="outline" class="prix-field">
-              <mat-label>Prix (Ar)</mat-label>
-              <input matInput type="number" formControlName="prix" />
-            </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Distance min (km)</mat-label>
+                  <input matInput type="number" formControlName="distanceMin" />
+                </mat-form-field>
 
-            <button mat-icon-button color="warn" type="button"
-              (click)="removeTranche($index)"
-              matTooltip="Supprimer">
-              <mat-icon>delete</mat-icon>
-            </button>
+                <span class="separator">→</span>
 
-          </div>
+                <mat-form-field appearance="outline">
+                  <mat-label>Distance max (km)</mat-label>
+                  <input matInput type="number" formControlName="distanceMax" placeholder="Laisser vide pour +" />
+                  <mat-hint>Vide = illimité</mat-hint>
+                </mat-form-field>
 
-          <div class="preview">
-            <strong>{{ tranche.value.distanceMin }} - {{ tranche.value.distanceMax ?? '+' }} km</strong>
-            : {{ tranche.value.prix | number:'1.0-0' }} Ar
-          </div>
+                <mat-form-field appearance="outline" class="prix-field">
+                  <mat-label>Prix (Ar)</mat-label>
+                  <input matInput type="number" formControlName="prix" />
+                </mat-form-field>
 
-        </mat-card>
-      }
+                <button mat-icon-button color="warn" type="button"
+                  (click)="removeTranche($index)"
+                  matTooltip="Supprimer">
+                  <mat-icon>delete</mat-icon>
+                </button>
+
+              </div>
+
+              <div class="preview">
+                <strong>{{ tranche.value.distanceMin }} - {{ tranche.value.distanceMax ?? '+' }} km</strong>
+                : {{ tranche.value.prix | number:'1.0-0' }} Ar
+              </div>
+
+            </mat-card>
+          }
+
+        </div>
+
+        <div class="actions">
+          <button mat-stroked-button type="button" (click)="addTranche()">
+            <mat-icon>add</mat-icon>
+            Ajouter une tranche
+          </button>
+
+          <button mat-flat-button color="primary" type="submit" [disabled]="isLoading()">
+            <mat-icon>save</mat-icon>
+            Enregistrer
+          </button>
+        </div>
+
+      </form>
 
     </div>
 
-    <div class="actions">
-      <button mat-stroked-button type="button" (click)="addTranche()">
-        <mat-icon>add</mat-icon>
-        Ajouter une tranche
-      </button>
-
-      <button mat-flat-button color="primary" type="submit" [disabled]="isLoading()">
-        <mat-icon>save</mat-icon>
-        Enregistrer
-      </button>
-    </div>
-
-  </form>
+  </main>
 
 </div>
