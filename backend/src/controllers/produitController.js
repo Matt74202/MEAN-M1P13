@@ -218,11 +218,18 @@ exports.getAllProduits = async (req, res) => {
       limit = 10
     } = req.query;
 
+    console.log('QUERY reçue:', req.query);
+
     const filter = {};
 
     if (boutiqueId) filter.idBoutique = boutiqueId;
-    if (categorie) filter['details.categorie'] = categorie.toLowerCase();
+
+    // Comparaison insensible à la casse → fonctionne quelle que soit la casse en base
+    if (categorie) filter['details.categorie'] = { $regex: new RegExp(`^${categorie.trim()}$`, 'i') };
+
     if (enPromotion === 'true') filter.enPromotion = true;
+
+    console.log('FILTER appliqué:', JSON.stringify(filter));
 
     const skip = (Number(page) - 1) * Number(limit);
 

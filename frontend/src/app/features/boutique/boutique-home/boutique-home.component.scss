@@ -10,7 +10,6 @@ $border:      #e8eddc;
   color: var(--text-primary);
   font-family: 'Garet', system-ui, sans-serif;
   line-height: 1.6;
-  // Décale le contenu quand le banner est présent (géré via .edit-active + padding-top du banner)
 }
 
 .content-area {
@@ -26,7 +25,7 @@ $border:      #e8eddc;
 // ── Banner mode édition ─────────────────────────────────────────────────────────
 .edit-banner {
   position: sticky;
-  top: 0; // se place juste sous la navbar (qui est sticky elle aussi)
+  top: 0;
   z-index: 80;
   display: flex;
   align-items: center;
@@ -57,7 +56,7 @@ $border:      #e8eddc;
     gap: 0.5rem;
 
     span {
-      display: none; // sur mobile le banner avec seulement le bouton + icône
+      display: none;
     }
   }
 }
@@ -110,7 +109,6 @@ $border:      #e8eddc;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
   }
 
-  // Quand édition active → rouge pour signaler "quitter"
   &--active {
     background-color: #c62828 !important;
     box-shadow: 0 4px 16px rgba(198, 40, 40, 0.35);
@@ -131,5 +129,86 @@ $border:      #e8eddc;
       width: 22px;
       height: 22px;
     }
+  }
+}
+
+// ── Pagination ─────────────────────────────────────────────────────────────────
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid $border;
+}
+
+.pagination-info {
+  font-size: 0.82rem;
+  color: #888;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.4rem;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #555;
+  font-size: 0.875rem;
+  font-family: 'Garet', system-ui, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover:not(:disabled):not(.page-btn--active) {
+    border-color: $accent;
+    color: $accent;
+  }
+
+  &--active {
+    background: $accent;
+    border-color: $accent;
+    color: #fff;
+    font-weight: 600;
+    cursor: default;
+  }
+
+  &--nav:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  color: #aaa;
+  user-select: none;
+}
+
+@media (max-width: 480px) {
+  .pagination {
+    flex-direction: column;
+    align-items: center;
   }
 }

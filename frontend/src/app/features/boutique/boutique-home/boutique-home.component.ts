@@ -53,26 +53,86 @@ export class BoutiqueHomeComponent implements OnInit {
   nomBoutique      = signal('Ma Boutique');
   editMode         = signal(false);
   selectedCategory = signal<string | null>(null);
+  promotionsMap    = signal<Record<string, Promotion>>({});
 
-  promotionsMap = signal<Record<string, Promotion>>({});
+  // ── Catégories : chargées une seule fois, indépendamment de la page ──────────
+  allCategories = signal<string[]>([]);
 
-  // ────────────────────────────────────────────────
-  // INIT
+  categoryItems = computed(() =>
+    this.allCategories().map(cat => ({ value: cat, label: cat }))
+  );
+
+  // ── Pagination ──────────────────────────────────
+  currentPage   = signal(1);
+  totalPages    = signal(1);
+  totalProduits = signal(0);
+  readonly pageSize = 8;
+
+  pageNumbers = computed(() => {
+    const total   = this.totalPages();
+    const current = this.currentPage();
+    const range: (number | '...')[] = [];
+    const start = Math.max(1, current - 2);
+    const end   = Math.min(total, current + 2);
+
+    if (start > 1) { range.push(1); if (start > 2) range.push('...'); }
+    for (let i = start; i <= end; i++) range.push(i);
+    if (end < total) { if (end < total - 1) range.push('...'); range.push(total); }
+
+    return range;
+  });
+
+  // ── Plus de filtrage côté client : les produits de la page sont déjà filtrés ─
+  filteredProduits = computed(() => this.produits());
+
   // ────────────────────────────────────────────────
   ngOnInit(): void {
+    this.loadCategories();
     this.loadProduits();
     this.loadPromotionsActives();
-
     this.boutiqueService.getBoutiqueById(this.boutiqueId).subscribe({
       next: (b) => this.nomBoutique.set(b.nom ?? 'Ma Boutique'),
       error: () => {},
     });
   }
 
+  // Chargé une seule fois, ne change que si on ajoute/supprime un produit
+  loadCategories() {
+    this.produitService.getAllCategories(this.boutiqueId).subscribe({
+      next: (cats) => this.allCategories.set(cats),
+      error: () => {},
+    });
+  }
+
   loadProduits() {
     this.produitService
-      .getProduitsByBoutique(this.boutiqueId)
-      .subscribe(res => this.produits.set(res.produits || []));
+      .getProduitsByBoutique(
+        this.boutiqueId,
+        this.currentPage(),
+        this.pageSize,
+        this.selectedCategory()
+      )
+      .subscribe(res => {
+        this.produits.set(res.produits || []);
+        this.totalPages.set(res.totalPages ?? 1);
+        this.totalProduits.set(res.total ?? 0);
+      });
+  }
+
+  goToPage(page: number | '...') {
+    if (page === '...' || page === this.currentPage()) return;
+    this.currentPage.set(page as number);
+    this.loadProduits();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  prevPage() { if (this.currentPage() > 1) this.goToPage(this.currentPage() - 1); }
+  nextPage() { if (this.currentPage() < this.totalPages()) this.goToPage(this.currentPage() + 1); }
+
+  onCategoryChange(value: string | null) {
+    this.selectedCategory.set(value);
+    this.currentPage.set(1);  // revenir page 1 à chaque changement de filtre
+    this.loadProduits();
   }
 
   loadPromotionsActives() {
@@ -91,47 +151,20 @@ export class BoutiqueHomeComponent implements OnInit {
     });
   }
 
-  // ────────────────────────────────────────────────
-  // MODE EDIT
-  // ────────────────────────────────────────────────
-  toggleEditMode() {
-    this.editMode.update(v => !v);
-  }
+  toggleEditMode() { this.editMode.update(v => !v); }
 
-  // ────────────────────────────────────────────────
-  // DELETE / UPDATE
-  // ────────────────────────────────────────────────
   onProduitDeleted(id: string) {
-    this.produitService.deleteProduit(id).subscribe(() => this.loadProduits());
+    this.produitService.deleteProduit(id).subscribe(() => {
+      this.loadCategories(); // recalcule les catégories au cas où la dernière d'un type est supprimée
+      this.loadProduits();
+    });
   }
 
   onProduitUpdated(_updated: Produit) {
+    this.loadCategories();
     this.loadProduits();
   }
 
-  // ────────────────────────────────────────────────
-  // FILTER
-  // ────────────────────────────────────────────────
-  categoryItems = computed(() => {
-    const unique = new Set(
-      this.produits().map(p => p.details.categorie).filter(Boolean)
-    );
-    return Array.from(unique).map(cat => ({ value: cat, label: cat }));
-  });
-
-  filteredProduits = computed(() => {
-    const cat = this.selectedCategory();
-    if (!cat) return this.produits();
-    return this.produits().filter(p => p.details.categorie === cat);
-  });
-
-  onCategoryChange(value: string | null) {
-    this.selectedCategory.set(value);
-  }
-
-  // ────────────────────────────────────────────────
-  // FORM PRODUIT (CREATE / UPDATE)
-  // ────────────────────────────────────────────────
   openProduitForm(produit?: Produit) {
     const fields: FormField[] = [
       { name: 'nom',         label: 'Nom du produit', type: 'text',           required: true },
@@ -182,7 +215,11 @@ export class BoutiqueHomeComponent implements OnInit {
         : this.produitService.createProduit(formData);
 
       request$.subscribe({
-        next: () => { this.loadProduits(); dialogRef.close(); },
+        next: () => {
+          this.loadCategories();
+          this.loadProduits();
+          dialogRef.close();
+        },
         error: (err) => console.error('Erreur create/update produit', err),
       });
     });
@@ -190,12 +227,8 @@ export class BoutiqueHomeComponent implements OnInit {
     dialogRef.componentInstance.cancel.subscribe(() => dialogRef.close());
   }
 
-  // ────────────────────────────────────────────────
-  // FORM PROMOTION (créer OU modifier)
-  // ────────────────────────────────────────────────
   openPromotionForm(produit: Produit) {
     const promoExistante = this.promotionsMap()[produit.id];
-
     const today     = new Date().toISOString().split('T')[0];
     const inOneWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
 
@@ -207,19 +240,10 @@ export class BoutiqueHomeComponent implements OnInit {
     ];
 
     const formGroup = this.fb.group({
-      pourcentage: [
-        promoExistante?.details.pourcentage ?? 20,
-        [Validators.required, Validators.min(1), Validators.max(100)],
-      ],
+      pourcentage: [promoExistante?.details.pourcentage ?? 20, [Validators.required, Validators.min(1), Validators.max(100)]],
       description: [promoExistante?.details.description ?? '', []],
-      dateDebut:   [
-        promoExistante ? promoExistante.details.dateDebut.split('T')[0] : today,
-        [Validators.required],
-      ],
-      dateFin:     [
-        promoExistante ? promoExistante.details.dateFin.split('T')[0] : inOneWeek,
-        [Validators.required],
-      ],
+      dateDebut:   [promoExistante ? promoExistante.details.dateDebut.split('T')[0] : today,     [Validators.required]],
+      dateFin:     [promoExistante ? promoExistante.details.dateFin.split('T')[0]   : inOneWeek, [Validators.required]],
     });
 
     const isModification = !!promoExistante;
@@ -227,20 +251,19 @@ export class BoutiqueHomeComponent implements OnInit {
     const dialogRef = this.dialog.open(FormComponent, {
       width: '480px', maxWidth: '92vw',
       data: {
-        title:       isModification
+        title: isModification
           ? `Modifier la promotion — ${produit.details.nom}`
           : `Nouvelle promotion — ${produit.details.nom}`,
-        subtitle:    `Prix actuel : ${produit.details.prix?.toLocaleString()} Ar`,
+        subtitle: `Prix actuel : ${produit.details.prix?.toLocaleString()} Ar`,
         fields, formGroup,
         submitLabel: isModification ? 'Modifier la promotion' : 'Lancer la promotion',
-        showCancel:  true,
+        showCancel: true,
       },
     });
 
     dialogRef.componentInstance.submit.subscribe(() => {
       if (formGroup.invalid) { formGroup.markAllAsTouched(); return; }
       const v = formGroup.value;
-
       const details = {
         idProduit:   produit.id,
         description: v.description || '',
@@ -274,13 +297,9 @@ export class BoutiqueHomeComponent implements OnInit {
     dialogRef.componentInstance.cancel.subscribe(() => dialogRef.close());
   }
 
-  // ────────────────────────────────────────────────
-  // SUPPRIMER PROMOTION
-  // ────────────────────────────────────────────────
   supprimerPromotion(produit: Produit) {
     const promo = this.promotionsMap()[produit.id];
     if (!promo) return;
-
     this.promotionService.supprimerPromotion(promo._id).subscribe({
       next: () => {
         this.snackBar.open('Promotion supprimée', '', { duration: 2500 });

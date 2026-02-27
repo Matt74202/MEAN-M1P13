@@ -25,7 +25,7 @@ $bg-main:     #f7f8f5;
   gap: 1rem;
   background: $bg;
   position: sticky;
-  top: 0;        // colle sous la client-navbar (elle-même sticky)
+  top: 0;
   z-index: 50;
 
   @media (max-width: 480px) { padding: 0.875rem 1rem; }
@@ -114,7 +114,7 @@ $bg-main:     #f7f8f5;
   border-radius: 10px;
   padding: 0 14px;
   height: 44px;
-  width: 100%;       // ← fini le 1250px fixe
+  width: 100%;
   max-width: 100%;
   margin-bottom: 1.25rem;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -194,11 +194,15 @@ $bg-main:     #f7f8f5;
 .image-container {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 4 / 3;    // remplace la hauteur fixe 200px
+  height: 250px; // ← augmenté (était aspect-ratio: 4/3 ~160px sur carte 240px)
   background: #f9f9f9;
   display: flex;
   align-items: center;
   justify-content: center;
+
+  @media (max-width: 480px) {
+    height: 300px; 
+  }
 }
 
 .product-image {
@@ -421,7 +425,6 @@ $bg-main:     #f7f8f5;
   font-size: 0.85rem;
   min-width: 0;
 
-  // Sur très petits écrans : masquer le texte, garder l'icône
   @media (max-width: 360px) {
     .btn-ajouter-label { display: none; }
   }
@@ -567,5 +570,82 @@ $bg-main:     #f7f8f5;
   @media (max-width: 480px) {
     width: 100%;
     justify-content: center;
+  }
+}
+
+// ── Pagination ─────────────────────────────────────────────────────────────────
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid $border;
+}
+
+.pagination-info {
+  font-size: 0.82rem;
+  color: $text-muted;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.4rem;
+  border-radius: 6px;
+  border: 1px solid $border;
+  background: $bg;
+  color: $text-muted;
+  font-size: 0.875rem;
+  font-family: 'Garet', system-ui, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover:not(:disabled):not(.page-btn--active) {
+    border-color: $accent;
+    color: $accent;
+  }
+
+  &--active {
+    background: $accent;
+    border-color: $accent;
+    color: #fff;
+    font-weight: 600;
+    cursor: default;
+  }
+
+  &--nav:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  color: $text-muted;
+  user-select: none;
+}
+
+@media (max-width: 480px) {
+  .pagination {
+    flex-direction: column;
+    align-items: center;
   }
 }

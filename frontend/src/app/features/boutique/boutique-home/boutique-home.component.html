@@ -35,6 +35,53 @@
       (stopPromo)="supprimerPromotion($event)"
     ></app-product-grid>
 
+    <!-- ── Pagination ── -->
+    @if (totalPages() > 1) {
+      <nav class="pagination" aria-label="Navigation des pages">
+
+        <span class="pagination-info">
+          {{ totalProduits() }} produit{{ totalProduits() > 1 ? 's' : '' }}
+          &nbsp;·&nbsp;
+          Page {{ currentPage() }} / {{ totalPages() }}
+        </span>
+
+        <div class="pagination-controls">
+
+          <button
+            class="page-btn page-btn--nav"
+            [disabled]="currentPage() === 1"
+            (click)="prevPage()"
+            aria-label="Page précédente">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
+          @for (p of pageNumbers(); track $index) {
+            @if (p === '...') {
+              <span class="page-ellipsis">…</span>
+            } @else {
+              <button
+                class="page-btn"
+                [class.page-btn--active]="p === currentPage()"
+                (click)="goToPage(p)"
+                [attr.aria-current]="p === currentPage() ? 'page' : null">
+                {{ p }}
+              </button>
+            }
+          }
+
+          <button
+            class="page-btn page-btn--nav"
+            [disabled]="currentPage() === totalPages()"
+            (click)="nextPage()"
+            aria-label="Page suivante">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+
+        </div>
+
+      </nav>
+    }
+
   </main>
 </div>
 

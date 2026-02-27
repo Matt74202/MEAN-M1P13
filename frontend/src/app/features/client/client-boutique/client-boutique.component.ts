@@ -46,39 +46,77 @@ export class ClientBoutiqueComponent implements OnInit {
   nomBoutique = signal<string>('');
 
   promotionsActives = signal<Map<string, Promotion>>(new Map());
-
   vue = signal<'catalogue' | 'panier'>('catalogue');
 
+  // ── Page courante (pagination normale) ──────────────────────────────────────
   private readonly produits = signal<Produit[]>([]);
+
+  // ── Tous les produits (pour recherche + favoris) ─────────────────────────────
+  private readonly tousLesProduits = signal<Produit[]>([]);
+
   selectedCategory = signal<string | null>(null);
   statsProduitsMap = signal<Record<string, StatNote>>({});
   recherche        = signal('');
   filtreFavoris    = signal(false);
 
-  categoryItems = computed(() => {
-    const unique = new Set(
-      this.produits().map(p => p.details.categorie).filter(Boolean)
-    );
-    return Array.from(unique).map(cat => ({ value: cat, label: cat }));
+  // ── Catégories issues de tous les produits ───────────────────────────────────
+  allCategories = signal<string[]>([]);
+  categoryItems = computed(() =>
+    this.allCategories().map(cat => ({ value: cat, label: cat }))
+  );
+
+  // ── Pagination ───────────────────────────────────────────────────────────────
+  currentPage   = signal(1);
+  totalPages    = signal(1);
+  totalProduits = signal(0);
+  readonly pageSize = 8;
+
+  pageNumbers = computed(() => {
+    const total   = this.totalPages();
+    const current = this.currentPage();
+    const range: (number | '...')[] = [];
+    const start = Math.max(1, current - 2);
+    const end   = Math.min(total, current + 2);
+    if (start > 1) { range.push(1); if (start > 2) range.push('...'); }
+    for (let i = start; i <= end; i++) range.push(i);
+    if (end < total) { if (end < total - 1) range.push('...'); range.push(total); }
+    return range;
   });
+
+  // ── Ce qu'on affiche selon le mode actif ─────────────────────────────────────
+  //
+  // - Recherche OU favoris actifs → on filtre sur tousLesProduits (pas de pagination)
+  // - Sinon → on affiche la page courante (produits paginés)
+  //
+  modeRecherche = computed(() => !!this.recherche().trim() || this.filtreFavoris());
 
   filteredProduits = computed(() => {
-    let liste = this.produits();
+    if (this.modeRecherche()) {
+      // Filtre sur l'ensemble des produits
+      let liste = this.tousLesProduits();
 
-    const cat = this.selectedCategory();
-    if (cat) liste = liste.filter(p => p.details.categorie === cat);
+      // Filtre catégorie aussi si actif
+      const cat = this.selectedCategory();
+      if (cat) liste = liste.filter(p => p.details.categorie?.toLowerCase() === cat.toLowerCase());
 
-    const terme = this.recherche().toLowerCase().trim();
-    if (terme) liste = liste.filter(p =>
-      p.details.nom.toLowerCase().includes(terme)
-    );
+      const terme = this.recherche().toLowerCase().trim();
+      if (terme) liste = liste.filter(p =>
+        p.details.nom.toLowerCase().includes(terme)
+      );
 
-    if (this.filtreFavoris()) {
-      liste = liste.filter(p => this.favoriService.isFavori(p.id));
+      if (this.filtreFavoris()) {
+        liste = liste.filter(p => this.favoriService.isFavori(p.id));
+      }
+
+      return liste;
     }
 
-    return liste;
+    // Mode normal : page courante uniquement
+    return this.produits();
   });
+
+  // Pagination visible seulement en mode normal (pas recherche/favoris)
+  showPagination = computed(() => !this.modeRecherche() && this.totalPages() > 1);
 
   onRecherche(event: Event) {
     this.recherche.set((event.target as HTMLInputElement).value);
@@ -86,20 +124,22 @@ export class ClientBoutiqueComponent implements OnInit {
 
   toggleFiltreFavoris() { this.filtreFavoris.update(v => !v); }
 
-  // ── Panier ──
+  // ── Panier ───────────────────────────────────────────────────────────────────
   readonly panier      = this.panierService.panier;
   readonly nbArticles  = this.panierService.nbArticles;
   readonly totalPanier = this.panierService.total;
-
   quantites = signal<Record<string, number>>({});
 
+  // ────────────────────────────────────────────────────────────────────────────
   ngOnInit() {
     const state = window.history.state;
 
     this.route.params.subscribe(params => {
       this.boutiqueId = params['id'];
       localStorage.setItem('boutiqueId', this.boutiqueId);
+      this.loadCategories();
       this.loadProduits();
+      this.loadTousLesProduits();
       this.loadStatsProduitsMap();
       this.loadPromotionsActives();
     });
@@ -117,14 +157,59 @@ export class ClientBoutiqueComponent implements OnInit {
     this.panierService.charger(this.clientId).subscribe();
   }
 
+  // Catégories (une seule fois)
+  loadCategories() {
+    if (!this.boutiqueId) return;
+    this.produitService.getAllCategories(this.boutiqueId).subscribe({
+      next: (cats) => this.allCategories.set(cats),
+      error: () => {},
+    });
+  }
+
+  // Tous les produits sans pagination (pour recherche + favoris)
+  loadTousLesProduits() {
+    if (!this.boutiqueId) return;
+    this.produitService.getProduitsByBoutique(this.boutiqueId, 1, 500).subscribe({
+      next: res => this.tousLesProduits.set(res.produits || []),
+      error: () => {},
+    });
+  }
+
+  // Page courante (paginée + filtre catégorie backend)
   loadProduits() {
     if (!this.boutiqueId) return;
-    this.produitService.getProduitsByBoutique(this.boutiqueId).subscribe({
-      next: res => {
-        this.produits.set(res.produits || []);
-        if (!this.nomBoutique()) this.nomBoutique.set('Boutique');
-      },
-    });
+    this.produitService
+      .getProduitsByBoutique(
+        this.boutiqueId,
+        this.currentPage(),
+        this.pageSize,
+        this.selectedCategory()
+      )
+      .subscribe({
+        next: res => {
+          this.produits.set(res.produits || []);
+          this.totalPages.set(res.totalPages ?? 1);
+          this.totalProduits.set(res.total ?? 0);
+          if (!this.nomBoutique()) this.nomBoutique.set('Boutique');
+        },
+      });
+  }
+
+  goToPage(page: number | '...') {
+    if (page === '...' || page === this.currentPage()) return;
+    this.currentPage.set(page as number);
+    this.loadProduits();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  prevPage() { if (this.currentPage() > 1) this.goToPage(this.currentPage() - 1); }
+  nextPage() { if (this.currentPage() < this.totalPages()) this.goToPage(this.currentPage() + 1); }
+
+  onCategoryChange(value: string | null) {
+    this.selectedCategory.set(value);
+    this.currentPage.set(1);
+    this.loadProduits();
+    // Pas besoin de recharger tousLesProduits, le filtre client s'applique dans filteredProduits
   }
 
   loadPromotionsActives() {
@@ -149,8 +234,6 @@ export class ClientBoutiqueComponent implements OnInit {
     return Math.round(produit.details.prix * (1 - promo.details.pourcentage / 100));
   }
 
-  onCategoryChange(value: string | null) { this.selectedCategory.set(value); }
-
   getQuantite(idProduit: string): number {
     return this.quantites()[idProduit] ?? 1;
   }
@@ -160,7 +243,6 @@ export class ClientBoutiqueComponent implements OnInit {
     const dejaEnPanier    = this.quantiteEnPanier(produit.id);
     const qteSelectionnee = this.getQuantite(produit.id);
     const totalVoulu      = dejaEnPanier + qteSelectionnee + 1;
-
     if (totalVoulu > stockDispo) {
       this.snackBar.open(`Stock maximum atteint (${stockDispo} dispo)`, '', { duration: 2000 });
       return;
@@ -179,7 +261,6 @@ export class ClientBoutiqueComponent implements OnInit {
     const qte          = this.getQuantite(produit.id);
     const stockDispo   = produit.stock ?? 0;
     const dejaEnPanier = this.quantiteEnPanier(produit.id);
-
     if (stockDispo === 0) {
       this.snackBar.open('Ce produit est en rupture de stock', '', { duration: 2000 });
       return;
@@ -191,7 +272,6 @@ export class ClientBoutiqueComponent implements OnInit {
       );
       return;
     }
-
     const prixReel = this.getPrixPromo(produit);
     this.panierService.ajouter(this.clientId, produit.id, qte, prixReel).subscribe({
       next: () => {
@@ -209,17 +289,13 @@ export class ClientBoutiqueComponent implements OnInit {
   modifierQuantite(idProduit: string, delta: number) {
     const article = this.panier().articles.find(a => a.idProduit === idProduit);
     if (!article) return;
-
     const newQte = article.quantite + delta;
-
     if (newQte <= 0) { this.supprimerArticle(idProduit); return; }
-
-    const produit = this.produits().find(p => p.id === idProduit);
+    const produit = this.tousLesProduits().find(p => p.id === idProduit);
     if (produit && newQte > (produit.stock ?? 0)) {
       this.snackBar.open('Stock maximum atteint', '', { duration: 2000 });
       return;
     }
-
     this.panierService.modifierQuantite(this.clientId, idProduit, newQte).subscribe();
   }
 
@@ -242,7 +318,7 @@ export class ClientBoutiqueComponent implements OnInit {
 
   isFavori(idProduit: string): boolean { return this.favoriService.isFavori(idProduit); }
 
-  allerFavoris()  { this.router.navigate(['/client/favoris']); }
+  allerFavoris() { this.router.navigate(['/client/favoris']); }
 
   loadStatsProduitsMap() {
     if (!this.boutiqueId) return;
