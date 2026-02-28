@@ -34,9 +34,15 @@ export class FinancesDashboardComponent implements OnInit {
   errorMessage = '';
   data: any = null;
 
+  readonly GRAPH_HEIGHT_PX    = 140;
+  readonly TIMELINE_HEIGHT_PX = 140;
+
   maxGraphValue = 0;
   activeTab: 'box' | 'boutique' = 'box';
   activePayeursTab: 'tous' | 'bons' | 'mauvais' = 'tous';
+  searchPayeurs = '';
+  payeursExpanded = false;
+  readonly PAYEURS_LIMIT = 5;
 
   // Timeline draggable
   timelineWindow: any[] = [];
@@ -88,21 +94,31 @@ export class FinancesDashboardComponent implements OnInit {
     this.http.get<any>(this.apiUrl, { headers: this.getHeaders() }).subscribe({
       next: (res) => {
         if (res.success) {
-          this.data      = res.data;
-          
-          console.log('analysePayeurs[0] :', res.data.analysePayeurs?.[0]);
-          console.log('Clés disponibles :', Object.keys(res.data.analysePayeurs?.[0] || {}));
-        
-          this.contexte  = res.data.contexteChatbot || '';
-          this.alertes   = res.data.alertesChatbot  || [];
-          this.maxGraphValue = Math.max(
-            ...res.data.graphiqueMensuel.map((m: any) => Math.max(m.percu, m.estime)), 1
-          );
+          this.data = res.data;
+
+          if (res.data.graphiqueMensuel?.length) {
+            this.maxGraphValue = Math.max(
+              ...res.data.graphiqueMensuel.map((m: any) =>
+                Math.max(+(m.percu || 0), +(m.estime || 0))
+              ), 1
+            );
+          }
+
           if (res.data.timeline?.length) {
-            this.maxTimelineOffset = Math.max(0, res.data.timeline.length - this.timelineWindowSize);
-            this.timelineOffset    = Math.max(0, 24 - this.timelineWindowSize + 1);
+            const tl = res.data.timeline;
+            this.maxTimelineOffset = Math.max(0, tl.length - this.timelineWindowSize);
+            let presentIdx = tl.length - 1;
+            for (let i = 0; i < tl.length; i++) {
+              if (tl[i].type === 'present') { presentIdx = i; break; }
+            }
+            const half = Math.floor(this.timelineWindowSize / 2);
+            this.timelineOffset = Math.max(0, Math.min(presentIdx - half, this.maxTimelineOffset));
             this.updateTimelineWindow();
           }
+
+          this.contexte = res.data.contexteChatbot || '';
+          this.alertes  = res.data.alertesChatbot  || [];
+
           if (this.chatMessages.length === 0) {
             const nbAlertes = this.alertes.length;
             this.chatMessages.push({
@@ -131,7 +147,7 @@ export class FinancesDashboardComponent implements OnInit {
     });
   }
 
-  // ── Chatbot ──────────────────────────────────────────────────────────────────
+  // ── Chatbot ───────────────────────────────────────────────────────────────────
   toggleChat() {
     this.chatOuvert = !this.chatOuvert;
     if (this.chatOuvert) setTimeout(() => this.scrollChat(), 100);
@@ -206,16 +222,19 @@ export class FinancesDashboardComponent implements OnInit {
   get nbAlertesDanger(): number { return this.alertes.filter(a => a.type === 'danger').length; }
   get nbAlertesTotal(): number  { return this.alertes.length; }
 
-  // ── Timeline ─────────────────────────────────────────────────────────────────
+  // ── Timeline ──────────────────────────────────────────────────────────────────
   updateTimelineWindow() {
     if (!this.data?.timeline) return;
     this.timelineOffset = Math.max(0, Math.min(this.timelineOffset, this.maxTimelineOffset));
-    this.timelineWindow = this.data.timeline.slice(this.timelineOffset, this.timelineOffset + this.timelineWindowSize);
+    this.timelineWindow = this.data.timeline.slice(
+      this.timelineOffset,
+      this.timelineOffset + this.timelineWindowSize
+    );
   }
 
   onTimelineDragStart(e: MouseEvent | TouchEvent) {
-    this.isDragging   = true;
-    this.dragStartX   = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
+    this.isDragging      = true;
+    this.dragStartX      = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
     this.dragStartOffset = this.timelineOffset;
     e.preventDefault();
   }
@@ -234,29 +253,107 @@ export class FinancesDashboardComponent implements OnInit {
   onDragEnd() { this.isDragging = false; }
 
   navigateTimeline(d: number) { this.timelineOffset += d * 3; this.updateTimelineWindow(); }
-  goToToday() { this.timelineOffset = Math.max(0, 24 - this.timelineWindowSize + 1); this.updateTimelineWindow(); }
+
+  goToToday() {
+    const tl = this.data?.timeline;
+    if (!tl) return;
+    let targetIdx = tl.length - 1;
+    for (let i = 0; i < tl.length; i++) {
+      if (tl[i].type === 'present') { targetIdx = i; break; }
+    }
+    this.timelineOffset = Math.max(0, Math.min(
+      targetIdx - Math.floor(this.timelineWindowSize / 2),
+      this.maxTimelineOffset
+    ));
+    this.updateTimelineWindow();
+  }
 
   get timelineMax(): number {
     if (!this.timelineWindow?.length) return 1;
-    return Math.max(...this.timelineWindow.map(t => Math.max(t.percu || 0, t.estimeCont || 0, t.projMax || 0)), 1);
+    const max = Math.max(
+      ...this.timelineWindow.map(t => Math.max(
+        +(t.percu      || 0),
+        +(t.estimeCont || 0),
+        +(t.projMax    || 0),
+        +(t.projection || 0)
+      ))
+    );
+    return max > 0 ? max : 1;
   }
-  timelineBarHeight(v: number): number { return Math.round((v / this.timelineMax) * 100); }
-  barHeight(v: number): number         { return Math.round((v / this.maxGraphValue) * 100); }
+
+  tlPx(v: number): number {
+    const val = Math.max(0, +(v || 0));
+    if (val === 0) return 3;
+    return Math.round((val / this.timelineMax) * this.TIMELINE_HEIGHT_PX);
+  }
+
+  get graphMax(): number {
+    if (!this.data?.graphiqueMensuel?.length) return 1;
+    const max = Math.max(
+      ...this.data.graphiqueMensuel.map((m: any) =>
+        Math.max(+(m.percu || 0), +(m.estime || 0))
+      )
+    );
+    return max > 0 ? max : 1;
+  }
+
+  grPx(v: number): number {
+    const val = Math.max(0, +(v || 0));
+    if (val === 0) return 3;
+    return Math.round((val / this.graphMax) * this.GRAPH_HEIGHT_PX);
+  }
+
+  pct(v: number, total: number = 100): string {
+    if (!total) return '0%';
+    return Math.min(100, Math.round((+(v || 0) / total) * 100)) + '%';
+  }
 
   get timelineRangeLabel(): string {
     if (!this.timelineWindow?.length) return '';
     return `${this.timelineWindow[0]?.moisNom} → ${this.timelineWindow[this.timelineWindow.length - 1]?.moisNom}`;
   }
+
   get timelineProgressPct(): number {
-    return this.maxTimelineOffset === 0 ? 0 : Math.round((this.timelineOffset / this.maxTimelineOffset) * 100);
+    return this.maxTimelineOffset === 0
+      ? 0
+      : Math.round((this.timelineOffset / this.maxTimelineOffset) * 100);
   }
 
   // ── Payeurs ───────────────────────────────────────────────────────────────────
   get payeursAffiches(): any[] {
     if (!this.data?.analysePayeurs) return [];
-    if (this.activePayeursTab === 'bons')    return this.data.bonsPayeurs    || [];
-    if (this.activePayeursTab === 'mauvais') return this.data.mauvaisPayeurs || [];
-    return this.data.analysePayeurs;
+
+    let liste: any[];
+    if (this.activePayeursTab === 'bons')         liste = this.data.bonsPayeurs    || [];
+    else if (this.activePayeursTab === 'mauvais') liste = this.data.mauvaisPayeurs || [];
+    else                                           liste = this.data.analysePayeurs;
+
+    if (this.searchPayeurs.trim()) {
+      const q = this.searchPayeurs.trim().toLowerCase();
+      liste = liste.filter((b: any) =>
+        b.boutiqueNom?.toLowerCase().includes(q) ||
+        b.boutiqueMail?.toLowerCase().includes(q)
+      );
+    }
+
+    return this.payeursExpanded ? liste : liste.slice(0, this.PAYEURS_LIMIT);
+  }
+
+  get payeursTotalFiltres(): number {
+    if (!this.data?.analysePayeurs) return 0;
+    let liste: any[];
+    if (this.activePayeursTab === 'bons')         liste = this.data.bonsPayeurs    || [];
+    else if (this.activePayeursTab === 'mauvais') liste = this.data.mauvaisPayeurs || [];
+    else                                           liste = this.data.analysePayeurs;
+
+    if (this.searchPayeurs.trim()) {
+      const q = this.searchPayeurs.trim().toLowerCase();
+      liste = liste.filter((b: any) =>
+        b.boutiqueNom?.toLowerCase().includes(q) ||
+        b.boutiqueMail?.toLowerCase().includes(q)
+      );
+    }
+    return liste.length;
   }
 
   getCategorieLabel(c: string) {
@@ -268,7 +365,11 @@ export class FinancesDashboardComponent implements OnInit {
     return 'payeur-row__avatar--mauvais';
   }
   getScoreBarClass(c: string) {
-    return c === 'excellent' ? 'score-bar-wrap__fill--excellent' : c === 'moyen' ? 'score-bar-wrap__fill--moyen' : 'score-bar-wrap__fill--mauvais';
+    return c === 'excellent'
+      ? 'score-bar-wrap__fill--excellent'
+      : c === 'moyen'
+        ? 'score-bar-wrap__fill--moyen'
+        : 'score-bar-wrap__fill--mauvais';
   }
 
   // ── Utilitaires ───────────────────────────────────────────────────────────────
@@ -284,5 +385,27 @@ export class FinancesDashboardComponent implements OnInit {
     if (j <= 30) return 'jours-urgent';
     if (j <= 60) return 'jours-warning';
     return 'jours-ok';
+  }
+
+  onInputFocus(e: Event) {
+    (e.target as HTMLInputElement).style.borderColor = 'var(--accent)';
+  }
+
+  onInputBlur(e: Event) {
+    (e.target as HTMLInputElement).style.borderColor = 'var(--border)';
+  }
+
+  onBtnEnter(e: Event) {
+    const btn = e.target as HTMLButtonElement;
+    btn.style.background  = 'var(--accent-light)';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.color       = 'var(--accent-dark)';
+  }
+
+  onBtnLeave(e: Event) {
+    const btn = e.target as HTMLButtonElement;
+    btn.style.background  = 'var(--bg-main)';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color       = 'var(--text-secondary)';
   }
 }

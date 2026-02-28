@@ -54,7 +54,6 @@ function buildContexteChatbot(data) {
     .map(b => `${b.boutiqueNom}:${Math.round((b.totalPercu||0)/1000)}kAr(${b.nbPaiements}paiements)`)
     .join(' | ');
 
-  // Alertes automatiques détectées
   const alertes = [];
   if (stats.revenuManque > stats.revenuReel * 0.3) alertes.push('ALERTE:revenus_manques_elevés(>' + Math.round(stats.revenuManque/1000) + 'kAr)');
   if (previsions.tauxRecouvrement < 50) alertes.push('ALERTE:taux_recouvrement_faible(' + previsions.tauxRecouvrement + '%)');
@@ -99,7 +98,6 @@ function genererAlertes(data) {
   const { stats, analysePayeurs, previsions, contratsExpirants } = data;
   const alertes = [];
 
-  // Mauvais payeurs
   analysePayeurs.filter(b => b.categorie === 'mauvais').forEach(b => {
     alertes.push({
       type: 'danger',
@@ -109,7 +107,6 @@ function genererAlertes(data) {
     });
   });
 
-  // Contrats expirant dans 30 jours
   contratsExpirants.filter(c => c.joursRestants <= 30).forEach(c => {
     alertes.push({
       type: 'warning',
@@ -119,7 +116,6 @@ function genererAlertes(data) {
     });
   });
 
-  // Taux de recouvrement faible
   if (previsions.tauxRecouvrement < 50) {
     alertes.push({
       type: 'warning',
@@ -129,7 +125,6 @@ function genererAlertes(data) {
     });
   }
 
-  // Revenu manqué élevé
   if (stats.revenuManque > stats.revenuReel * 0.3) {
     alertes.push({
       type: 'danger',
@@ -139,7 +134,16 @@ function genererAlertes(data) {
     });
   }
 
-  // Occupation faible
+  // Alerte si montant en attente significatif
+  if (stats.montantEnAttente > 0) {
+    alertes.push({
+      type: 'warning',
+      titre: `Loyers en attente : ${Math.round((stats.montantEnAttente||0)/1000)}k Ar`,
+      message: `Des loyers de février et/ou mars ne sont pas encore enregistrés`,
+      action: 'Quelles boutiques n\'ont pas encore payé leur loyer ?'
+    });
+  }
+
   if (stats.tauxOccupation < 70) {
     alertes.push({
       type: 'info',
@@ -161,12 +165,11 @@ exports.getDashboard = async (req, res) => {
     const today = new Date();
 
     // ── 1. Données brutes ────────────────────────────────────
-    const loyersPayes    = await Loyer.find({ statut: 'paye' }).lean();
+    const loyersPayes   = await Loyer.find({ statut: 'paye' }).lean();
+    const loyersImpayés = await Loyer.find({ statut: 'impaye' }).lean();
     console.log('[getDashboard] loyersPayes OK:', loyersPayes.length);
 
-    const loyersImpayés  = await Loyer.find({ statut: 'impaye' }).lean();
-    const revenuReel     = loyersPayes.reduce((s, l) => s + (l.montant || 0), 0);
-    const montantEnAttente = loyersImpayés.reduce((s, l) => s + (l.montant || 0), 0);
+    const revenuReel = loyersPayes.reduce((s, l) => s + (l.montant || 0), 0);
 
     const moisCourant = moisStr(today);
     const revenuReelMoisCourant = loyersPayes
@@ -178,23 +181,53 @@ exports.getDashboard = async (req, res) => {
       .populate('idBoutique', 'nom mail')
       .lean();
     console.log('[getDashboard] contratsActifs OK:', contratsActifs.length);
-    console.log('[getDashboard] Exemple contrat:', JSON.stringify(contratsActifs[0], null, 2));
 
     const tousLesContrats = await Contrat.find({})
       .populate('idBox',      'numero nom loyer superficie')
       .populate('idBoutique', 'nom mail')
       .lean();
 
-    // Normalisation : alias cohérents dans tout le contrôleur
+    // Normalisation
     for (const c of contratsActifs) {
       c.loyerMensuel = c.idBox?.loyer || 0;
-      c.boxId        = c.idBox;        // alias boxId → idBox
-      c.userId       = c.idBoutique;   // alias userId → idBoutique
+      c.boxId        = c.idBox;
+      c.userId       = c.idBoutique;
     }
     for (const c of tousLesContrats) {
       c.loyerMensuel = c.idBox?.loyer || 0;
       c.boxId        = c.idBox;
       c.userId       = c.idBoutique;
+    }
+
+    // ── MONTANT EN ATTENTE (CORRIGÉ) ─────────────────────────
+    // Base : loyers explicitement marqués 'impaye'
+    let montantEnAttente = loyersImpayés.reduce((s, l) => s + (l.montant || 0), 0);
+
+    // Ajout : loyers non enregistrés du mois courant ET du mois précédent
+    const moisAVerifier = [moisStr(today), moisStr(addMonths(today, -1))];
+
+    for (const contrat of contratsActifs) {
+      for (const mois of moisAVerifier) {
+        const debutContrat = new Date(contrat.dateDebut);
+        const finContrat   = new Date(contrat.dateFin);
+        const dateMois     = new Date(mois + '-01');
+
+        // Le contrat couvre-t-il ce mois ?
+        if (debutContrat > dateMois || finContrat < dateMois) continue;
+
+        // Un paiement ou un impayé existe déjà pour ce mois ?
+        const dejaPaye = loyersPayes.some(
+          l => l.contratId === contrat._id.toString() && l.mois === mois
+        );
+        const dejaImpaye = loyersImpayés.some(
+          l => l.contratId === contrat._id.toString() && l.mois === mois
+        );
+
+        // Ni payé ni marqué impayé = en attente
+        if (!dejaPaye && !dejaImpaye) {
+          montantEnAttente += contrat.loyerMensuel || 0;
+        }
+      }
     }
 
     const revenuEstimeMensuel = contratsActifs.reduce((s, c) => s + (c.loyerMensuel || 0), 0);
@@ -204,8 +237,6 @@ exports.getDashboard = async (req, res) => {
       const moisRestants = Math.max(0, moisCalendaires(today, fin));
       return s + (c.loyerMensuel || 0) * moisRestants;
     }, 0);
-
-    // ── NOUVELLES MÉTRIQUES ──────────────────────────────────
 
     // Revenu attendu sur 12 mois glissants
     let revenuAttendu12Mois = 0;
@@ -319,7 +350,6 @@ exports.getDashboard = async (req, res) => {
     // ── 4. Stats générales ───────────────────────────────────
     const totalBoxes = await Box.countDocuments();
 
-    // Occupation calculée depuis les contrats actifs (plus fiable que le statut Box)
     const boxIdsOccupees = new Set(
       contratsActifs
         .filter(c => c.boxId?._id)
@@ -402,11 +432,9 @@ exports.getDashboard = async (req, res) => {
       if (!boutiqueId) continue;
 
       if (!analyseParBoutique.has(boutiqueId)) {
-        // Priorité 1 : récupérer le nom depuis revenusParBoutiqueMap (déjà résolu)
         let boutiqueNom  = revenusParBoutiqueMap.get(boutiqueId)?.boutiqueNom  || null;
         let boutiqueMail = revenusParBoutiqueMap.get(boutiqueId)?.boutiqueMail || '';
 
-        // Priorité 2 : si toujours inconnu, chercher via le contrat lié au loyer
         if (!boutiqueNom || boutiqueNom === 'Inconnu') {
           const contratLie = tousLesContrats.find(c => c._id.toString() === loyer.contratId);
           if (contratLie?.userId) {
@@ -415,7 +443,6 @@ exports.getDashboard = async (req, res) => {
           }
         }
 
-        // Priorité 3 : dernier recours — requête directe en base
         if (!boutiqueNom || boutiqueNom === 'Inconnu') {
           try {
             const user = await User.findById(boutiqueId).select('nom mail').lean();
@@ -494,7 +521,8 @@ exports.getDashboard = async (req, res) => {
       revenuEstimeMensuel, revenuEstimeTotalRestant,
       revenuAttendu12Mois, revenuManque,
       tauxCroissanceAnnuel,
-      montantEnAttente, totalBoxes, boxesOccupes,
+      montantEnAttente,   // ← valeur corrigée
+      totalBoxes, boxesOccupes,
       tauxOccupation, nbContratsActifs: contratsActifs.length
     };
 
@@ -515,7 +543,6 @@ exports.getDashboard = async (req, res) => {
       }))
     };
 
-    // Contexte chatbot + alertes automatiques
     const chatData = { stats, analysePayeurs, previsions, contratsExpirants, revenusParBoutique };
     const contexteChatbot = buildContexteChatbot(chatData);
     const alertesChatbot  = genererAlertes(chatData);

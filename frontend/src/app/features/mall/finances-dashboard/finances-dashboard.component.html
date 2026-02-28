@@ -134,7 +134,10 @@
           <div class="stat-card__label">Occupation</div>
           <p class="stat-card__value">{{ data.stats.tauxOccupation }}<small>%</small></p>
           <div class="progress-bar">
-            <div class="progress-bar__fill progress-bar__fill--amber" [style.width.%]="data.stats.tauxOccupation"></div>
+            <div class="progress-bar__fill"
+                 [style.width.%]="data.stats.tauxOccupation"
+                 [style.background]="data.stats.tauxOccupation >= 80 ? '#2e7d46' : data.stats.tauxOccupation >= 50 ? '#926415' : '#b03030'">
+            </div>
           </div>
           <p class="stat-card__sub">{{ data.stats.boxesOccupes }}/{{ data.stats.totalBoxes }} boxes</p>
         </div>
@@ -148,6 +151,50 @@
         </div>
 
       </div>
+
+      <!-- ── Graphique mensuel ── -->
+      @if (data.graphiqueMensuel?.length) {
+        <div class="panel" style="margin-bottom:1.5rem">
+          <div class="panel__header">
+            <div>
+              <h2 class="panel__title">Revenus mensuels</h2>
+              <p class="panel__sub">Encaissé vs Estimé · 12 derniers mois</p>
+            </div>
+            <div style="display:flex;gap:1rem;align-items:center">
+              <span style="display:flex;align-items:center;gap:.45rem;font-size:.73rem;color:var(--text-secondary)">
+                <span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block;flex-shrink:0"></span>Encaissé
+              </span>
+              <span style="display:flex;align-items:center;gap:.45rem;font-size:.73rem;color:var(--text-secondary)">
+                <span style="width:10px;height:10px;border-radius:3px;background:#e8c9a0;display:inline-block;flex-shrink:0"></span>Estimé
+              </span>
+            </div>
+          </div>
+          <div class="panel__body">
+            <div style="display:flex;align-items:flex-end;gap:6px;height:160px;padding:0 2px">
+              @for (m of data.graphiqueMensuel; track m.mois) {
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0">
+                  <div style="width:100%;position:relative;height:140px;display:flex;align-items:flex-end;">
+                    @if (m.estime > 0) {
+                      <div style="position:absolute;left:0;right:0;bottom:0;border-radius:4px 4px 0 0;background:#e8c9a0;opacity:.8;"
+                           [style.height.px]="grPx(m.estime)"></div>
+                    }
+                    <div style="position:absolute;left:3px;right:3px;bottom:0;border-radius:4px 4px 0 0;z-index:1;"
+                         [style.background]="m.percu > 0 ? '#7d936c' : '#ccd5b5'"
+                         [style.height.px]="grPx(m.percu)"></div>
+                  </div>
+                  <span style="font-size:.58rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center">
+                    {{ m.moisNom }}
+                  </span>
+                </div>
+              }
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:.5rem;font-size:.66rem;color:var(--text-secondary)">
+              <span>{{ data.graphiqueMensuel[0]?.moisNom }}</span>
+              <span>Max : {{ formatMontant(graphMax) }} Ar</span>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- ── Timeline ── -->
       @if (data.timeline?.length) {
@@ -187,13 +234,15 @@
               </span>
             </div>
 
-            <div class="timeline-chart" [class.grabbing]="isDragging"
+            <div style="display:flex;align-items:flex-end;gap:4px;height:160px;cursor:grab;user-select:none;padding:0 2px"
+                 [class.grabbing]="isDragging"
                  (mousedown)="onTimelineDragStart($event)"
                  (touchstart)="onTimelineDragStart($event)">
-              @for (t of timelineWindow; track t.mois) {
-                <div class="timeline-bar-group">
 
-                  <!-- Tooltip -->
+              @for (t of timelineWindow; track t.mois) {
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;min-width:0"
+                     class="tl-group">
+
                   <div class="timeline-tooltip">
                     <span class="timeline-tooltip__title">
                       {{ t.moisNom }}
@@ -227,27 +276,29 @@
                     <span class="timeline-tooltip__arrow"></span>
                   </div>
 
-                  <!-- Barres -->
-                  <div class="timeline-bar-group__bars">
-                    @if (t.type === 'futur' || t.type === 'present') {
-                      <div class="bar-proj-max" [style.height.%]="timelineBarHeight(t.projMax)"></div>
-                      <div class="bar-proj"     [style.height.%]="timelineBarHeight(t.projection)"></div>
+                  <div style="width:100%;height:140px;position:relative;display:flex;align-items:flex-end;">
+                    @if (t.type === 'futur') {
+                      <div style="position:absolute;left:0;right:0;bottom:0;border-radius:4px 4px 0 0;background:#e8ede0;"
+                           [style.height.px]="tlPx(t.projMax)"></div>
+                      <div style="position:absolute;left:2px;right:2px;bottom:0;border-radius:4px 4px 0 0;background:linear-gradient(to top,#4a5e3a,#7d936c);opacity:.85;"
+                           [style.height.px]="tlPx(t.projection)"></div>
                     } @else {
                       @if (t.estimeCont > t.percu) {
-                        <div class="bar-missed" [style.height.%]="timelineBarHeight(t.estimeCont)"></div>
+                        <div style="position:absolute;left:0;right:0;bottom:0;border-radius:4px 4px 0 0;background:#e8c9a0;"
+                             [style.height.px]="tlPx(t.estimeCont)"></div>
                       }
-                      <div class="bar-real"
-                           [class.bar-real--zero]="t.percu === 0"
-                           [style.height.%]="t.percu > 0 ? timelineBarHeight(t.percu) : 3"></div>
+                      <div style="position:absolute;left:2px;right:2px;bottom:0;border-radius:4px 4px 0 0;"
+                           [style.background]="t.percu > 0 ? '#7d936c' : '#ccd5b5'"
+                           [style.height.px]="tlPx(t.percu)"></div>
                     }
                     @if (t.type === 'present') {
-                      <div class="bar-present-line"></div>
+                      <div style="position:absolute;left:0;right:0;top:0;bottom:0;border-left:2px dashed var(--accent);opacity:.45;pointer-events:none"></div>
                     }
                   </div>
 
-                  <span class="timeline-bar-group__label"
-                        [class.timeline-bar-group__label--present]="t.type === 'present'"
-                        [class.timeline-bar-group__label--future]="t.type === 'futur'">
+                  <span style="font-size:.58rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%"
+                        [style.color]="t.type === 'present' ? 'var(--accent-dark)' : t.type === 'futur' ? 'var(--accent)' : 'var(--text-secondary)'"
+                        [style.font-weight]="t.type === 'present' ? '700' : 'normal'">
                     {{ t.moisNom }}
                   </span>
                 </div>
@@ -275,21 +326,52 @@
               <h2 class="panel__title">Comportement de paiement</h2>
               <p class="panel__sub">À temps = avant le 5 du mois · Score = 60% taux + 40% ponctualité</p>
             </div>
-            <div class="tabs">
-              <button class="tab-btn" [class.tab-btn--active]="activePayeursTab === 'tous'"
-                      (click)="activePayeursTab = 'tous'">
-                Tous ({{ data.analysePayeurs.length }})
-              </button>
-              <button class="tab-btn"
-                      [class.tab-btn--active]="activePayeursTab === 'bons'"
-                      (click)="activePayeursTab = 'bons'">
-                ✓ Bons ({{ data.bonsPayeurs?.length || 0 }})
-              </button>
-              <button class="tab-btn"
-                      [class.tab-btn--active]="activePayeursTab === 'mauvais'"
-                      (click)="activePayeursTab = 'mauvais'">
-                ✗ Mauvais ({{ data.mauvaisPayeurs?.length || 0 }})
-              </button>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.6rem">
+
+              <!-- Barre de recherche -->
+              <div style="position:relative">
+                <svg style="position:absolute;left:.55rem;top:50%;transform:translateY(-50%);color:var(--text-secondary);pointer-events:none"
+                     width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text"
+                       [(ngModel)]="searchPayeurs"
+                       (ngModelChange)="payeursExpanded = false"
+                       placeholder="Rechercher une boutique..."
+                       style="padding:.38rem .75rem .38rem 1.85rem;font-family:'Garet',sans-serif;font-size:.75rem;
+                              border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-main);
+                              color:var(--text-primary);outline:none;width:210px;transition:border-color .15s"
+                       (focus)="onInputFocus($event)"
+                       (blur)="onInputBlur($event)" />
+                @if (searchPayeurs) {
+                  <button (click)="searchPayeurs = ''" aria-label="Effacer"
+                          style="position:absolute;right:.5rem;top:50%;transform:translateY(-50%);
+                                 background:none;border:none;cursor:pointer;color:var(--text-secondary);
+                                 display:flex;align-items:center;padding:0">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                }
+              </div>
+
+              <!-- Tabs -->
+              <div class="tabs">
+                <button class="tab-btn" [class.tab-btn--active]="activePayeursTab === 'tous'"
+                        (click)="activePayeursTab = 'tous'; payeursExpanded = false">
+                  Tous ({{ data.analysePayeurs.length }})
+                </button>
+                <button class="tab-btn" [class.tab-btn--active]="activePayeursTab === 'bons'"
+                        (click)="activePayeursTab = 'bons'; payeursExpanded = false">
+                  ✓ Bons ({{ data.bonsPayeurs?.length || 0 }})
+                </button>
+                <button class="tab-btn" [class.tab-btn--active]="activePayeursTab === 'mauvais'"
+                        (click)="activePayeursTab = 'mauvais'; payeursExpanded = false">
+                  ✗ Mauvais ({{ data.mauvaisPayeurs?.length || 0 }})
+                </button>
+              </div>
+
             </div>
           </div>
 
@@ -342,8 +424,9 @@
                 <div class="score-bar-wrap">
                   <div class="score-bar-wrap__track">
                     <div class="score-bar-wrap__fill"
-                         [class]="'score-bar-wrap__fill--' + b.categorie"
-                         [style.width.%]="b.scoreGlobal"></div>
+                         [style.width.%]="b.scoreGlobal"
+                         [style.background]="b.categorie === 'excellent' ? '#2e7d46' : b.categorie === 'moyen' ? '#926415' : '#b03030'">
+                    </div>
                   </div>
                   <span class="score-bar-wrap__label">Score {{ b.scoreGlobal }}/100</span>
                 </div>
@@ -356,6 +439,34 @@
           } @empty {
             <div style="padding:2rem;text-align:center;color:var(--text-secondary);font-size:.82rem">Aucune donnée</div>
           }
+
+          <!-- Bouton voir plus / voir moins — APRÈS le bloc @for/@empty -->
+          @if (payeursTotalFiltres > PAYEURS_LIMIT && !searchPayeurs) {
+            <div style="padding:.9rem 1.5rem;border-top:1px solid var(--border);text-align:center">
+              <button class="btn-voir-plus"
+                      (click)="payeursExpanded = !payeursExpanded"
+                      (mouseenter)="onBtnEnter($event)"
+                      (mouseleave)="onBtnLeave($event)"
+                      style="font-family:'Garet',sans-serif;font-size:.78rem;padding:.45rem 1.2rem;
+                             border:1px solid var(--border);border-radius:var(--radius-md);
+                             background:var(--bg-main);color:var(--text-secondary);cursor:pointer;
+                             display:inline-flex;align-items:center;gap:.45rem;
+                             transition:background .15s,color .15s,border-color .15s">
+                @if (!payeursExpanded) {
+                  <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                  Voir les {{ payeursTotalFiltres - PAYEURS_LIMIT }} autres boutiques
+                } @else {
+                  <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                  </svg>
+                  Réduire
+                }
+              </button>
+            </div>
+          }
+
         </div>
       }
 
@@ -388,8 +499,8 @@
                   <tr>
                     <td>
                       <div style="display:flex;align-items:center;gap:.75rem">
-                        <div class="table-box-icon">{{ item.boxNumero || '?' }}</div>
-                        <span>{{ item.boxNom || 'Box ' + item.boxNumero }}</span>
+                        <div class="table-box-icon">{{ item.boxNom }}</div>
+                        <span>{{ item.boxNom }}</span>
                       </div>
                     </td>
                     <td class="right bold">{{ item.totalPercu | number:'1.0-0' }} Ar</td>
@@ -398,7 +509,8 @@
                       <div class="table-part">
                         <div class="table-part__track">
                           <div class="table-part__fill"
-                               [style.width.%]="data.stats.revenuReel > 0 ? (item.totalPercu / data.stats.revenuReel * 100) : 0"></div>
+                               [style.width.%]="data.stats.revenuReel > 0 ? (item.totalPercu / data.stats.revenuReel * 100) : 0"
+                               style="background:#7d936c"></div>
                         </div>
                         <span class="table-part__pct">
                           {{ data.stats.revenuReel > 0 ? (item.totalPercu / data.stats.revenuReel * 100 | number:'1.0-0') : 0 }}%
@@ -438,7 +550,8 @@
                       <div class="table-part">
                         <div class="table-part__track">
                           <div class="table-part__fill table-part__fill--blue"
-                               [style.width.%]="data.stats.revenuReel > 0 ? (item.totalPercu / data.stats.revenuReel * 100) : 0"></div>
+                               [style.width.%]="data.stats.revenuReel > 0 ? (item.totalPercu / data.stats.revenuReel * 100) : 0"
+                               style="background:#2a5a7a"></div>
                         </div>
                         <span class="table-part__pct">
                           {{ data.stats.revenuReel > 0 ? (item.totalPercu / data.stats.revenuReel * 100 | number:'1.0-0') : 0 }}%
@@ -479,7 +592,6 @@
   @if (chatOuvert) {
     <div class="chat-panel">
 
-      <!-- Header -->
       <div class="chat-header">
         <div class="chat-header__info">
           <div class="chat-header__avatar">
@@ -509,7 +621,6 @@
         </div>
       </div>
 
-      <!-- Raccourcis -->
       <div class="chat-shortcuts">
         <p class="chat-shortcuts__label">Raccourcis</p>
         <div class="chat-shortcuts__list">
@@ -521,10 +632,8 @@
         </div>
       </div>
 
-      <!-- Messages -->
       <div class="chat-messages" id="chat-messages">
         @for (msg of chatMessages; track $index) {
-
           @if (msg.isAlerte) {
             <button class="chat-alerte" [class]="'chat-alerte--' + (msg.alerteType || 'info')"
                     (click)="useQuestion(msg.alerteAction || '')">
@@ -540,26 +649,20 @@
                 </div>
               </div>
             </button>
-          }
-
-          @else {
+          } @else {
             <div class="chat-bubble-wrap" [class]="'chat-bubble-wrap--' + msg.role">
               <div class="chat-bubble" [class]="'chat-bubble--' + msg.role">
                 @if (msg.loading) {
-                  <div class="chat-typing">
-                    <span></span><span></span><span></span>
-                  </div>
+                  <div class="chat-typing"><span></span><span></span><span></span></div>
                 } @else {
                   {{ msg.content }}
                 }
               </div>
             </div>
           }
-
         }
       </div>
 
-      <!-- Input -->
       <div class="chat-input-area">
         <div class="chat-input-area__row">
           <textarea class="chat-textarea"
