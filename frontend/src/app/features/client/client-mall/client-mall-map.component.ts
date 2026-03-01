@@ -39,7 +39,7 @@ export class ClientMallMapComponent implements AfterViewInit, OnDestroy, OnChang
   private boxesContainers: Map<string, PIXI.Container> = new Map();
 
   // ── Même SCALE_FACTOR que l'admin ──
-  private readonly SCALE_FACTOR = 0.9;
+  private readonly SCALE_FACTOR = 0.8;
 
   constructor(private boutiqueService: BoutiqueService) {}
   

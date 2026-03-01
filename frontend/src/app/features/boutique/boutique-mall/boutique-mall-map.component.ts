@@ -37,7 +37,7 @@ export class BoutiqueMallMapComponent implements AfterViewInit, OnDestroy, OnCha
   private mapContent = new PIXI.Container();
   private boxesContainers: Map<string, PIXI.Container> = new Map();
 
-  private readonly SCALE_FACTOR = 0.9;
+  private readonly SCALE_FACTOR = 0.8;
   private readonly COLOR_MA_BOX  = 0x2e7d32;
   private readonly COLOR_LIBRE   = 0x7d936c;
   private readonly COLOR_OCCUPEE = 0xf59e0b;

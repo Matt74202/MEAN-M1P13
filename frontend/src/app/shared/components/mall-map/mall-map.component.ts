@@ -59,7 +59,7 @@ export class MallMapComponent implements AfterViewInit, OnDestroy, OnChanges {
   private currentDraggedContainer: PIXI.Container | null = null;
 
   // 🆕 Facteur de zoom pour réduire la carte
-  private readonly SCALE_FACTOR = 0.9; // Réduit à 65% de la taille originale
+  private readonly SCALE_FACTOR = 0.8; // Réduit à 65% de la taille originale
 
   constructor(private boutiqueService: BoutiqueService) {}
 
