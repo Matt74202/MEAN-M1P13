@@ -11,7 +11,7 @@ const generateToken = (user) => {
       mail: user.mail,
       role: user.role,
     },
-    process.env.JWT_SECRET || 'votre_secret_par_defaut_pour_test',
+    process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
 };
@@ -48,7 +48,7 @@ exports.login = async (req, res) => {
         role:      user.role,
         profileId,
       },
-      process.env.JWT_SECRET || 'secret_test',
+      process.env.JWT_SECRET ,
       { expiresIn: '7d' }
     );
 
