@@ -1,4 +1,4 @@
-const RentalRequest = require('../models/rentalRequest');
+const RentalRequest = require('../models/RentalRequest');
 const Box           = require('../models/Box');
 const Contrat       = require('../models/Contrat');
 
