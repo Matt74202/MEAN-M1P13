@@ -34,7 +34,7 @@ module.exports = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'votre_secret_par_defaut_pour_test');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('[AUTH MIDDLEWARE] Token VALIDE ! Décodé :', {
       id: decoded.id,
       mail: decoded.mail,
