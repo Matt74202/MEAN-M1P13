@@ -1237,11 +1237,21 @@
     display: flex;
     gap: .35rem;
     overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: none;
+    padding-bottom: 4px;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
 
     &::-webkit-scrollbar {
-      display: none;
+    height: 3px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 99px;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
     }
   }
 }

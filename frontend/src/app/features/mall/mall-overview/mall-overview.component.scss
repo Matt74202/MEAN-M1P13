@@ -266,12 +266,12 @@ $edit-accent:     #f59e0b;
   position: relative;
   overflow: hidden;
   background: #edeee9;
-  min-height: 480px;
-  max-height: calc(100vh - 180px);
+  height: calc(100vh - 64px);  
+  min-height: 700px;
 
   @media (max-width: 768px) {
-    min-height: 360px;
-    max-height: calc(100vh - 160px);
+    height: calc(100vh - 56px);
+    min-height: 500px;
   }
 }
 
