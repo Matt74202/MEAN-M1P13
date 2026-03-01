@@ -1,8 +1,8 @@
 // src/controllers/financesController.js
-const Contrat = require('../models/contrat');
-const Loyer   = require('../models/loyer');
-const Box     = require('../models/box');
-const User    = require('../models/user');
+const Contrat = require('../models/Contrat');
+const Loyer   = require('../models/Loyer');
+const Box     = require('../models/Box');
+const User    = require('../models/User');
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
