@@ -105,6 +105,15 @@ exports.getHistorique = async (req, res) => {
     if (boutiqueId) filter.idBoutique = boutiqueId;
     if (produitId)  filter.idProduit  = produitId;
     if (type)       filter.type       = type;
+    if (req.query.dateDebut || req.query.dateFin) {
+      filter.date = {};
+      if (req.query.dateDebut) filter.date.$gte = new Date(req.query.dateDebut);
+      if (req.query.dateFin) {
+        const fin = new Date(req.query.dateFin);
+        fin.setHours(23, 59, 59, 999); // inclut toute la journée
+        filter.date.$lte = fin;
+      }
+    }
 
     const skip = (Number(page) - 1) * Number(limit);
 

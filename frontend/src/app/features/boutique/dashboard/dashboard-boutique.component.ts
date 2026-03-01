@@ -155,8 +155,8 @@ export class DashboardBoutiqueComponent implements OnInit {
     });
   }
 
-  getTotalProduits(): number {
-    return this.data()?.produitsVendus.reduce((sum, p) => sum + p.quantite, 0) ?? 0;
+ getTotalProduits(): number {
+    return this.data()?.totalUnitesVendues ?? 0;
   }
 
   getTopProduit(): string {

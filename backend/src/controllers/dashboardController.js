@@ -44,7 +44,7 @@ exports.getDashboardBoutique = async (req, res) => {
     ]);
 
     // ── 4. Produits les plus vendus ──────────────────────────────────────────
-    const produitsVendus = await Achat.aggregate([
+    const produitsVendusOnline = await Achat.aggregate([
       { $match: { idBoutique, createdAt: { $gte: dateDebut } } },
       { $unwind: '$details' },
       {
@@ -54,10 +54,66 @@ exports.getDashboardBoutique = async (req, res) => {
           quantite: { $sum: '$details.quantite' },
           chiffre:  { $sum: { $multiply: ['$details.prixUnitaire', '$details.quantite'] } }
         }
-      },
-      { $sort: { quantite: -1 } },
-      { $limit: 5 }
+      }
     ]);
+
+    // Ventes physiques (mouvements sortie avec raison achat_physique)
+    const ventesPhysiques = await MouvementStock.aggregate([
+      {
+        $match: {
+          idBoutique: boutiqueId,
+          type:       'sortie',
+          raison:     'achat_physique',
+          date:       { $gte: dateDebut }
+        }
+      },
+      {
+        $group: {
+          _id:      '$idProduit',
+          quantite: { $sum: '$nombre' }
+        }
+      }
+    ]);
+
+    // Récupérer les noms des produits pour les ventes physiques
+    const idsProduits = ventesPhysiques.map(v => v._id);
+    const produitsPhysiques = idsProduits.length > 0
+      ? await Produit.find({ _id: { $in: idsProduits } }, 'details.nom details.categorie').lean()
+      : [];
+
+    const nomMap = {};
+    produitsPhysiques.forEach(p => { nomMap[p._id.toString()] = p.details?.nom || '—'; });
+
+    // Fusionner online + physique
+    const fusionMap = {};
+
+    produitsVendusOnline.forEach(p => {
+      const key = p._id?.toString();
+      fusionMap[key] = { _id: p._id, nom: p.nom, quantite: p.quantite, chiffre: p.chiffre };
+    });
+
+    ventesPhysiques.forEach(p => {
+      const key = p._id?.toString();
+      if (fusionMap[key]) {
+        fusionMap[key].quantite += p.quantite;
+      } else {
+        fusionMap[key] = {
+          _id:      p._id,
+          nom:      nomMap[key] || '—',
+          quantite: p.quantite,
+          chiffre:  0
+        };
+      }
+    });
+
+    const produitsVendus = Object.values(fusionMap)
+      .sort((a, b) => b.quantite - a.quantite)
+      .slice(0, 5);
+
+    // ── Total unités vendues (online + physique) ─────────────────────────────
+    const totalUnitesOnline = produitsVendusOnline.reduce((s, p) => s + p.quantite, 0);
+    const totalUnitesPhysiques = ventesPhysiques.reduce((s, p) => s + p.quantite, 0);
+    const totalUnitesVendues = totalUnitesOnline + totalUnitesPhysiques;
 
     // ── 5. Notes boutique ────────────────────────────────────────────────────
     const notesBoutique = await NoteBoutique.aggregate([
@@ -134,7 +190,6 @@ exports.getDashboardBoutique = async (req, res) => {
     // ── 10. Loyers — prochain impayé + résumé ────────────────────────────────
     const today = new Date();
 
-    // Récupérer les contrats actifs de la boutique
     const contratsActifs = await Contrat.find({
       $or: [
         { userId:     idBoutique },
@@ -145,7 +200,6 @@ exports.getDashboardBoutique = async (req, res) => {
       .populate('idBox', 'numero nom loyer')
       .lean();
 
-    // Récupérer tous les loyers déjà payés pour cette boutique
     const loyersPaies = await Loyer.find({
       boutiqueId,
       statut: 'paye'
@@ -153,7 +207,6 @@ exports.getDashboardBoutique = async (req, res) => {
 
     const paidSet = new Set(loyersPaies.map(l => `${l.contratId}__${l.mois}`));
 
-    // Générer les loyers virtuels de chaque contrat et trouver les impayés
     const loyersImpayes = [];
 
     for (const contrat of contratsActifs) {
@@ -167,7 +220,6 @@ exports.getDashboardBoutique = async (req, res) => {
         const key     = `${contrat._id}__${moisStr}`;
 
         if (!paidSet.has(key)) {
-          // Échéance = le 5 du mois
           const echeance = new Date(curseur.getFullYear(), curseur.getMonth(), 5, 23, 59, 59);
 
           loyersImpayes.push({
@@ -185,16 +237,13 @@ exports.getDashboardBoutique = async (req, res) => {
       }
     }
 
-    // Trier : d'abord les en retard (les plus anciens), puis les à venir
     loyersImpayes.sort((a, b) => new Date(a.dateEcheance) - new Date(b.dateEcheance));
 
-    // Prochain loyer à payer = le plus ancien impayé
     const prochainLoyer = loyersImpayes[0] || null;
 
-    // Calculer les jours restants / de retard pour le prochain
     let joursInfo = null;
     if (prochainLoyer) {
-      const diffMs   = new Date(prochainLoyer.dateEcheance) - today;
+      const diffMs    = new Date(prochainLoyer.dateEcheance) - today;
       const diffJours = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
       joursInfo = {
         jours:    Math.abs(diffJours),
@@ -202,10 +251,8 @@ exports.getDashboardBoutique = async (req, res) => {
       };
     }
 
-    // Prochain mois à payer (futur) pour affichage "dans X jours"
-    // = le 5 du mois prochain si tout est payé pour ce mois
-    const moisCourantStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-    const echeanceCeMois = new Date(today.getFullYear(), today.getMonth(), 5, 23, 59, 59);
+    const moisCourantStr       = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const echeanceCeMois       = new Date(today.getFullYear(), today.getMonth(), 5, 23, 59, 59);
     const echeanceMoisProchain = new Date(today.getFullYear(), today.getMonth() + 1, 5, 23, 59, 59);
 
     const montantMensuelTotal = contratsActifs.reduce((s, c) => s + (c.idBox?.loyer || 0), 0);
@@ -218,7 +265,6 @@ exports.getDashboardBoutique = async (req, res) => {
       joursInfo,
       echeanceCeMois:       echeanceCeMois.toISOString(),
       echeanceMoisProchain: echeanceMoisProchain.toISOString(),
-      // Les 3 prochains impayés pour la liste
       prochainImpayes:      loyersImpayes.slice(0, 3)
     };
 
@@ -240,6 +286,7 @@ exports.getDashboardBoutique = async (req, res) => {
 
       ventesParJour,
       produitsVendus,
+      totalUnitesVendues,   // ← total online + physique
 
       notes: {
         moyenne:      notesBoutique[0] ? Math.round(notesBoutique[0].moyenne * 10) / 10 : null,
@@ -253,7 +300,7 @@ exports.getDashboardBoutique = async (req, res) => {
         nbProduits: produits.length,
         alertes:    stockFaible.map(p => ({
           _id:       p._id,
-          nom:       p.details?.nom      || '—',
+          nom:       p.details?.nom       || '—',
           categorie: p.details?.categorie || '—',
           stock:     p.stock
         })),

@@ -62,6 +62,7 @@ export interface DashboardData {
     totalSorties: number;
   };
   loyers: LoyersSummary;
+  totalUnitesVendues: number;
 }
 
 @Injectable({ providedIn: 'root' })

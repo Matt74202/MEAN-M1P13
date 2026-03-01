@@ -5,10 +5,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, Validators, FormsModule } from '@angular/forms';
 
 import { FormComponent, FormField } from '@app/shared/UI/form/form.component';
-import { StockService, StockProduit, RAISONS_ENTREE, RAISONS_SORTIE } from '@app/services/stock.service';
+import { StockService, StockProduit, RAISONS_ENTREE, RAISONS_SORTIE, MouvementStock } from '@app/services/stock.service';
 import { AuthService } from '@app/services/auth.service';
 import { BoutiqueNavbarComponent } from '@app/shared/components/boutique-navbar/boutique-navbar.component';
 
@@ -17,6 +17,7 @@ import { BoutiqueNavbarComponent } from '@app/shared/components/boutique-navbar/
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,
@@ -40,6 +41,24 @@ export class GestionStockComponent implements OnInit {
   produitsEnAlerte = computed(() => this.stockProduits().filter(p => p.stockFaible));
   filtreAlerte     = signal(false);
   recherche        = signal('');
+  historique        = signal<MouvementStock[]>([]);
+  historiqueLoading = signal(false);
+  historiquePage    = signal(1);
+  historiqueTotal   = signal(0);
+  historiqueTotalPages = signal(1);
+  filtreType        = signal<'entree' | 'sortie' | ''>('');
+  filtreDateDebut   = signal('');
+  filtreDateFin     = signal('');
+  historiqueLimit   = 10;
+
+  onglet = signal<'stock' | 'historique'>('stock');
+
+  switchOnglet(o: 'stock' | 'historique') {
+    this.onglet.set(o);
+    if (o === 'historique' && this.historique().length === 0) {
+      this.loadHistorique();
+    }
+  }
 
   produitAffiches = computed(() => {
     let liste = this.filtreAlerte()
@@ -176,5 +195,47 @@ export class GestionStockComponent implements OnInit {
     });
 
     dialogRef.componentInstance.cancel.subscribe(() => dialogRef.close());
+  }
+
+  loadHistorique() {
+    this.historiqueLoading.set(true);
+    const params: any = {
+      boutiqueId: this.boutiqueId,
+      page:       this.historiquePage(),
+      limit:      this.historiqueLimit,
+    };
+    if (this.filtreType())      params.type       = this.filtreType();
+    if (this.filtreDateDebut()) params.dateDebut  = this.filtreDateDebut();
+    if (this.filtreDateFin())   params.dateFin    = this.filtreDateFin();
+
+    this.stockService.getHistorique(params).subscribe({
+      next: res => {
+        this.historique.set(res.mouvements);
+        this.historiqueTotal.set(res.total);
+        this.historiqueTotalPages.set(res.totalPages);
+        this.historiqueLoading.set(false);
+      },
+      error: () => this.historiqueLoading.set(false),
+    });
+  }
+
+  onFiltreChange() {
+    this.historiquePage.set(1);
+    this.loadHistorique();
+  }
+
+  clearDates() {
+    this.filtreDateDebut.set('');
+    this.filtreDateFin.set('');
+    this.onFiltreChange();
+  }
+
+  goPage(p: number) {
+    this.historiquePage.set(p);
+    this.loadHistorique();
+  }
+
+  getRaisonLabel(raison: string): string {
+    return [...RAISONS_ENTREE, ...RAISONS_SORTIE].find(r => r.value === raison)?.label ?? raison;
   }
 }

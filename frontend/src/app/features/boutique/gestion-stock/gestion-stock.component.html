@@ -2,122 +2,274 @@
 
 <div class="stock-container">
 
-  <!-- Header -->
-  <header class="stock-header">
-    <div class="header-top">
-      <div class="header-left">
-        <h1>Gestion du stock</h1>
-        @if (produitsEnAlerte().length > 0) {
-          <button
-            class="alerte-badge"
-            (click)="toggleFiltreAlerte()"
-            [class.active]="filtreAlerte()"
-            [attr.aria-pressed]="filtreAlerte()">
-            <mat-icon>warning</mat-icon>
-            <span>{{ produitsEnAlerte().length }} en stock faible</span>
-          </button>
-        }
-      </div>
-    </div>
-
-    <!-- Barre de recherche -->
-    <div class="search-bar" role="search">
-      <mat-icon class="search-icon" aria-hidden="true">search</mat-icon>
-      <input
-        type="search"
-        placeholder="Rechercher un produit..."
-        [value]="recherche()"
-        (input)="onRecherche($event)"
-        class="search-input"
-        aria-label="Rechercher un produit"
-      />
-      @if (recherche()) {
-        <button class="clear-btn" (click)="recherche.set('')" aria-label="Effacer la recherche">
-          <mat-icon aria-hidden="true">close</mat-icon>
-        </button>
+  <!-- ══ ONGLETS ══ -->
+  <div class="onglets">
+    <button
+      class="onglet-btn"
+      [class.active]="onglet() === 'stock'"
+      (click)="switchOnglet('stock')">
+      <mat-icon>inventory_2</mat-icon>
+      Gestion du stock
+    </button>
+    <button
+      class="onglet-btn"
+      [class.active]="onglet() === 'historique'"
+      (click)="switchOnglet('historique')">
+      <mat-icon>swap_vert</mat-icon>
+      Mouvements
+      @if (historiqueTotal() > 0) {
+        <span class="onglet-count">{{ historiqueTotal() }}</span>
       }
-    </div>
-  </header>
+    </button>
+  </div>
 
-  <!-- Compteur résultats -->
-  @if (produitAffiches().length > 0) {
-    <p class="results-count" aria-live="polite">
-      {{ produitAffiches().length }} produit{{ produitAffiches().length > 1 ? 's' : '' }}
-      @if (filtreAlerte()) { <span class="results-filter-tag">stock faible</span> }
-      @if (recherche()) { <span class="results-filter-tag">« {{ recherche() }} »</span> }
-    </p>
-  }
+  <!-- ══ SECTION STOCK ══ -->
+  @if (onglet() === 'stock') {
 
-  <!-- Grille produits -->
-  <div class="stock-grid" role="list">
-
-    @for (produit of produitAffiches(); track produit.id) {
-
-      <div class="stock-card" [class.alerte]="produit.stockFaible" role="listitem">
-
-        <!-- Image + infos -->
-        <div class="card-left">
-          <img
-            [src]="produit.imageUrl || 'https://placehold.co/64x64?text=?'"
-            [alt]="produit.details.nom"
-            class="stock-img"
-            loading="lazy"
-          />
-          <div class="stock-info">
-            <span class="stock-nom">{{ produit.details.nom }}</span>
-            <span class="stock-cat">{{ produit.details.categorie }}</span>
-          </div>
-        </div>
-
-        <!-- Quantité -->
-        <div class="stock-qty"
-          [class.low]="produit.stockFaible && produit.stock > 0"
-          [class.zero]="produit.stock === 0">
-          <span class="qty-number">{{ produit.stock }}</span>
-          <span class="qty-label">{{ getUniteLabel(produit.stock) }}</span>
-          @if (produit.stockFaible) {
-            <mat-icon class="warn-icon" matTooltip="Stock faible" aria-label="Stock faible">warning</mat-icon>
+    <header class="stock-header">
+      <div class="header-top">
+        <div class="header-left">
+          <h1>Gestion du stock</h1>
+          @if (produitsEnAlerte().length > 0) {
+            <button
+              class="alerte-badge"
+              (click)="toggleFiltreAlerte()"
+              [class.active]="filtreAlerte()"
+              [attr.aria-pressed]="filtreAlerte()">
+              <mat-icon>warning</mat-icon>
+              <span>{{ produitsEnAlerte().length }} en stock faible</span>
+            </button>
           }
         </div>
-
-        <!-- Actions -->
-        <div class="card-actions">
-          <button
-            mat-stroked-button
-            color="primary"
-            (click)="openEntreeForm(produit)"
-            matTooltip="Enregistrer un approvisionnement"
-            class="btn-entree"
-            [attr.aria-label]="'Entrée stock pour ' + produit.details.nom">
-            <mat-icon>add</mat-icon>
-            <span class="btn-label">Entrée</span>
-          </button>
-          <button
-            mat-stroked-button
-            color="warn"
-            [disabled]="produit.stock === 0"
-            (click)="openSortieForm(produit)"
-            matTooltip="{{ produit.stock === 0 ? 'Stock vide' : 'Enregistrer une sortie' }}"
-            class="btn-sortie"
-            [attr.aria-label]="'Sortie stock pour ' + produit.details.nom">
-            <mat-icon>remove</mat-icon>
-            <span class="btn-label">Sortie</span>
-          </button>
-        </div>
-
       </div>
 
-    } @empty {
-      <div class="empty-state" role="status">
-        <mat-icon aria-hidden="true">inventory_2</mat-icon>
-        <p>Aucun produit trouvé</p>
-        @if (filtreAlerte() || recherche()) {
-          <button class="reset-filters-btn" (click)="filtreAlerte.set(false); recherche.set('')">
-            Réinitialiser les filtres
+      <!-- Barre de recherche -->
+      <div class="search-bar" role="search">
+        <mat-icon class="search-icon" aria-hidden="true">search</mat-icon>
+        <input
+          type="search"
+          placeholder="Rechercher un produit..."
+          [value]="recherche()"
+          (input)="onRecherche($event)"
+          class="search-input"
+          aria-label="Rechercher un produit"
+        />
+        @if (recherche()) {
+          <button class="clear-btn" (click)="recherche.set('')" aria-label="Effacer la recherche">
+            <mat-icon aria-hidden="true">close</mat-icon>
           </button>
         }
       </div>
+    </header>
+
+    <!-- Compteur résultats -->
+    @if (produitAffiches().length > 0) {
+      <p class="results-count" aria-live="polite">
+        {{ produitAffiches().length }} produit{{ produitAffiches().length > 1 ? 's' : '' }}
+        @if (filtreAlerte()) { <span class="results-filter-tag">stock faible</span> }
+        @if (recherche()) { <span class="results-filter-tag">« {{ recherche() }} »</span> }
+      </p>
     }
 
-  </div>
+    <!-- Grille produits -->
+    <div class="stock-grid" role="list">
+
+      @for (produit of produitAffiches(); track produit.id) {
+        <div class="stock-card" [class.alerte]="produit.stockFaible" role="listitem">
+
+          <!-- Image + infos -->
+          <div class="card-left">
+            <img
+              [src]="produit.imageUrl || 'https://placehold.co/64x64?text=?'"
+              [alt]="produit.details.nom"
+              class="stock-img"
+              loading="lazy"
+            />
+            <div class="stock-info">
+              <span class="stock-nom">{{ produit.details.nom }}</span>
+              <span class="stock-cat">{{ produit.details.categorie }}</span>
+            </div>
+          </div>
+
+          <!-- Quantité -->
+          <div class="stock-qty"
+            [class.low]="produit.stockFaible && produit.stock > 0"
+            [class.zero]="produit.stock === 0">
+            <span class="qty-number">{{ produit.stock }}</span>
+            <span class="qty-label">{{ getUniteLabel(produit.stock) }}</span>
+            @if (produit.stockFaible) {
+              <mat-icon class="warn-icon" matTooltip="Stock faible" aria-label="Stock faible">warning</mat-icon>
+            }
+          </div>
+
+          <!-- Actions -->
+          <div class="card-actions">
+            <button
+              mat-stroked-button
+              color="primary"
+              (click)="openEntreeForm(produit)"
+              matTooltip="Enregistrer un approvisionnement"
+              class="btn-entree"
+              [attr.aria-label]="'Entrée stock pour ' + produit.details.nom">
+              <mat-icon>add</mat-icon>
+              <span class="btn-label">Entrée</span>
+            </button>
+            <button
+              mat-stroked-button
+              color="warn"
+              [disabled]="produit.stock === 0"
+              (click)="openSortieForm(produit)"
+              matTooltip="{{ produit.stock === 0 ? 'Stock vide' : 'Enregistrer une sortie' }}"
+              class="btn-sortie"
+              [attr.aria-label]="'Sortie stock pour ' + produit.details.nom">
+              <mat-icon>remove</mat-icon>
+              <span class="btn-label">Sortie</span>
+            </button>
+          </div>
+
+        </div>
+      } @empty {
+        <div class="empty-state" role="status">
+          <mat-icon aria-hidden="true">inventory_2</mat-icon>
+          <p>Aucun produit trouvé</p>
+          @if (filtreAlerte() || recherche()) {
+            <button class="reset-filters-btn" (click)="filtreAlerte.set(false); recherche.set('')">
+              Réinitialiser les filtres
+            </button>
+          }
+        </div>
+      }
+
+    </div>
+
+  }
+
+  <!-- ══ SECTION HISTORIQUE ══ -->
+  @if (onglet() === 'historique') {
+
+    <div class="historique-header">
+      <h2 class="historique-title">
+        <mat-icon>swap_vert</mat-icon>
+        Historique des mouvements
+        @if (historiqueTotal() > 0) {
+          <span class="historique-count">{{ historiqueTotal() }}</span>
+        }
+      </h2>
+    </div>
+
+    <!-- Filtres -->
+    <div class="historique-filtres">
+
+      <!-- Type -->
+      <div class="filtre-group">
+        <button
+          class="filtre-btn"
+          [class.active]="filtreType() === ''"
+          (click)="filtreType.set(''); onFiltreChange()">
+          Tous
+        </button>
+        <button
+          class="filtre-btn filtre-btn--entree"
+          [class.active]="filtreType() === 'entree'"
+          (click)="filtreType.set('entree'); onFiltreChange()">
+          <mat-icon>add_circle</mat-icon> Entrées
+        </button>
+        <button
+          class="filtre-btn filtre-btn--sortie"
+          [class.active]="filtreType() === 'sortie'"
+          (click)="filtreType.set('sortie'); onFiltreChange()">
+          <mat-icon>remove_circle</mat-icon> Sorties
+        </button>
+      </div>
+
+      <!-- Dates -->
+      <div class="filtre-dates">
+        <div class="date-input-wrap" [class.has-value]="!!filtreDateDebut()">
+          <mat-icon>event</mat-icon>
+          <input
+            type="date"
+            class="date-input"
+            [value]="filtreDateDebut()"
+            (change)="filtreDateDebut.set($any($event.target).value); onFiltreChange()"
+            aria-label="Date de début" />
+        </div>
+        <span class="date-sep">→</span>
+        <div class="date-input-wrap" [class.has-value]="!!filtreDateFin()">
+          <mat-icon>event</mat-icon>
+          <input
+            type="date"
+            class="date-input"
+            [value]="filtreDateFin()"
+            (change)="filtreDateFin.set($any($event.target).value); onFiltreChange()"
+            aria-label="Date de fin" />
+        </div>
+        @if (filtreDateDebut() || filtreDateFin()) {
+          <button class="clear-dates-btn" (click)="clearDates()" aria-label="Effacer les dates">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+
+    </div>
+
+    <!-- Liste -->
+    @if (historiqueLoading()) {
+      <div class="historique-loading">
+        <mat-icon class="spin">sync</mat-icon>
+        <span>Chargement...</span>
+      </div>
+    } @else if (historique().length === 0) {
+      <div class="historique-empty">
+        <mat-icon>inbox</mat-icon>
+        <p>Aucun mouvement trouvé</p>
+      </div>
+    } @else {
+      <div class="historique-list">
+        @for (m of historique(); track m.id) {
+          <div class="mv-row"
+               [class.mv-row--entree]="m.type === 'entree'"
+               [class.mv-row--sortie]="m.type === 'sortie'">
+
+            <div class="mv-type-icon">
+              <mat-icon>{{ m.type === 'entree' ? 'add_circle' : 'remove_circle' }}</mat-icon>
+            </div>
+
+            <div class="mv-produit">
+              <span class="mv-nom">{{ m.idProduit?.details?.nom ?? '—' }}</span>
+              <span class="mv-raison">{{ getRaisonLabel(m.raison) }}</span>
+              @if (m.note) { <span class="mv-note">{{ m.note }}</span> }
+            </div>
+
+            <div class="mv-nombre"
+                 [class.entree]="m.type === 'entree'"
+                 [class.sortie]="m.type === 'sortie'">
+              {{ m.type === 'entree' ? '+' : '−' }}{{ m.nombre }}
+              <small>u.</small>
+            </div>
+
+            <div class="mv-date">
+              <span>{{ m.date | date:'dd/MM/yyyy' }}</span>
+              <small>{{ m.date | date:'HH:mm' }}</small>
+            </div>
+
+          </div>
+        }
+      </div>
+
+      <!-- Pagination -->
+      @if (historiqueTotalPages() > 1) {
+        <div class="pagination">
+          <button class="page-btn" [disabled]="historiquePage() === 1" (click)="goPage(historiquePage() - 1)">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="page-info">{{ historiquePage() }} / {{ historiqueTotalPages() }}</span>
+          <button class="page-btn" [disabled]="historiquePage() === historiqueTotalPages()" (click)="goPage(historiquePage() + 1)">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      }
+    }
+
+  }
+
 </div>
