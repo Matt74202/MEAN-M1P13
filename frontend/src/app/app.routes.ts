@@ -15,6 +15,7 @@ import { ContratsBoutiqueComponent } from './features/boutique/contrats-boutique
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: 'register', loadComponent: () => import('@app/features/auth/register/register.component').then(m => m.RegisterComponent) },
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'mall', component: MallCanvasComponent },
   { path: 'client/boutique', component: ClientBoutiqueComponent },

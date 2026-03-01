@@ -1,140 +1,71 @@
-<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="w-full max-w-md space-y-8">
-    <!-- Card principale (même style que la home et login) -->
-    <div class="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
+<div class="register-page">
+  <div class="register-card">
+    <h2 class="register-title">Dyve Mall</h2>
+    <p class="register-subtitle">Créer votre compte</p>
 
-      <div class="text-center mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Créer votre compte boutique
-        </h2>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Rejoignez notre plateforme et commencez à louer votre box dès aujourd'hui
-        </p>
+    <form (ngSubmit)="onSubmit()" class="register-form">
+
+      <div class="form-group">
+        <label class="form-label">Nom</label>
+        <input type="text" [(ngModel)]="nom" name="nom" required
+          class="form-input" placeholder="Ma Super Boutique" />
       </div>
 
-      <form (ngSubmit)="onSubmit()" class="space-y-6">
-
-        <!-- Nom de la boutique -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Nom de la boutique
-          </label>
-          <input
-            type="text"
-            [(ngModel)]="nom"
-            name="nom"
-            required
-            class="block w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-brand-400 dark:focus:ring-brand-400/20 sm:text-sm"
-            placeholder="Ma Super Boutique"
-          />
-        </div>
-
-        <!-- Email -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Email
-          </label>
-          <input
-            type="email"
-            [(ngModel)]="mail"
-            name="mail"
-            required
-            class="block w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-brand-400 dark:focus:ring-brand-400/20 sm:text-sm"
-            placeholder="contact@exemple.mg"
-          />
-        </div>
-
-        <!-- Mot de passe -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Mot de passe
-          </label>
-          <input
-            type="password"
-            [(ngModel)]="mdp"
-            name="mdp"
-            required
-            class="block w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-brand-400 dark:focus:ring-brand-400/20 sm:text-sm"
-            placeholder="••••••••"
-          />
-        </div>
-
-        <!-- Type de commerce -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Type de commerce
-          </label>
-          <select
-            [(ngModel)]="typeCommerce"
-            name="typeCommerce"
-            class="block w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-brand-400 dark:focus:ring-brand-400/20 sm:text-sm"
-          >
-            <option value="tech">Technologie / High-Tech</option>
-            <option value="mode">Mode & Accessoires</option>
-            <option value="alimentation">Alimentation</option>
-            <option value="beauté">Beauté & Cosmétique</option>
-            <option value="services">Services</option>
-            <option value="autre">Autre</option>
-          </select>
-        </div>
-
-        <!-- Description -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Description (facultatif)
-          </label>
-          <textarea
-            [(ngModel)]="description"
-            name="description"
-            rows="3"
-            class="block w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-brand-400 dark:focus:ring-brand-400/20 sm:text-sm"
-            placeholder="Décrivez brièvement votre activité..."
-          ></textarea>
-        </div>
-
-        <!-- Téléphone -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Téléphone de contact
-          </label>
-          <input
-            type="tel"
-            [(ngModel)]="numero"
-            name="numero"
-            class="block w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-brand-400 dark:focus:ring-brand-400/20 sm:text-sm"
-            placeholder="034 12 345 67"
-          />
-        </div>
-
-        <!-- Bouton Créer -->
-        <button
-          type="submit"
-          class="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:bg-brand-500 dark:hover:bg-brand-600"
-        >
-          Créer mon compte boutique
-        </button>
-
-        <!-- Message d'erreur -->
-        @if (errorMessage) {
-          <div class="rounded-lg bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-800">
-            {{ errorMessage }}
-          </div>
-        }
-      </form>
-
-      <!-- Lien retour vers login -->
-      <div class="mt-8 text-center text-sm">
-        <p class="text-gray-600 dark:text-gray-400">
-          Déjà inscrit ?
-        </p>
-        <a 
-          routerLink="/login"
-          class="mt-1 inline-block font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300"
-        >
-          Se connecter →
-        </a>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" [(ngModel)]="mail" name="mail" required
+          class="form-input" placeholder="contact@exemple.mg" />
       </div>
 
+      <div class="form-group">
+        <label class="form-label">Mot de passe</label>
+        <input type="password" [(ngModel)]="mdp" name="mdp" required
+          class="form-input" placeholder="••••••••" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Type de commerce</label>
+        <select [(ngModel)]="typeCommerce" name="typeCommerce" class="form-input form-select">
+          <option value="client">Client</option>
+          <option value="tech">Technologie / High-Tech</option>
+          <option value="mode">Mode & Accessoires</option>
+          <option value="alimentation">Alimentation</option>
+          <option value="beauté">Beauté & Cosmétique</option>
+          <option value="services">Services</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description <span class="form-label--optional">(facultatif)</span></label>
+        <textarea [(ngModel)]="description" name="description" rows="3"
+          class="form-input form-textarea"
+          placeholder="Décrivez brièvement votre activité..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Téléphone de contact</label>
+        <input type="tel" [(ngModel)]="numero" name="numero"
+          class="form-input" placeholder="034 12 345 67" />
+      </div>
+
+      <button type="submit" [disabled]="isLoading" class="btn-submit">
+        {{ isLoading ? 'Création en cours...' : 'Créer mon compte boutique' }}
+      </button>
+
+      @if (successMessage) {
+        <div class="success-message">{{ successMessage }}</div>
+      }
+
+      @if (errorMessage) {
+        <div class="error-message">{{ errorMessage }}</div>
+      }
+
+    </form>
+
+    <div class="register-footer">
+      <p>Déjà inscrit ?</p>
+      <a routerLink="/login">Se connecter →</a>
     </div>
   </div>
 </div>

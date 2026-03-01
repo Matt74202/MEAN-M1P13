@@ -42,5 +42,28 @@
       <p>Vous n'avez pas encore de compte?</p>
       <a routerLink="/register">Créer un compte maintenant →</a>
     </div>
+
+    <!-- Comptes de démonstration -->
+    
   </div>
+
+  <div class="demo-accounts">
+    <p class="demo-accounts__title">Comptes de démonstration </p>
+    <p class="demo-accounts__title">Cliquez pour remplir automatiquement les champs de connexion</p>
+    <div class="demo-accounts__list">
+      <button class="demo-btn" (click)="fillDemo('admin@dyve.mg', 'admin123')">
+        <span class="demo-btn__role demo-btn__role--admin">Admin</span>
+        <span class="demo-btn__mail">admin&#64;dyve.mg</span>
+      </button>
+      <button class="demo-btn" (click)="fillDemo('contact@exemple-boutique.mg', 'motdepasse123')">
+        <span class="demo-btn__role demo-btn__role--boutique">Boutique</span>
+        <span class="demo-btn__mail">contact&#64;exemple-boutique.mg</span>
+      </button>
+      <button class="demo-btn" (click)="fillDemo('jean.rakoto@gmail.com', 'password123')">
+        <span class="demo-btn__role demo-btn__role--client">Client</span>
+        <span class="demo-btn__mail">jean.rakoto&#64;gmail.com</span>
+      </button>
+    </div>
+  </div>
+
 </div>

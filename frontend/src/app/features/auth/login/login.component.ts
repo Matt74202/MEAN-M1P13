@@ -57,4 +57,8 @@ export class LoginComponent {
       default:            this.router.navigate(['/client']);   break;
     }
   }
+
+  fillDemo(mail: string, mdp: string) {
+    this.form.patchValue({ mail, mdp });
+  }
 }
