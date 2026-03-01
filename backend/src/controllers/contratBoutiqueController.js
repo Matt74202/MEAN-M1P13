@@ -1,6 +1,6 @@
 // src/controllers/contratBoutiqueController.js
 const Contrat  = require('../models/Contrat');
-const Box      = require('../models/box');
+const Box      = require('../models/Box');
 const mongoose = require('mongoose');
 
 // ─────────────────────────────────────────────────────────────
