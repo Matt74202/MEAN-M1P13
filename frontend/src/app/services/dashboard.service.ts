@@ -3,6 +3,44 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
 
+export interface StockAlerte {
+  _id: string;
+  nom: string;
+  categorie: string;
+  stock: number;
+}
+
+export interface MouvementRecent {
+  _id: string;
+  type: 'entree' | 'sortie';
+  nombre: number;
+  raison: string;
+  note?: string;
+  date: string;
+  produitNom: string;
+}
+
+export interface LoyerInfo {
+  contratId: string;
+  mois: string;
+  montant: number;
+  dateEcheance: string;
+  boxNumero: string;
+  boxNom: string;
+  enRetard: boolean;
+}
+
+export interface LoyersSummary {
+  nbImpayes: number;
+  montantImpayes: number;
+  montantMensuelTotal: number;
+  prochainLoyer: LoyerInfo | null;
+  joursInfo: { jours: number; enRetard: boolean } | null;
+  echeanceCeMois: string;
+  echeanceMoisProchain: string;
+  prochainImpayes: LoyerInfo[];
+}
+
 export interface DashboardData {
   periode: number;
   ca: { total: number; periode: number };
@@ -15,6 +53,15 @@ export interface DashboardData {
     repartition: Record<number, number>;
     derniersAvis: any[];
   };
+  stock: {
+    total: number;
+    nbProduits: number;
+    alertes: StockAlerte[];
+    mouvementsRecents: MouvementRecent[];
+    totalEntrees: number;
+    totalSorties: number;
+  };
+  loyers: LoyersSummary;
 }
 
 @Injectable({ providedIn: 'root' })

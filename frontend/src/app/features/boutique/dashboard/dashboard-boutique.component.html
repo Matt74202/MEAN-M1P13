@@ -7,7 +7,6 @@
     <div class="header-left">
       <h1>Tableau de bord</h1>
     </div>
-
     <div class="periode-selector" role="group" aria-label="Sélectionner la période">
       @for (j of [7, 30, 90]; track j) {
         <button
@@ -31,10 +30,10 @@
 
   @if (data() && !isLoading()) {
 
-    <!-- ══ KPI CARDS ══ -->
+    <!-- ══ KPI VENTES ══ -->
     <div class="kpi-grid">
 
-      <div class="kpi-card">
+      <div class="kpi-card kpi-card--accent">
         <div class="kpi-icon"><mat-icon>payments</mat-icon></div>
         <div class="kpi-content">
           <span class="kpi-label">CA total</span>
@@ -53,7 +52,7 @@
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-icon"><mat-icon>star</mat-icon></div>
+        <div class="kpi-icon note"><mat-icon>star</mat-icon></div>
         <div class="kpi-content">
           <span class="kpi-label">Note moyenne</span>
           <span class="kpi-value">
@@ -75,27 +74,134 @@
 
     </div>
 
-    <!-- ══ GRILLE PRINCIPALE ══ -->
-    <div class="main-grid">
+    <!-- ══ KPI STOCK ══ -->
+    <div class="kpi-grid">
 
-      <!-- Barres : CA par jour -->
-      <div class="chart-card">
-        <h3 class="card-title">
-          <mat-icon aria-hidden="true">bar_chart</mat-icon>
-          CA par jour
-        </h3>
-        @if (data()!.ventesParJour.length > 0) {
-          <canvas baseChart [data]="barChartData()" [options]="barChartOptions" type="bar"></canvas>
-        } @else {
-          <div class="chart-empty">
-            <mat-icon aria-hidden="true">bar_chart</mat-icon>
-            <p>Aucune vente sur cette période</p>
-          </div>
-        }
+      <div class="kpi-card">
+        <div class="kpi-icon"><mat-icon>warehouse</mat-icon></div>
+        <div class="kpi-content">
+          <span class="kpi-label">Unités en stock</span>
+          <span class="kpi-value">{{ data()!.stock.total }}</span>
+          <span class="kpi-sub">{{ data()!.stock.nbProduits }} produits</span>
+        </div>
       </div>
 
+      <div class="kpi-card">
+        <div class="kpi-icon entree"><mat-icon>arrow_downward</mat-icon></div>
+        <div class="kpi-content">
+          <span class="kpi-label">Entrées ({{ periode() }}j)</span>
+          <span class="kpi-value">+{{ data()!.stock.totalEntrees }}</span>
+          <span class="kpi-sub">unités reçues</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon sortie"><mat-icon>arrow_upward</mat-icon></div>
+        <div class="kpi-content">
+          <span class="kpi-label">Sorties ({{ periode() }}j)</span>
+          <span class="kpi-value">-{{ data()!.stock.totalSorties }}</span>
+          <span class="kpi-sub">unités sorties</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" [class.alerte-active]="data()!.stock.alertes.length > 0">
+        <div class="kpi-icon alerte"><mat-icon>warning_amber</mat-icon></div>
+        <div class="kpi-content">
+          <span class="kpi-label">Alertes stock</span>
+          <span class="kpi-value" [class.danger]="data()!.stock.alertes.length > 0">
+            {{ data()!.stock.alertes.length }}
+          </span>
+          <span class="kpi-sub">produit(s) ≤ 5 unités</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ KPI LOYERS ══ -->
+    @if (data()!.loyers) {
+      <div class="kpi-grid">
+
+        <div class="kpi-card" [class.alerte-active]="data()!.loyers.nbImpayes > 0">
+          <div class="kpi-icon"
+               [class.alerte]="data()!.loyers.nbImpayes > 0"
+               [class.loyer]="data()!.loyers.nbImpayes === 0">
+            <mat-icon>{{ data()!.loyers.nbImpayes > 0 ? 'warning_amber' : 'check_circle' }}</mat-icon>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Loyers impayés</span>
+            <span class="kpi-value" [class.danger]="data()!.loyers.nbImpayes > 0">
+              {{ data()!.loyers.nbImpayes }}
+            </span>
+            <span class="kpi-sub">{{ data()!.loyers.montantImpayes | number:'1.0-0' }} Ar dus</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon loyer"><mat-icon>home_work</mat-icon></div>
+          <div class="kpi-content">
+            <span class="kpi-label">Loyer mensuel</span>
+            <span class="kpi-value">{{ data()!.loyers.montantMensuelTotal | number:'1.0-0' }} <small>Ar</small></span>
+            <span class="kpi-sub">charges fixes / mois</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon"
+               [class.alerte]="data()!.loyers.joursInfo?.enRetard"
+               [class.loyer]="!data()!.loyers.joursInfo?.enRetard">
+            <mat-icon>{{ data()!.loyers.joursInfo?.enRetard ? 'schedule' : 'event_available' }}</mat-icon>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Prochain paiement</span>
+            <span class="kpi-value" [class.danger]="data()!.loyers.joursInfo?.enRetard">
+              @if (data()!.loyers.joursInfo) {
+                {{ data()!.loyers.joursInfo!.jours }}j
+              } @else { — }
+            </span>
+            <span class="kpi-sub">
+              @if (data()!.loyers.joursInfo?.enRetard) { de retard }
+              @else if (data()!.loyers.joursInfo) { restants }
+              @else { à jour ✓ }
+            </span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon loyer"><mat-icon>calendar_today</mat-icon></div>
+          <div class="kpi-content">
+            <span class="kpi-label">Prochaine échéance</span>
+            <span class="kpi-value" style="font-size:1rem">
+              {{ (data()!.loyers.prochainLoyer?.dateEcheance || data()!.loyers.echeanceMoisProchain) | date:'dd MMM yyyy' }}
+            </span>
+            <span class="kpi-sub">échéance le 5 du mois</span>
+          </div>
+        </div>
+
+      </div>
+    }
+
+    <!-- ══ CA PAR JOUR — pleine largeur ══ -->
+    <div class="full-row-card">
+      <h3 class="card-title">
+        <mat-icon aria-hidden="true">bar_chart</mat-icon>
+        CA par jour
+        <span class="card-title__sub">sur {{ periode() }} jours</span>
+      </h3>
+      @if (data()!.ventesParJour.length > 0) {
+        <canvas baseChart [data]="barChartData()" [options]="barChartOptions" type="bar"></canvas>
+      } @else {
+        <div class="chart-empty">
+          <mat-icon aria-hidden="true">bar_chart</mat-icon>
+          <p>Aucune vente sur cette période</p>
+        </div>
+      }
+    </div>
+
+    <!-- ══ GRILLE 3 COLONNES : Top produits / Répartition / Avis ══ -->
+    <div class="tri-grid">
+
       <!-- Top produits -->
-      <div class="section-card">
+      <div class="section-card tri-card">
         <h3 class="card-title">
           <mat-icon aria-hidden="true">trending_up</mat-icon>
           Top produits
@@ -104,7 +210,10 @@
           <div class="produits-list">
             @for (p of data()!.produitsVendus; track p._id; let i = $index) {
               <div class="produit-row">
-                <span class="rank" [class.gold]="i===0" [class.silver]="i===1" [class.bronze]="i===2">
+                <span class="rank"
+                      [class.gold]="i===0"
+                      [class.silver]="i===1"
+                      [class.bronze]="i===2">
                   {{ i + 1 }}
                 </span>
                 <span class="produit-nom">{{ p.nom }}</span>
@@ -114,30 +223,33 @@
             }
           </div>
         } @else {
-          <p class="empty-text">Aucune vente sur cette période</p>
+          <div class="tri-empty">
+            <mat-icon>trending_up</mat-icon>
+            <p>Aucune vente sur cette période</p>
+          </div>
         }
       </div>
 
-      <!-- Camembert : répartition produits -->
-      <div class="chart-card">
+      <!-- Répartition produits -->
+      <div class="section-card tri-card">
         <h3 class="card-title">
           <mat-icon aria-hidden="true">donut_large</mat-icon>
-          Répartition produits
+          Répartition
         </h3>
         @if (data()!.produitsVendus.length > 0) {
           <div class="doughnut-wrapper">
             <canvas baseChart [data]="doughnutData()" [options]="doughnutOptions" type="doughnut"></canvas>
           </div>
         } @else {
-          <div class="chart-empty">
-            <mat-icon aria-hidden="true">donut_large</mat-icon>
+          <div class="tri-empty">
+            <mat-icon>donut_large</mat-icon>
             <p>Aucun produit vendu</p>
           </div>
         }
       </div>
 
       <!-- Avis clients -->
-      <div class="section-card">
+      <div class="section-card tri-card">
         <h3 class="card-title">
           <mat-icon aria-hidden="true">reviews</mat-icon>
           Avis clients
@@ -149,7 +261,10 @@
             <div class="notes-right">
               <div class="stars-row" [attr.aria-label]="'Note ' + data()!.notes.moyenne + ' sur 5'">
                 @for (star of getStars(data()!.notes.moyenne!); track $index) {
-                  <mat-icon [class.filled]="star==='full'" [class.half]="star==='half'" aria-hidden="true">
+                  <mat-icon
+                    [class.filled]="star==='full'"
+                    [class.half]="star==='half'"
+                    aria-hidden="true">
                     {{ star==='full' ? 'star' : star==='half' ? 'star_half' : 'star_border' }}
                   </mat-icon>
                 }
@@ -158,17 +273,14 @@
             </div>
           </div>
 
-          <div class="repartition-list" aria-label="Répartition des notes">
+          <div class="repartition-list">
             @for (n of [5, 4, 3, 2, 1]; track n) {
               <div class="rep-row">
                 <span class="rep-label">{{ n }}★</span>
-                <div class="rep-bar-bg" role="progressbar"
-                  [attr.aria-valuenow]="data()!.notes.repartition[n]"
-                  [attr.aria-valuemax]="data()!.notes.total">
+                <div class="rep-bar-bg">
                   <div class="rep-bar-fill"
                     [style.width.%]="data()!.notes.total > 0
-                      ? (data()!.notes.repartition[n] / data()!.notes.total) * 100
-                      : 0">
+                      ? (data()!.notes.repartition[n] / data()!.notes.total) * 100 : 0">
                   </div>
                 </div>
                 <span class="rep-count">{{ data()!.notes.repartition[n] }}</span>
@@ -180,7 +292,7 @@
             @for (avis of data()!.notes.derniersAvis; track avis._id) {
               <div class="avis-item">
                 <div class="avis-top">
-                  <div class="avis-stars" [attr.aria-label]="'Note ' + avis.note + ' sur 5'">
+                  <div class="avis-stars">
                     @for (i of [1, 2, 3, 4, 5]; track i) {
                       <mat-icon [class.filled]="i <= avis.note" aria-hidden="true">
                         {{ i <= avis.note ? 'star' : 'star_border' }}
@@ -197,9 +309,217 @@
           </div>
 
         } @else {
-          <p class="no-avis">Aucun avis client pour le moment</p>
+          <div class="tri-empty">
+            <mat-icon>reviews</mat-icon>
+            <p>Aucun avis pour le moment</p>
+          </div>
         }
       </div>
+
+    </div><!-- fin .tri-grid -->
+
+    <!-- ══ GRILLE 2 COLONNES : Mouvements + Stock ══ -->
+    <div class="main-grid">
+
+      <!-- Mouvements récents -->
+      <div class="section-card">
+
+        <div class="card-header-row">
+          <h3 class="card-title" style="margin:0">
+            <mat-icon aria-hidden="true">swap_vert</mat-icon>
+            Mouvements récents
+          </h3>
+          <div class="mv-date-filter" [class.has-value]="!!filtreDate()">
+            <mat-icon aria-hidden="true">event</mat-icon>
+            <input
+              type="date"
+              class="mv-date-input"
+              [ngModel]="filtreDate()"
+              (ngModelChange)="filtreDate.set($event); onFiltreDateChange()"
+              aria-label="Filtrer par date">
+            @if (filtreDate()) {
+              <button class="mv-date-clear" (click)="clearFiltreDate()" aria-label="Effacer le filtre">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (mouvementsFiltres().length > 0) {
+          <div class="mouvements-list">
+            @for (m of mouvementsAffiches(); track m._id) {
+              <div class="mouvement-row"
+                   [class.entree]="m.type === 'entree'"
+                   [class.sortie]="m.type === 'sortie'">
+                <div class="mv-icon">
+                  <mat-icon aria-hidden="true">
+                    {{ m.type === 'entree' ? 'add_circle' : 'remove_circle' }}
+                  </mat-icon>
+                </div>
+                <div class="mv-info">
+                  <span class="mv-produit">{{ m.produitNom }}</span>
+                  <span class="mv-raison">{{ m.raison }}</span>
+                </div>
+                <div class="mv-right">
+                  <span class="mv-nombre"
+                        [class.entree]="m.type === 'entree'"
+                        [class.sortie]="m.type === 'sortie'">
+                    {{ m.type === 'entree' ? '+' : '-' }}{{ m.nombre }}
+                  </span>
+                  <span class="mv-date">{{ m.date | date:'dd/MM HH:mm' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          @if (mouvementsFiltres().length > 6) {
+            <button class="btn-voir-plus" (click)="toggleVoirPlus()">
+              @if (!voirPlusMouvements()) {
+                <mat-icon>expand_more</mat-icon>
+                Voir {{ mouvementsFiltres().length - 6 }} de plus
+              } @else {
+                <mat-icon>expand_less</mat-icon>
+                Réduire
+              }
+            </button>
+          }
+
+        } @else {
+          <p class="empty-text">
+            {{ filtreDate() ? 'Aucun mouvement à cette date' : 'Aucun mouvement sur cette période' }}
+          </p>
+        }
+
+      </div>
+
+      <!-- Stock faible -->
+      <div class="section-card">
+        <h3 class="card-title">
+          <mat-icon aria-hidden="true">warning_amber</mat-icon>
+          Stock faible
+        </h3>
+        @if (data()!.stock.alertes.length > 0) {
+          <div class="alertes-list">
+            @for (a of data()!.stock.alertes; track a._id) {
+              <div class="alerte-row" [class]="getStockClass(a.stock)">
+                <div class="alerte-info">
+                  <span class="alerte-nom">{{ a.nom }}</span>
+                  <span class="alerte-cat">{{ a.categorie }}</span>
+                </div>
+                <div class="stock-badge" [class]="getStockClass(a.stock)">
+                  {{ a.stock }} u.
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="stock-ok-msg">
+            <mat-icon>inventory_2</mat-icon>
+            <p>Tous les stocks sont suffisants</p>
+          </div>
+        }
+      </div>
+
+      <!-- Loyers — pleine largeur -->
+      @if (data()!.loyers) {
+        <div class="section-card loyers-card full-width">
+          <h3 class="card-title">
+            <mat-icon aria-hidden="true">home_work</mat-icon>
+            Mes loyers
+          </h3>
+
+          @if (data()!.loyers.prochainLoyer) {
+
+            <div class="loyer-prochain" [class]="'loyer-prochain--' + getLoursUrgence()">
+              <div class="loyer-prochain__left">
+                <div class="loyer-prochain__badge">
+                  <mat-icon>
+                    {{ data()!.loyers.joursInfo?.enRetard ? 'warning' : 'schedule' }}
+                  </mat-icon>
+                </div>
+                <div>
+                  <p class="loyer-prochain__label">
+                    {{ data()!.loyers.joursInfo?.enRetard ? 'Loyer en retard' : 'Prochain loyer' }}
+                  </p>
+                  <p class="loyer-prochain__mois">
+                    Box {{ data()!.loyers.prochainLoyer!.boxNumero }}
+                    · {{ data()!.loyers.prochainLoyer!.mois + '-01' | date:'MMMM yyyy' | titlecase }}
+                  </p>
+                  <p class="loyer-prochain__echeance">
+                    Échéance : {{ data()!.loyers.prochainLoyer!.dateEcheance | date:'dd/MM/yyyy' }}
+                    <span class="loyer-countdown" [class]="'loyer-countdown--' + getLoursUrgence()">
+                      {{ getJoursLabel() }}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div class="loyer-prochain__montant">
+                {{ data()!.loyers.prochainLoyer!.montant | number:'1.0-0' }}
+                <small>Ar</small>
+              </div>
+            </div>
+
+            @if (data()!.loyers.nbImpayes > 1) {
+              <div class="loyer-resume">
+                <div class="loyer-resume__item">
+                  <span class="loyer-resume__val loyer-resume__val--danger">
+                    {{ data()!.loyers.nbImpayes }}
+                  </span>
+                  <span class="loyer-resume__label">impayé(s)</span>
+                </div>
+                <div class="loyer-resume__sep"></div>
+                <div class="loyer-resume__item">
+                  <span class="loyer-resume__val">
+                    {{ data()!.loyers.montantImpayes | number:'1.0-0' }} <small>Ar</small>
+                  </span>
+                  <span class="loyer-resume__label">total dû</span>
+                </div>
+                <div class="loyer-resume__sep"></div>
+                <div class="loyer-resume__item">
+                  <span class="loyer-resume__val">
+                    {{ data()!.loyers.montantMensuelTotal | number:'1.0-0' }} <small>Ar</small>
+                  </span>
+                  <span class="loyer-resume__label">/ mois</span>
+                </div>
+              </div>
+
+              <div class="loyer-list">
+                @for (l of data()!.loyers.prochainImpayes; track l.contratId + l.mois) {
+                  <div class="loyer-list__row" [class.loyer-list__row--retard]="l.enRetard">
+                    <span class="loyer-list__mois">
+                      {{ l.mois + '-01' | date:'MMM yyyy' | titlecase }}
+                    </span>
+                    <span class="loyer-list__box">Box {{ l.boxNumero }}</span>
+                    <span class="loyer-list__tag" [class.tag--retard]="l.enRetard">
+                      {{ l.enRetard ? 'En retard' : 'À venir' }}
+                    </span>
+                    <span class="loyer-list__montant">{{ l.montant | number:'1.0-0' }} Ar</span>
+                  </div>
+                }
+              </div>
+            }
+
+            <a class="loyer-link" routerLink="/boutique/loyers">
+              Voir tous mes loyers
+              <mat-icon>arrow_forward</mat-icon>
+            </a>
+
+          } @else {
+            <div class="loyer-ok">
+              <mat-icon>check_circle</mat-icon>
+              <div>
+                <p class="loyer-ok__title">Loyers à jour !</p>
+                <p class="loyer-ok__sub">
+                  Prochain paiement le
+                  {{ data()!.loyers.echeanceMoisProchain | date:'dd MMMM yyyy' }}
+                  — {{ data()!.loyers.montantMensuelTotal | number:'1.0-0' }} Ar
+                </p>
+              </div>
+            </div>
+          }
+
+        </div>
+      }
 
     </div><!-- fin .main-grid -->
 

@@ -1,5 +1,7 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,7 +23,16 @@ Chart.register(
 @Component({
   selector: 'app-dashboard-boutique',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, BaseChartDirective, BoutiqueNavbarComponent],
+  imports: [
+    CommonModule,
+    DatePipe,
+    RouterLink,
+    FormsModule,
+    MatIconModule,
+    MatButtonModule,
+    BaseChartDirective,
+    BoutiqueNavbarComponent,
+  ],
   templateUrl: './dashboard-boutique.component.html',
   styleUrl:    './dashboard-boutique.component.scss',
 })
@@ -36,7 +47,50 @@ export class DashboardBoutiqueComponent implements OnInit {
   isLoading = signal(true);
   periode   = signal(7);
 
-  // ── Graphique barres ──────────────────────────────────────────────────────
+  // ── Mouvements : filtre date + voir plus ────────────────────────────────────
+  filtreDate = signal('');
+  voirPlusMouvements = signal(false);
+
+  // Filtre par date : compare YYYY-MM-DD du champ avec YYYY-MM-DD de m.date
+  mouvementsFiltres = computed(() => {
+    const tous = this.data()?.stock?.mouvementsRecents ?? [];
+    const filtre = this.filtreDate();
+
+    if (!filtre) return tous;
+
+    return tous.filter(m => {
+      // Utilise toLocaleDateString pour comparer en heure locale
+      const dateLocale = new Date(m.date).toLocaleDateString('fr-CA'); 
+      return dateLocale === filtre;
+    });
+  });
+
+  mouvementsAffiches = computed(() => {
+    const filtres = this.mouvementsFiltres();
+    return this.voirPlusMouvements() ? filtres : filtres.slice(0, 5);
+  });
+
+  onFiltreDateChange() {
+    this.voirPlusMouvements.set(false);
+  }
+
+  clearFiltreDate() {
+    this.filtreDate.set('');  // ← .set()
+    this.voirPlusMouvements.set(false);
+  }
+
+  setPeriode(j: number) {
+    this.periode.set(j);
+    this.filtreDate.set('');  // ← .set()
+    this.voirPlusMouvements.set(false);
+    this.load();
+  }
+
+  toggleVoirPlus() {
+    this.voirPlusMouvements.update(v => !v);
+  }
+
+  // ── Graphiques ──────────────────────────────────────────────────────────────
   barChartData = signal<ChartData<'bar'>>({ labels: [], datasets: [] });
   barChartOptions: ChartConfiguration['options'] = {
     responsive: true,
@@ -47,7 +101,6 @@ export class DashboardBoutiqueComponent implements OnInit {
     },
   };
 
-  // ── Graphique camembert ───────────────────────────────────────────────────
   doughnutData = signal<ChartData<'doughnut'>>({ labels: [], datasets: [] });
   doughnutOptions: ChartConfiguration['options'] = {
     responsive: true,
@@ -68,11 +121,6 @@ export class DashboardBoutiqueComponent implements OnInit {
       },
       error: () => this.isLoading.set(false),
     });
-  }
-
-  setPeriode(j: number) {
-    this.periode.set(j);
-    this.load();
   }
 
   private buildCharts(res: DashboardData) {
@@ -98,6 +146,7 @@ export class DashboardBoutiqueComponent implements OnInit {
     });
   }
 
+  // ── Helpers ─────────────────────────────────────────────────────────────────
   getStars(moyenne: number): ('full' | 'half' | 'empty')[] {
     return [1, 2, 3, 4, 5].map(i => {
       if (i <= Math.floor(moyenne)) return 'full';
@@ -114,5 +163,26 @@ export class DashboardBoutiqueComponent implements OnInit {
     return this.data()?.produitsVendus[0]?.nom ?? '—';
   }
 
-  retour() { this.router.navigate(['/boutique']); }
+  getStockClass(stock: number): string {
+    if (stock === 0) return 'stock-zero';
+    if (stock <= 5)  return 'stock-low';
+    if (stock <= 15) return 'stock-medium';
+    return 'stock-ok';
+  }
+
+  getLoursUrgence(): 'danger' | 'warning' | 'ok' {
+    const info = this.data()?.loyers?.joursInfo;
+    if (!info) return 'ok';
+    if (info.enRetard)   return 'danger';
+    if (info.jours <= 5) return 'warning';
+    return 'ok';
+  }
+
+  getJoursLabel(): string {
+    const info = this.data()?.loyers?.joursInfo;
+    if (!info) return '';
+    if (info.enRetard)    return `${info.jours} jour(s) de retard`;
+    if (info.jours === 0) return "échéance aujourd'hui !";
+    return `dans ${info.jours} jour(s)`;
+  }
 }
