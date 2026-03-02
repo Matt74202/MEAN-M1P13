@@ -17,37 +17,58 @@ $error-text: #8b3a3a;
 .login-page {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background-color: $bg-main;
-  padding: 1rem;
+  padding: 1.5rem 1rem;
   font-family: 'Garet', sans-serif;
+  gap: 1.5rem;
+
+  @media (min-width: 640px) {
+    flex-direction: column;
+    padding: 2rem 1rem;
+  }
 }
 
 .login-card {
   background-color: $card-bg;
-  padding: 2.5rem;
+  padding: 2rem 1.5rem;
   border-radius: 1rem;
   box-shadow: 0 8px 32px rgba(58, 74, 47, 0.08);
   width: 100%;
   max-width: 28rem;
   border: 1px solid $border;
+  box-sizing: border-box;
+
+  @media (min-width: 480px) {
+    padding: 2.5rem;
+  }
 }
 
 .login-title {
   font-family: 'New Icon Script', sans-serif;
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 400;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.75rem;
   color: $text-primary;
   letter-spacing: 0.05em;
+
+  @media (min-width: 480px) {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
+
+  @media (min-width: 480px) {
+    gap: 1.5rem;
+  }
 }
 
 .form-group {
@@ -77,6 +98,11 @@ $error-text: #8b3a3a;
   background-color: $bg-main;
   color: $text-primary;
 
+  // Prevent iOS zoom on input focus (font-size >= 16px)
+  @media (max-width: 480px) {
+    font-size: 1rem;
+  }
+
   &::placeholder {
     color: $border;
   }
@@ -101,6 +127,7 @@ $error-text: #8b3a3a;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
+  touch-action: manipulation;
 
   &:hover:not(:disabled) {
     background-color: $accent-dark;
@@ -129,10 +156,14 @@ $error-text: #8b3a3a;
 }
 
 .login-footer {
-  margin-top: 2rem;
+  margin-top: 1.75rem;
   text-align: center;
   color: $text-secondary;
   font-size: 0.875rem;
+
+  @media (min-width: 480px) {
+    margin-top: 2rem;
+  }
 
   p {
     margin-bottom: 0.5rem;
@@ -153,10 +184,19 @@ $error-text: #8b3a3a;
 }
 
 .demo-accounts {
-  margin-top: 1.75rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid $border;
-  margin-left:20px;
+  width: 100%;
+  max-width: 28rem;
+  box-sizing: border-box;
+  padding: 1.5rem 1.5rem 1.5rem;
+  background-color: $card-bg;
+  border: 1px solid $border;
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(58, 74, 47, 0.08);
+
+  // On larger screens, keep it as a separate card below the login card
+  @media (min-width: 480px) {
+    padding: 1.5rem 2rem;
+  }
 
   &__title {
     text-align: center;
@@ -166,7 +206,11 @@ $error-text: #8b3a3a;
     letter-spacing: .07em;
     color: $text-secondary;
     opacity: .7;
-    margin-bottom: .85rem;
+    margin-bottom: .5rem;
+
+    &:last-of-type {
+      margin-bottom: .85rem;
+    }
   }
 
   &__list {
@@ -181,7 +225,7 @@ $error-text: #8b3a3a;
   align-items: center;
   gap: .75rem;
   width: 100%;
-  padding: .55rem .85rem;
+  padding: .6rem .85rem;
   background: $bg-main;
   border: 1px solid $border;
   border-radius: .5rem;
@@ -189,6 +233,8 @@ $error-text: #8b3a3a;
   transition: background .15s, border-color .15s;
   font-family: 'Garet', sans-serif;
   text-align: left;
+  touch-action: manipulation;
+  box-sizing: border-box;
 
   &:hover {
     background: darken($bg-main, 2%);
@@ -203,9 +249,9 @@ $error-text: #8b3a3a;
     white-space: nowrap;
     flex-shrink: 0;
 
-    &--admin   { background: #e8ede0; color: #4a5e3a; }
+    &--admin    { background: #e8ede0; color: #4a5e3a; }
     &--boutique { background: #eef4f8; color: #2a5a7a; }
-    &--client  { background: #fdf6e8; color: #926415; }
+    &--client   { background: #fdf6e8; color: #926415; }
   }
 
   &__mail {
@@ -214,5 +260,6 @@ $error-text: #8b3a3a;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0; // allows flex children to shrink properly
   }
 }

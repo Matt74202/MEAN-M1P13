@@ -264,9 +264,9 @@ $edit-accent:     #f59e0b;
 .pixi-container {
   flex: 1;
   position: relative;
-  overflow: hidden;
+  overflow: hidden;    
   background: #edeee9;
-  height: calc(100vh - 64px);  
+  height: calc(100vh - 64px);
   min-height: 700px;
 
   @media (max-width: 768px) {
